@@ -1,0 +1,425 @@
+/* ================================================================
+   MascotTestPage.css — SafeMum AI Mascot Test Lab
+   Soft, clinical warmth — like a well-designed medical tool.
+   Font: DM Serif Display (display) + DM Sans (body)
+   ================================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap");
+
+/* ── Reset / root ─────────────────────────────────────────────── */
+.mtp-root *,
+.mtp-root *::before,
+.mtp-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.mtp-root {
+  --bg:          #f5f2ee;
+  --surface:     #ffffff;
+  --surface-2:   #f0ece6;
+  --border:      #e0d9d0;
+  --text:        #1c1917;
+  --text-muted:  #78716c;
+  --radius:      14px;
+  --shadow:      0 2px 12px rgba(0,0,0,0.07);
+
+  min-height: 100vh;
+  background: var(--bg);
+  font-family: "DM Sans", sans-serif;
+  color: var(--text);
+}
+
+/* ── Header ───────────────────────────────────────────────────── */
+.mtp-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 28px 40px 24px;
+}
+
+.mtp-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.mtp-logo {
+  font-family: "DM Serif Display", serif;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.mtp-title {
+  font-family: "DM Serif Display", serif;
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+
+.mtp-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+/* ── Main layout ──────────────────────────────────────────────── */
+.mtp-main {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 40px;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .mtp-main {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+}
+
+/* ── Controls panel ───────────────────────────────────────────── */
+.mtp-controls {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow);
+}
+
+.mtp-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* Scenario list */
+.mtp-scenario-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mtp-scenario-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  font-family: inherit;
+}
+
+.mtp-scenario-btn:hover {
+  background: #ede8e1;
+  transform: translateX(2px);
+}
+
+.mtp-scenario-btn.active {
+  background: color-mix(in srgb, var(--accent, #6b7280) 10%, white);
+  border-color: var(--accent, #6b7280);
+}
+
+.mtp-scenario-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.mtp-scenario-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 300;
+}
+
+/* Divider */
+.mtp-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.mtp-divider::before,
+.mtp-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Fields */
+.mtp-field {
+  margin-bottom: 16px;
+}
+.mtp-field:last-child {
+  margin-bottom: 0;
+}
+
+.mtp-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* Pill group */
+.mtp-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mtp-pill {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: capitalize;
+}
+
+.mtp-pill:hover {
+  border-color: var(--pill-color);
+  color: var(--pill-color);
+}
+
+.mtp-pill.active {
+  background: var(--pill-color);
+  border-color: var(--pill-color);
+  color: #fff;
+}
+
+/* Slider */
+.mtp-slider {
+  width: 100%;
+  accent-color: var(--accent, #6b7280);
+  height: 4px;
+  cursor: pointer;
+  margin: 4px 0;
+}
+
+.mtp-range-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Textarea */
+.mtp-textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-2);
+  resize: vertical;
+  transition: border-color 0.15s;
+  line-height: 1.5;
+}
+.mtp-textarea:focus {
+  outline: none;
+  border-color: #6b7280;
+}
+.mtp-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.mtp-textarea-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.mtp-clear-btn {
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 0;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+.mtp-clear-btn:hover {
+  color: var(--text);
+}
+
+/* ── Preview area ─────────────────────────────────────────────── */
+.mtp-preview-area {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Status bar */
+.mtp-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 9px 14px;
+  box-shadow: var(--shadow);
+}
+
+.mtp-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s;
+}
+
+/* Stage */
+.mtp-stage {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 360px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+
+  /* Subtle dot grid background */
+  background-image: radial-gradient(circle, #d6cfc6 1px, transparent 1px);
+  background-size: 22px 22px;
+  background-color: var(--surface);
+}
+
+/* Guide lines */
+.mtp-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0,0,0,0.06);
+}
+.mtp-guide-left   { left:  15%; }
+.mtp-guide-center { left:  50%; }
+.mtp-guide-right  { right: 15%; }
+
+/* Mascot slots */
+.mtp-mascot-slot {
+  position: absolute;
+  bottom: 28px;
+}
+
+.mtp-slot-left {
+  left: calc(15% - 70px);
+}
+
+.mtp-slot-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.mtp-slot-right {
+  right: calc(15% - 70px);
+}
+
+/* Props readout */
+.mtp-props-readout {
+  background: #1c1917;
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mtp-props-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #78716c;
+}
+
+.mtp-props-code {
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+  font-size: 12px;
+  color: #d6d3d1;
+  line-height: 1.7;
+  white-space: pre;
+}
+
+/* Quick triggers */
+.mtp-quick-triggers {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+}
+
+.mtp-quick-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 10px;
+}
+
+.mtp-quick-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.mtp-quick-btn {
+  padding: 6px 13px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  line-height: 1.4;
+}
+.mtp-quick-btn:hover {
+  background: var(--border);
+  border-color: #c7bdb2;
+}

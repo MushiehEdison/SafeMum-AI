@@ -1,0 +1,129 @@
+/* ============================================================
+   Mascot.css — SafeMum AI
+   ============================================================ */
+
+@keyframes mascot-enter {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mascot-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes mascot-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bubble-appear {
+  from { opacity: 0; transform: translateY(6px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ── Root wrapper ─────────────────────────────────────────── */
+.mascot-root {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  animation:      mascot-enter 0.5s ease-out both;
+}
+
+.mascot-root.position-left   { align-self: flex-start; align-items: flex-start; }
+.mascot-root.position-right  { align-self: flex-end;   align-items: flex-end; }
+.mascot-root.position-center { align-self: center;     align-items: center; }
+
+/* ── Speech bubble ────────────────────────────────────────── */
+.mascot-bubble {
+  position:      relative;
+  background:    #ffffff;
+  border:        1.5px solid #6b7280;
+  border-radius: 12px;
+  padding:       12px 16px;
+  max-width:     220px;
+  margin-bottom: 10px;
+  font-family:   -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size:     13px;
+  line-height:   1.5;
+  color:         #111827;
+  animation:     bubble-appear 0.28s ease-out both;
+  word-break:    break-word;
+  /* ensure bubble is always above canvas */
+  z-index:       2;
+}
+
+.mascot-bubble::after {
+  content:      "";
+  position:     absolute;
+  bottom:       -8px;
+  left:         50%;
+  transform:    translateX(-50%);
+  border-left:  8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top:   8px solid #ffffff;
+  z-index:      1;
+}
+
+.mascot-bubble::before {
+  content:      "";
+  position:     absolute;
+  bottom:       -10px;
+  left:         50%;
+  transform:    translateX(-50%);
+  border-left:  9px solid transparent;
+  border-right: 9px solid transparent;
+  border-top:   9px solid var(--bubble-border-color, #6b7280);
+  z-index:      0;
+}
+
+.mascot-root.position-left .mascot-bubble::after,
+.mascot-root.position-left .mascot-bubble::before {
+  left: 28px; transform: none;
+}
+.mascot-root.position-right .mascot-bubble::after,
+.mascot-root.position-right .mascot-bubble::before {
+  left: auto; right: 28px; transform: none;
+}
+
+.mascot-cursor {
+  display:        inline-block;
+  width:          1px;
+  height:         1em;
+  background:     #6b7280;
+  margin-left:    1px;
+  vertical-align: text-bottom;
+  animation:      cursor-blink 0.8s step-end infinite;
+}
+
+/* ── Canvas wrapper ───────────────────────────────────────── */
+.mascot-canvas-wrapper {
+  display:         block;
+  position:        relative;
+  /* bob runs on this element */
+  animation:       mascot-bob 3.2s ease-in-out infinite;
+  /* critical: never let overflow or opacity hide the canvas */
+  overflow:        visible;
+  opacity:         1;
+  z-index:         1;
+}
+
+.mascot-canvas-wrapper.mascot-pulsing {
+  animation: mascot-bob 3.2s ease-in-out infinite,
+             mascot-pulse 0.6s ease-in-out;
+}
+
+/* ── Rive canvas ──────────────────────────────────────────── */
+.mascot-canvas {
+  display:    block;
+  background: transparent !important;
+  /* must fill wrapper exactly */
+  width:      100% !important;
+  height:     100% !important;
+}
