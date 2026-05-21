@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import BottomNav from "./Components/BottomNav";
 import MascotTestPage from "./Mascottestpage";
-
+import Landing from "./Landing";
 // ── Auth ─────────────────────────────────────────────────────────────────────
 // import Login         from "./Pages/Auth/Login";
 // import CHWLogin      from "./Pages/Auth/CHWLogin";
@@ -32,6 +32,8 @@ import CaseDetail    from "./Pages/CHW/CaseDetail";
 import CHWDashboard  from "./Pages/CHW/CHWDashboard";
 import CHWProfile    from "./Pages/CHW/CHWProfile";
 import CHWPatients from "./Pages/CHW/CHWpatients";
+import CHWSchedule from "./Pages/CHW/CHWschedule";
+
 // ── Health Centre pages ───────────────────────────────────────────────────────
 import FacilityDashboard  from "./Pages/HealthCenters/FacilityDashboard";
 import IncomingAlerts     from "./Pages/HealthCenters/IncomingAlerts";
@@ -61,9 +63,9 @@ function AppShell() {
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
      
       <Routes>
-        <Route path="/" element={<Navigate to="/home" replace />} />
+        <Route path="/" element={<Landing />} />
         <Route path="/mascot-test" element={<MascotTestPage />} />
-        
+
         {/* ── Patient (Users) ── */}
         <Route path="/home" element={<Home />} />
         <Route path="/ai-assistant"    element={<AIAssistant />} />
@@ -88,6 +90,7 @@ function AppShell() {
         <Route path="/chw/cases/:id" element={<CaseDetail />} />
         <Route path="/chw/profile"   element={<CHWProfile />} />
         <Route path="/chw/patients"   element={<CHWPatients />} />
+        <Route path="/chw/schedule"   element={<CHWSchedule />} />
 
         {/* ── Health Centres ── */}
         <Route path="/facility"              element={<FacilityDashboard />} />
