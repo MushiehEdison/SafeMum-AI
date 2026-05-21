@@ -7,8 +7,11 @@ import {
   SmilePlus, Siren, Users, Activity,
   BookOpen, MessageCircle, Wind,
   Stethoscope, Bell, Plus, CheckCircle2, X, Clock,
+  Activity as ActivityIcon, Eye, Shield, Stethoscope as StethoscopeIcon,
+  Thermometer, Droplet, Frown, Meh, Smile
 } from "lucide-react";
 import Mascot from "../../Components/Mascot/Mascot";
+import SymptomChecklist from "../../Components/SymptomChecklist";
 
 /* ─────────────────────────────────
    DATA
@@ -39,7 +42,7 @@ const AI_MESSAGES = [
 ];
 
 const FACILITIES = [
-  { name: "Kenyatta National Hospital", type: "General Hospital", dist: "1.2 km", open: true,  Icon: Stethoscope },
+  { name: "Kenyatta National Hospital", type: "General Hospital", dist: "1.2 km", open: true,  Icon: StethoscopeIcon },
   { name: "Nairobi Women's Hospital",   type: "Women's Health",   dist: "2.8 km", open: true,  Icon: Heart       },
   { name: "MP Shah Hospital",           type: "Private Clinic",   dist: "3.4 km", open: false, Icon: Activity    },
 ];
@@ -58,9 +61,7 @@ const STATS = [
   { label: "Risk Level", value: "Low",       color: "#22c55e" },
 ];
 
-/* ─── Mascot sections — she lives in ONE section at a time ─── */
-// "zone" tells us which section she's parked in
-// zones: "hero" | "status" | "reminders" | "emergency" | "hub"
+/* ─── Mascot sections ─── */
 const IDLE_MESSAGES = [
   "Your follow-up appointment is tomorrow at 10am.",
   "It has been 3 days since your last check-in.",
@@ -71,11 +72,11 @@ const IDLE_MESSAGES = [
 
 /* ─── Reminder dummy data ─── */
 const dummyReminders = [
-  { id:1, type:'Follow-up Appointment', datetime:'May 22, 2026 at 10:00 AM', note:'Post-loss follow-up at Kenyatta National Hospital', aiMessage:'Sarah, your follow-up appointment at Kenyatta National Hospital is tomorrow at 10am. This visit helps confirm your body has fully recovered from your loss in February. Please do not skip it.', missedCount:0, completed:false, overdue:false },
-  { id:2, type:'Medication', datetime:'May 21, 2026 at 8:00 AM', note:'Iron supplement', aiMessage:'Taking your iron supplement today helps your body rebuild after your loss. It is a small thing that makes a real difference.', missedCount:0, completed:false, overdue:true },
-  { id:3, type:'Emotional Check-in', datetime:'May 23, 2026 at 6:00 PM', note:null, aiMessage:'You set this check-in for yourself. A few minutes to sit with how you are feeling is always worth it.', missedCount:0, completed:false, overdue:false },
-  { id:4, type:'Follow-up Appointment', datetime:'May 18, 2026 at 9:00 AM', note:'Missed twice now', aiMessage:'This appointment has been missed. Your recovery matters — please try to reschedule as soon as possible.', missedCount:2, completed:false, overdue:true },
-  { id:5, type:'Danger Signs Education', datetime:'May 25, 2026 at 7:00 PM', note:null, aiMessage:'Knowing the warning signs of incomplete recovery could be life-saving. This reminder is set to keep you informed.', missedCount:0, completed:false, overdue:false },
+  { id:1, type:'Follow-up Appointment', datetime:'May 22, 2026 at 10:00 AM', note:'Post-loss follow-up at Kenyatta National Hospital', aiMessage:'Sarah, your follow-up appointment at Kenyatta National Hospital is tomorrow at 10am.', missedCount:0, completed:false, overdue:false },
+  { id:2, type:'Medication', datetime:'May 21, 2026 at 8:00 AM', note:'Iron supplement', aiMessage:'Taking your iron supplement today helps your body rebuild after your loss.', missedCount:0, completed:false, overdue:true },
+  { id:3, type:'Emotional Check-in', datetime:'May 23, 2026 at 6:00 PM', note:null, aiMessage:'A few minutes to sit with how you are feeling is always worth it.', missedCount:0, completed:false, overdue:false },
+  { id:4, type:'Follow-up Appointment', datetime:'May 18, 2026 at 9:00 AM', note:'Missed twice now', aiMessage:'This appointment has been missed. Your recovery matters — please try to reschedule.', missedCount:2, completed:false, overdue:true },
+  { id:5, type:'Danger Signs Education', datetime:'May 25, 2026 at 7:00 PM', note:null, aiMessage:'Knowing the warning signs of incomplete recovery could be life-saving.', missedCount:0, completed:false, overdue:false },
 ];
 
 const TYPE_META = {
@@ -89,7 +90,7 @@ const TYPES = ['Follow-up Appointment','Medication','Emotional Check-in','Danger
 
 function generateAIMessage(type) {
   switch(type) {
-    case 'Follow-up Appointment':  return "Sarah, this follow-up visit is important for confirming your recovery. Please do not skip it.";
+    case 'Follow-up Appointment':  return "This follow-up visit is important for confirming your recovery. Please do not skip it.";
     case 'Medication':             return "Taking your medication consistently makes a real difference in your recovery.";
     case 'Emotional Check-in':     return "Checking in with yourself is just as important as physical recovery.";
     case 'Danger Signs Education': return "Understanding the warning signs helps you act fast if something changes.";
@@ -154,9 +155,6 @@ function AddReminderModal({ onClose, onAdd }) {
 
 /* ─────────────────────────────────
    INLINE MASCOT STRIP
-   Renders Sarah flush inside a container — no overlap ever.
-   zone: which section she's in (controls bubble position)
-   dark: true for dark backgrounds (status card)
 ───────────────────────────────── */
 function MascotStrip({ mood, message, size = 80, visible, dark = false, bubbleOpacity = 1 }) {
   if (!visible) return null;
@@ -329,6 +327,71 @@ function CompactReminders({ navigate, onReminderHover, onReminderComplete }) {
 }
 
 /* ─────────────────────────────────
+   SYMPTOM CHECKLIST CARD (Compact)
+───────────────────────────────── */
+function SymptomChecklistCard({ onOpen }) {
+  const MOOD_OPTIONS = [
+    { Icon: Frown,  label: "Not great",  color: "#dc2626", bg: "#fff5f5", border: "#fecaca" },
+    { Icon: Meh,   label: "So-so",      color: "#d97706", bg: "#fef3c7", border: "#fde68a" },
+    { Icon: Smile, label: "Pretty okay", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
+  ];
+
+  return (
+    <div
+      onClick={onOpen}
+      style={{
+        background: "#fff",
+        border: "1px solid #e8e6e1",
+        borderRadius: "18px",
+        padding: "18px",
+        cursor: "pointer",
+        fontFamily: "'Manrope', sans-serif",
+        transition: "border-color .2s, box-shadow .2s",
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = "#c4b5fd";
+        e.currentTarget.style.boxShadow = "0 6px 22px rgba(0,0,0,.06)";
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = "#e8e6e1";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    >
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+          <div style={{
+            width: "32px", height: "32px", borderRadius: "9px",
+            background: "#faf5ff", border: "1px solid #e9d5ff",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+          }}>
+            <Activity size={16} color="#9333ea" strokeWidth={1.8} />
+          </div>
+          <div>
+            <p style={{ fontSize: "14px", fontWeight: 600, color: "#111", marginBottom: "1px" }}>Check my symptoms</p>
+            <p style={{ fontSize: "11px", color: "#aaa", fontWeight: 300 }}>Physical, emotional, or both</p>
+          </div>
+        </div>
+        <ChevronRight size={16} color="#ccc" />
+      </div>
+
+      {/* Mood row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+        {MOOD_OPTIONS.map(({ Icon, label, color, bg, border }) => (
+          <div key={label} style={{
+            display: "flex", flexDirection: "column", alignItems: "center", gap: "5px",
+            padding: "10px 6px", borderRadius: "12px",
+            background: bg, border: `1px solid ${border}`,
+          }}>
+            <Icon size={20} color={color} strokeWidth={1.6} />
+            <span style={{ fontSize: "11px", fontWeight: 500, color, textAlign: "center", lineHeight: 1.2 }}>{label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+/* ─────────────────────────────────
    HOME
 ───────────────────────────────── */
 export default function Home() {
@@ -341,11 +404,14 @@ export default function Home() {
   const dateStr  = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   const hour     = now.getHours();
   const nameColor = hour < 12 ? "#d97706" : hour < 17 ? "#ea580c" : "#7c3aed";
+  
+  // Symptom checklist state
+  const [showSymptomChecklist, setShowSymptomChecklist] = useState(false);
 
   /* ── Mascot state ── */
   const [mascotMood,    setMascotMood]    = useState("idle");
   const [mascotMessage, setMascotMessage] = useState("");
-  const [mascotZone,    setMascotZone]    = useState("hero"); // which section she's in
+  const [mascotZone,    setMascotZone]    = useState("hero");
   const [mascotVisible, setMascotVisible] = useState(false);
   const [bubbleOpacity, setBubbleOpacity] = useState(1);
   const [lastInteraction, setLastInteraction] = useState(new Date());
@@ -362,16 +428,6 @@ export default function Home() {
   const savedMoodRef      = useRef("idle");
   const savedZoneRef      = useRef("hero");
 
-  /* ── Zone refs for IntersectionObserver ── */
-  const zoneRefs = {
-    status:    useRef(null),
-    reminders: useRef(null),
-    emergency: useRef(null),
-    hub:       useRef(null),
-  };
-  // Track which zones have already triggered so she only appears once per scroll-in
-  const zoneFiredRef = useRef({ status: false, reminders: false, emergency: false, hub: false });
-
   /* ── Show mascot in a zone ── */
   const show = useCallback((zone, mood, message) => {
     setMascotZone(zone);
@@ -384,7 +440,6 @@ export default function Home() {
   /* ── Idle rotation ── */
   const startIdleRotation = useCallback(() => {
     if (idleRotationRef.current) clearInterval(idleRotationRef.current);
-    // Cycle through zones as well as messages for variety
     const zones = ["hero", "status", "reminders"];
     idleRotationRef.current = setInterval(() => {
       const msg = IDLE_MESSAGES[idleIndexRef.current % IDLE_MESSAGES.length];
@@ -424,7 +479,7 @@ export default function Home() {
       if (idleTimerRef.current)    clearTimeout(idleTimerRef.current);
       if (idleRotationRef.current) clearInterval(idleRotationRef.current);
     };
-  }, []); // eslint-disable-line
+  }, []);
 
   /* ── Attention pulse every 30s ── */
   useEffect(() => {
@@ -503,6 +558,10 @@ export default function Home() {
     navigate("/ai-assistant", { state: { prefill: text || query } });
   }
 
+  function handleSymptomChecklistStart(contextMessage, symptoms) {
+    navigate("/ai-assistant", { state: { prefill: contextMessage, symptoms: symptoms } });
+  }
+
   /* ── Mascot size per zone ── */
   const sizeForZone = { hero:90, status:80, reminders:80, emergency:76, hub:76 };
 
@@ -526,7 +585,7 @@ export default function Home() {
         @keyframes pulse { 0%,100%{box-shadow:0 0 0 3px rgba(74,222,128,.25);}50%{box-shadow:0 0 0 5px rgba(74,222,128,.1);} }
         .hm-sub { font-size:13px; color:#999; font-weight:300; }
 
-        /* MASCOT HERO AREA — sits below greeting, above divider */
+        /* MASCOT HERO AREA */
         .hm-hero-mascot { margin-top:16px; }
 
         /* BODY GRID */
@@ -549,7 +608,7 @@ export default function Home() {
         .hm-stat-l { font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:#444; margin-bottom:4px; }
         .hm-stat-v { font-size:14px; font-weight:600; }
 
-        /* MASCOT IN STATUS — sits below the stats grid */
+        /* MASCOT IN STATUS */
         .hm-status-mascot { margin-top:20px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06); }
 
         /* TIP */
@@ -654,7 +713,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* MASCOT ZONE: hero — lives right below the greeting */}
+          {/* MASCOT ZONE: hero */}
           <div className="hm-hero-mascot">
             <MascotStrip
               mood={mascotMood}
@@ -687,7 +746,7 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* MASCOT ZONE: status — below the stats, still inside the dark card */}
+              {/* MASCOT ZONE: status */}
               <div className="hm-status-mascot">
                 <MascotStrip
                   mood={mascotMood}
@@ -701,35 +760,44 @@ export default function Home() {
             </div>
           </div>
 
-          {/* ═══ TIP ═══ */}
+          {/* ═══ TIP & APPOINTMENT COLUMN ═══ */}
           <div>
-            <p className="hm-lbl">Today's Health Tip</p>
-            <div className="hm-tip" style={{ background: tip.bg }}>
-              <div className="hm-tip-wm" style={{ color: tip.accent }}>"</div>
-              <div className="hm-tip-head">
-                <div className="hm-tip-ico" style={{ background: tip.accent + "20" }}>
-                  <TipIcon size={16} color={tip.accent} strokeWidth={1.8} />
+            {/* Today's Health Tip */}
+            <div className="mb-4">
+              <p className="hm-lbl">Today's Health Tip</p>
+              <div className="hm-tip" style={{ background: tip.bg }}>
+                <div className="hm-tip-wm" style={{ color: tip.accent }}>"</div>
+                <div className="hm-tip-head">
+                  <div className="hm-tip-ico" style={{ background: tip.accent + "20" }}>
+                    <TipIcon size={16} color={tip.accent} strokeWidth={1.8} />
+                  </div>
+                  <span className="hm-tip-badge" style={{ color: tip.accent }}>{tip.label}</span>
+                  <span className="hm-tip-day" style={{ color: tip.accent }}>{DAYS[now.getDay()]}</span>
                 </div>
-                <span className="hm-tip-badge" style={{ color: tip.accent }}>{tip.label}</span>
-                <span className="hm-tip-day" style={{ color: tip.accent }}>{DAYS[now.getDay()]}</span>
+                <p className="hm-tip-text" style={{ color: tip.accent }}>"{tip.tip}"</p>
               </div>
-              <p className="hm-tip-text" style={{ color: tip.accent }}>"{tip.tip}"</p>
             </div>
-          </div>
 
-          {/* ═══ APPOINTMENT ═══ */}
-          <div>
-            <p className="hm-lbl">Next Appointment</p>
-            <div className="hm-appt" onClick={() => navigate("/reminders")}>
-              <div className="hm-appt-cal">
-                <span className="hm-appt-n">19</span>
-                <span className="hm-appt-m">May</span>
+            {/* Next Appointment */}
+            <div className="mb-4">
+              <p className="hm-lbl">Next Appointment</p>
+              <div className="hm-appt" onClick={() => navigate("/reminders")}>
+                <div className="hm-appt-cal">
+                  <span className="hm-appt-n">19</span>
+                  <span className="hm-appt-m">May</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <p className="hm-appt-t">Post-Loss Follow-up</p>
+                  <p className="hm-appt-d">Kenyatta National Hospital · 10:00 AM</p>
+                </div>
+                <ChevronRight size={16} color="#ccc" />
               </div>
-              <div style={{ flex: 1 }}>
-                <p className="hm-appt-t">Post-Loss Follow-up</p>
-                <p className="hm-appt-d">Kenyatta National Hospital · 10:00 AM</p>
-              </div>
-              <ChevronRight size={16} color="#ccc" />
+            </div>
+
+            {/* Symptom Checklist Card - NEW */}
+            <div>
+              <p className="hm-lbl">How are you feeling?</p>
+              <SymptomChecklistCard onOpen={() => setShowSymptomChecklist(true)} />
             </div>
           </div>
 
@@ -742,7 +810,6 @@ export default function Home() {
                 onReminderHover={handleReminderHover}
                 onReminderComplete={handleReminderComplete}
               />
-              {/* MASCOT ZONE: reminders — below the reminder cards */}
               <div className="hm-reminders-mascot">
                 <MascotStrip
                   mood={mascotMood}
@@ -793,7 +860,6 @@ export default function Home() {
                     <p className="hm-card-sub">Feeling unwell? Get immediate help</p>
                   </div>
                 </div>
-                {/* MASCOT ZONE: emergency — inside the card below the text */}
                 <div className="hm-emer-mascot" onClick={e => e.stopPropagation()}>
                   <MascotStrip
                     mood={mascotMood}
@@ -854,7 +920,6 @@ export default function Home() {
                     ))}
                   </div>
 
-                  {/* MASCOT ZONE: hub — below the module grid */}
                   <div className="hm-hub-mascot" onClick={e => e.stopPropagation()}>
                     <MascotStrip
                       mood={mascotMood}
@@ -872,6 +937,14 @@ export default function Home() {
 
         </div>
       </div>
+
+      {/* Symptom Checklist Modal */}
+      {showSymptomChecklist && (
+        <SymptomChecklist
+          onClose={() => setShowSymptomChecklist(false)}
+          onStartChat={handleSymptomChecklistStart}
+        />
+      )}
     </>
   );
 }
