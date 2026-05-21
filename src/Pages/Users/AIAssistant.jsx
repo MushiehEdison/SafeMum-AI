@@ -259,14 +259,14 @@ function Sidebar({ open, onClose, onNew, activeId, onSelect, navigate }) {
             </button>
           ))}
         </div>
-        <div className="sb-obs">
+        {/* <div className="sb-obs">
           <div className="sb-obs-head">
             <Activity size={12} color="#9333ea" strokeWidth={1.5} />
             <span className="sb-obs-t">AI Observations</span>
             <span className="sb-obs-pill">Soon</span>
           </div>
           <p className="sb-obs-txt">Patterns & insights from your conversations will appear here.</p>
-        </div>
+        </div> */}
       </div>
     </>
   );
