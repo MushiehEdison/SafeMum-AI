@@ -1,7 +1,7 @@
 // src/Components/Mascot/Mascot.jsx
 import { useEffect, useRef, useState } from "react";
 import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
-import mascotRiv from "../../assets/mascot/mascot.riv?url";
+import mascotRiv from "../../assets/mascot/mascot2.riv?url";
 import "./Mascot.css";
 
 /* ─── mood → accent colour ───────────────────────────────────────── */

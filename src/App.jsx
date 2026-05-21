@@ -63,6 +63,7 @@ function AppShell() {
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/mascot-test" element={<MascotTestPage />} />
+        
         {/* ── Patient (Users) ── */}
         <Route path="/home" element={<Home />} />
         <Route path="/ai-assistant"    element={<AIAssistant />} />
