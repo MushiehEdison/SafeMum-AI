@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from "react";
 import Mascot from "./Components/Mascot/Mascot";
-import "./MascotTestPage.css";
+import "./Mascottestpage.css";
 
 // ── Preset scenarios ──────────────────────────────────────────────
 const SCENARIOS = [
