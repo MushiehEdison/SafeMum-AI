@@ -1,9 +1,10 @@
 // src/Components/Mascot/Mascot.jsx
 import { useEffect, useRef, useState } from "react";
-import { useRive } from "@rive-app/react-canvas";
+import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
 import mascotRiv from "../../assets/mascot/mascot.riv?url";
 import "./Mascot.css";
 
+/* ─── mood → accent colour ───────────────────────────────────────── */
 const MOOD_COLORS = {
   idle:        "#6b7280",
   happy:       "#16a34a",
@@ -11,13 +12,19 @@ const MOOD_COLORS = {
   celebrating: "#ea580c",
 };
 
-const MOOD_TO_ANIMATION = {
-  idle:        "idle",
-  happy:       "wave",
-  concerned:   "attention",
-  celebrating: "wave",
+/*
+ * tevredenheid scale:  0-2 angry · 3 annoyed · 4 neutral · 5-6 happy · 7 laughing
+ * We pick the most expressive value for each SafeMum mood.
+ */
+const MOOD_TO_VALUE = {
+  idle:        4,   // neutral
+  concerned:   2,   // troubled / worried
+  happy:       6,   // warm positive
+  celebrating: 7,   // full joy
 };
 
+const STATE_MACHINE_NAME = "State Machine 1";
+const INPUT_NAME         = "tevredenheid";
 const TYPING_INTERVAL_MS = 28;
 
 export default function Mascot({
@@ -26,22 +33,27 @@ export default function Mascot({
   position = "left",
   size     = 140,
 }) {
-  /* ── Rive ─────────────────────────────────────────────────────── */
+  /* ── Rive + state machine ────────────────────────────────────────── */
   const { RiveComponent, rive } = useRive({
-    src:        mascotRiv,
-    autoplay:   true,
-    animations: "idle",
+    src:           mascotRiv,
+    autoplay:      true,
+    stateMachines: STATE_MACHINE_NAME,
   });
 
-  /* ── Switch animation on mood change ─────────────────────────── */
-  useEffect(() => {
-    if (!rive) return;
-    const animName = MOOD_TO_ANIMATION[mood] ?? "idle";
-    rive.stop();
-    rive.play(animName);
-  }, [mood, rive]);
+  const tevredenheid = useStateMachineInput(
+    rive,
+    STATE_MACHINE_NAME,
+    INPUT_NAME
+  );
 
-  /* ── Typewriter ───────────────────────────────────────────────── */
+  /* ── Drive the emotion number whenever mood changes ─────────────── */
+  useEffect(() => {
+    if (!tevredenheid) return;
+    const value = MOOD_TO_VALUE[mood] ?? MOOD_TO_VALUE.idle;
+    tevredenheid.value = value;
+  }, [mood, tevredenheid]);
+
+  /* ── Typewriter ──────────────────────────────────────────────────── */
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping,      setIsTyping]      = useState(false);
 
@@ -58,7 +70,7 @@ export default function Mascot({
     return () => clearInterval(interval);
   }, [message]);
 
-  /* ── Mood pulse ───────────────────────────────────────────────── */
+  /* ── Mood pulse ──────────────────────────────────────────────────── */
   const wrapperRef  = useRef(null);
   const prevMoodRef = useRef(mood);
   useEffect(() => {
@@ -72,6 +84,7 @@ export default function Mascot({
     prevMoodRef.current = mood;
   }, [mood]);
 
+  /* ── Render ──────────────────────────────────────────────────────── */
   const accentColor = MOOD_COLORS[mood] ?? MOOD_COLORS.idle;
   const showBubble  = Boolean(message);
   const bubbleStyle = {
