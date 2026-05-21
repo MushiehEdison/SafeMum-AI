@@ -1,14 +1,15 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bot, Mic, MicOff, Send, X, Plus,
+  Bot, Mic, MicOff, Send, X,
   AlertTriangle, MessageSquare,
   Stethoscope, Heart, Leaf, ShieldAlert,
   CheckCircle2, Circle, ChevronRight,
   Activity, PenLine, PhoneOff, Volume2,
-  VolumeX, Home, Bell, Map, Settings,
-  ArrowLeft, User2, Sparkles,
+  VolumeX, Home, Bell, Map,
+  ArrowLeft, User2,
 } from "lucide-react";
+import Mascot from "../../Components/Mascot/Mascot";
 
 /* ─────────────────────────────────────────────────────────────
    DATA
@@ -47,10 +48,10 @@ const MOCK_CONVOS = [
 ];
 
 const NAV_LINKS = [
-  { label: "Home",      Icon: Home,   path: "/home"      },
-  { label: "Reminders", Icon: Bell,   path: "/reminders" },
-  { label: "Map",       Icon: Map,    path: "/map"        },
-  { label: "Profile",   Icon: User2,  path: "/profile"   },
+  { label: "Home",      Icon: Home,  path: "/home"      },
+  { label: "Reminders", Icon: Bell,  path: "/reminders" },
+  { label: "Map",       Icon: Map,   path: "/map"        },
+  { label: "Profile",   Icon: User2, path: "/profile"   },
 ];
 
 function getAIResponse(userMessage, qrId) {
@@ -59,21 +60,21 @@ function getAIResponse(userMessage, qrId) {
   if (id === "physical" || msg.includes("physical") || msg.includes("recovery"))
     return { text: "Let's check how you're recovering physically. Are you currently experiencing any of these?", quickReplies: SYMPTOM_OPTIONS, quickReplyType: "symptoms", urgent: false, mascotMood: "curious", mascotSay: "Tell me what you're feeling — I'm listening carefully." };
   if (id === "emotional" || msg.includes("feel") || msg.includes("sad") || msg.includes("emotion"))
-    return { text: "How you feel emotionally is just as important as your physical recovery.\n\nHow would you describe where you are right now?", quickReplies: MOOD_OPTIONS, quickReplyType: "mood", urgent: false, mascotMood: "warm", mascotSay: "Your feelings are completely valid. Take your time." };
+    return { text: "How you feel emotionally is just as important as your physical recovery.\n\nHow would you describe where you are right now?", quickReplies: MOOD_OPTIONS, quickReplyType: "mood", urgent: false, mascotMood: "idle", mascotSay: "Your feelings are completely valid. Take your time." };
   if (id === "danger" || msg.includes("danger") || msg.includes("warning"))
-    return { text: "These are the danger signs that need immediate attention:\n\n**Soaking a pad every hour** for 2+ hours\n**Fever above 38°C** with chills or foul discharge\n**Severe lower belly pain** that does not ease\n**Dizziness or fainting**\n\nIf you notice any of these — go to a facility immediately.", quickReplies: [{ id: "alert", label: "Open Emergency Alert", Icon: ShieldAlert, accent: "#dc2626" }, { id: "map", label: "Find nearest facility", Icon: Stethoscope, accent: "#15803d" }], quickReplyType: "actions", urgent: false, mascotMood: "alert", mascotSay: "Please keep these in mind. Your safety matters most." };
+    return { text: "These are the danger signs that need immediate attention:\n\n**Soaking a pad every hour** for 2+ hours\n**Fever above 38°C** with chills or foul discharge\n**Severe lower belly pain** that does not ease\n**Dizziness or fainting**\n\nIf you notice any of these — go to a facility immediately.", quickReplies: [{ id: "alert", label: "Open Emergency Alert", Icon: ShieldAlert, accent: "#dc2626" }, { id: "map", label: "Find nearest facility", Icon: Stethoscope, accent: "#15803d" }], quickReplyType: "actions", urgent: false, mascotMood: "concerned", mascotSay: "Please keep these in mind. Your safety matters most." };
   if (["bleeding_heavy","fever","dizziness","pain_severe"].includes(id))
-    return { text: "I'm concerned about what you've described. These symptoms can be serious.\n\nPlease don't wait — you need to be seen by a healthcare provider today.", quickReplies: [{ id: "alert", label: "Send Emergency Alert", Icon: ShieldAlert, accent: "#dc2626" }, { id: "map", label: "Find nearest facility", Icon: Stethoscope, accent: "#15803d" }], quickReplyType: "actions", urgent: true, mascotMood: "urgent", mascotSay: "Please don't wait. Go now — I'll be here when you're safe." };
+    return { text: "I'm concerned about what you've described. These symptoms can be serious.\n\nPlease don't wait — you need to be seen by a healthcare provider today.", quickReplies: [{ id: "alert", label: "Send Emergency Alert", Icon: ShieldAlert, accent: "#dc2626" }, { id: "map", label: "Find nearest facility", Icon: Stethoscope, accent: "#15803d" }], quickReplyType: "actions", urgent: true, mascotMood: "concerned", mascotSay: "Please don't wait. Go now — I'll be here when you're safe." };
   if (["bleeding_light","pain_mild"].includes(id))
-    return { text: "Some light spotting and mild discomfort are normal in the first 2 weeks. Your body is healing.\n\nAre you attending your follow-up appointment on May 19th?", quickReplies: [{ id: "yes_appt", label: "Yes, I am", Icon: CheckCircle2, accent: "#15803d" }, { id: "no_appt", label: "I'm not sure", Icon: Circle, accent: "#ca8a04" }], quickReplyType: "actions", urgent: false, mascotMood: "reassuring", mascotSay: "That sounds manageable. You're doing well, Amina." };
+    return { text: "Some light spotting and mild discomfort are normal in the first 2 weeks. Your body is healing.\n\nAre you attending your follow-up appointment on May 19th?", quickReplies: [{ id: "yes_appt", label: "Yes, I am", Icon: CheckCircle2, accent: "#15803d" }, { id: "no_appt", label: "I'm not sure", Icon: Circle, accent: "#ca8a04" }], quickReplyType: "actions", urgent: false, mascotMood: "idle", mascotSay: "That sounds manageable. You're doing well, Amina." };
   if (id === "none")
-    return { text: "That's encouraging. Rest, hydration, and your follow-up on May 19th still matter.\n\nAnything specific on your mind?", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false, mascotMood: "happy", mascotSay: "No symptoms — that's good news! Keep taking care of yourself." };
+    return { text: "That's encouraging. Rest, hydration, and your follow-up on May 19th still matter.\n\nAnything specific on your mind?", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false, mascotMood: "celebrating", mascotSay: "No symptoms — that's great news!" };
   if (["overwhelmed","numb","sad","anxious"].includes(id))
-    return { text: "What you're feeling is completely valid. Grief after a pregnancy loss is real — it doesn't have a timeline.\n\nYou don't have to carry this alone.", quickReplies: [{ id: "hub", label: "Recovery Hub", Icon: Heart, accent: "#9333ea" }, { id: "talk", label: "Keep talking", Icon: MessageSquare, accent: "#2563eb" }], quickReplyType: "actions", urgent: false, mascotMood: "empathetic", mascotSay: "I'm right here with you. You are not alone in this." };
+    return { text: "What you're feeling is completely valid. Grief after a pregnancy loss is real — it doesn't have a timeline.\n\nYou don't have to carry this alone.", quickReplies: [{ id: "hub", label: "Recovery Hub", Icon: Heart, accent: "#9333ea" }, { id: "talk", label: "Keep talking", Icon: MessageSquare, accent: "#2563eb" }], quickReplyType: "actions", urgent: false, mascotMood: "idle", mascotSay: "I'm right here with you. You are not alone in this." };
   if (["ok","good"].includes(id))
     return { text: "I'm glad you're managing. That takes real strength.\n\nIs there anything I can help with today?", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false, mascotMood: "celebrating", mascotSay: "That's wonderful. You're stronger than you know, Amina." };
   if (id === "nutrition" || msg.includes("eat") || msg.includes("food"))
-    return { text: "Good nutrition after a pregnancy loss helps your body rebuild faster.\n\n**Iron** — lentils, spinach, beans, red meat\n**Folate** — leafy greens, eggs, avocado\n**Hydration** — at least 8 glasses of water daily", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false, mascotMood: "informing", mascotSay: "Small, nourishing choices add up to real healing." };
+    return { text: "Good nutrition after a pregnancy loss helps your body rebuild faster.\n\n**Iron** — lentils, spinach, beans, red meat\n**Folate** — leafy greens, eggs, avocado\n**Hydration** — at least 8 glasses of water daily", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false, mascotMood: "idle", mascotSay: "Small, nourishing choices add up to real healing." };
   return { text: "I hear you. Can you tell me a bit more about what you're experiencing right now?", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false, mascotMood: "curious", mascotSay: "I'm here — tell me more." };
 }
 
@@ -81,140 +82,13 @@ const INITIAL_MESSAGES = [{
   id: "intro", role: "assistant", urgent: false,
   text: "Hello Amina, I'm here with you.\n\nI'm your SafeMum health assistant — here to support your recovery, answer your questions, and make sure you're safe.\n\nWhat would you like to talk about today?",
   quickReplies: TOPIC_OPTIONS, quickReplyType: "topics",
-  mascotMood: "warm", mascotSay: "I've been thinking about you. Let's check in.",
+  mascotMood: "idle", mascotSay: "I've been thinking about you. Let's check in.",
 }];
 
 /* ─────────────────────────────────────────────────────────────
-   MASCOT COMPONENT — SVG-based, fully animated
-   mood: idle | warm | curious | empathetic | urgent | alert |
-         reassuring | happy | celebrating | informing | typing | listening
+   TYPED TEXT — character-by-character bubble reveal
 ───────────────────────────────────────────────────────────── */
-function MascotFace({ mood = "idle", size = 72 }) {
-  const moodColors = {
-    idle:        { body: "#2a2927", face: "#1a1917", glow: "rgba(255,255,255,0.04)" },
-    warm:        { body: "#9333ea", face: "#7c3aed", glow: "rgba(147,51,234,0.3)"  },
-    curious:     { body: "#2563eb", face: "#1d4ed8", glow: "rgba(37,99,235,0.25)"  },
-    empathetic:  { body: "#7c3aed", face: "#6d28d9", glow: "rgba(124,58,237,0.3)"  },
-    urgent:      { body: "#dc2626", face: "#b91c1c", glow: "rgba(220,38,38,0.35)"  },
-    alert:       { body: "#d97706", face: "#b45309", glow: "rgba(217,119,6,0.3)"   },
-    reassuring:  { body: "#15803d", face: "#166534", glow: "rgba(21,128,61,0.25)"  },
-    happy:       { body: "#16a34a", face: "#15803d", glow: "rgba(22,163,74,0.25)"  },
-    celebrating: { body: "#7c3aed", face: "#6d28d9", glow: "rgba(124,58,237,0.35)" },
-    informing:   { body: "#0369a1", face: "#075985", glow: "rgba(3,105,161,0.25)"  },
-    typing:      { body: "#374151", face: "#1f2937", glow: "rgba(255,255,255,0.06)"},
-    listening:   { body: "#1d4ed8", face: "#1e40af", glow: "rgba(29,78,216,0.3)"  },
-  };
-
-  const c = moodColors[mood] || moodColors.idle;
-  const r = size / 2;
-
-  /* Eye shapes by mood */
-  const eyeConfig = {
-    idle:        { ly: 0.38, ry: 0.38, lh: 0.09, rh: 0.09, shape: "oval" },
-    warm:        { ly: 0.40, ry: 0.40, lh: 0.07, rh: 0.07, shape: "happy" },
-    curious:     { ly: 0.36, ry: 0.38, lh: 0.10, rh: 0.08, shape: "asymmetric" },
-    empathetic:  { ly: 0.41, ry: 0.41, lh: 0.07, rh: 0.07, shape: "soft" },
-    urgent:      { ly: 0.35, ry: 0.35, lh: 0.11, rh: 0.11, shape: "wide" },
-    alert:       { ly: 0.35, ry: 0.35, lh: 0.12, rh: 0.12, shape: "wide" },
-    reassuring:  { ly: 0.40, ry: 0.40, lh: 0.08, rh: 0.08, shape: "happy" },
-    happy:       { ly: 0.42, ry: 0.42, lh: 0.06, rh: 0.06, shape: "happy" },
-    celebrating: { ly: 0.41, ry: 0.41, lh: 0.07, rh: 0.07, shape: "happy" },
-    informing:   { ly: 0.37, ry: 0.37, lh: 0.10, rh: 0.10, shape: "oval" },
-    typing:      { ly: 0.40, ry: 0.40, lh: 0.05, rh: 0.05, shape: "half" },
-    listening:   { ly: 0.37, ry: 0.37, lh: 0.11, rh: 0.11, shape: "wide" },
-  };
-
-  const ec = eyeConfig[mood] || eyeConfig.idle;
-  const lx = size * 0.36, rx = size * 0.64;
-  const ley = size * ec.ly, rey = size * ec.ry;
-  const leh = size * ec.lh, reh = size * ec.rh;
-  const ew  = size * 0.12;
-
-  const mouthConfig = {
-    idle:        "M 0.3 0.65 Q 0.5 0.68 0.7 0.65",
-    warm:        "M 0.28 0.63 Q 0.5 0.72 0.72 0.63",
-    curious:     "M 0.3 0.65 Q 0.5 0.70 0.65 0.62",
-    empathetic:  "M 0.3 0.66 Q 0.5 0.72 0.7 0.66",
-    urgent:      "M 0.3 0.66 Q 0.5 0.62 0.7 0.66",
-    alert:       "M 0.3 0.67 Q 0.5 0.64 0.7 0.67",
-    reassuring:  "M 0.28 0.64 Q 0.5 0.72 0.72 0.64",
-    happy:       "M 0.27 0.62 Q 0.5 0.74 0.73 0.62",
-    celebrating: "M 0.25 0.61 Q 0.5 0.76 0.75 0.61",
-    informing:   "M 0.3 0.64 Q 0.5 0.68 0.7 0.64",
-    typing:      "M 0.35 0.65 Q 0.5 0.67 0.65 0.65",
-    listening:   "M 0.3 0.65 Q 0.5 0.70 0.7 0.65",
-  };
-  const mouthPath = (moodConfig) => {
-    const m = moodConfig || mouthConfig.idle;
-    return m.replace(/(\d+\.\d+)/g, v => parseFloat(v) * size);
-  };
-
-  const animId = `glow-${mood}-${size}`;
-
-  return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} xmlns="http://www.w3.org/2000/svg" style={{ overflow: "visible", flexShrink: 0 }}>
-      <defs>
-        <radialGradient id={animId} cx="40%" cy="35%" r="60%">
-          <stop offset="0%" stopColor={c.face} />
-          <stop offset="100%" stopColor={c.body} />
-        </radialGradient>
-      </defs>
-
-      {/* Glow ring */}
-      <circle cx={r} cy={r} r={r - 1} fill="none" stroke={c.glow} strokeWidth={size * 0.06} />
-
-      {/* Body */}
-      <circle cx={r} cy={r} r={r - 2} fill={`url(#${animId})`} />
-
-      {/* Left eye */}
-      {ec.shape === "happy" || ec.shape === "soft" ? (
-        <path d={`M ${lx - ew/2} ${ley} Q ${lx} ${ley - leh * 1.6} ${lx + ew/2} ${ley}`} fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth={size * 0.035} strokeLinecap="round" />
-      ) : ec.shape === "half" ? (
-        <path d={`M ${lx - ew/2} ${ley + leh/2} Q ${lx} ${ley - leh/2} ${lx + ew/2} ${ley + leh/2}`} fill="rgba(255,255,255,0.85)" />
-      ) : (
-        <ellipse cx={lx} cy={ley} rx={ew / 2} ry={leh} fill="rgba(255,255,255,0.9)" />
-      )}
-
-      {/* Right eye */}
-      {ec.shape === "happy" || ec.shape === "soft" ? (
-        <path d={`M ${rx - ew/2} ${rey} Q ${rx} ${rey - reh * 1.6} ${rx + ew/2} ${rey}`} fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth={size * 0.035} strokeLinecap="round" />
-      ) : ec.shape === "asymmetric" ? (
-        <ellipse cx={rx} cy={rey} rx={ew / 2} ry={reh * 0.8} fill="rgba(255,255,255,0.9)" />
-      ) : ec.shape === "half" ? (
-        <path d={`M ${rx - ew/2} ${rey + reh/2} Q ${rx} ${rey - reh/2} ${rx + ew/2} ${rey + reh/2}`} fill="rgba(255,255,255,0.85)" />
-      ) : (
-        <ellipse cx={rx} cy={rey} rx={ew / 2} ry={reh} fill="rgba(255,255,255,0.9)" />
-      )}
-
-      {/* Mouth */}
-      <path
-        d={mouthPath(mouthConfig[mood])}
-        fill="none"
-        stroke="rgba(255,255,255,0.75)"
-        strokeWidth={size * 0.032}
-        strokeLinecap="round"
-      />
-
-      {/* Celebrating sparkles */}
-      {mood === "celebrating" && (<>
-        <circle cx={size * 0.15} cy={size * 0.2} r={size * 0.03} fill="rgba(255,220,80,0.8)" />
-        <circle cx={size * 0.85} cy={size * 0.18} r={size * 0.025} fill="rgba(255,220,80,0.7)" />
-        <circle cx={size * 0.82} cy={size * 0.82} r={size * 0.02} fill="rgba(255,200,60,0.6)" />
-      </>)}
-
-      {/* Urgent pulse lines */}
-      {mood === "urgent" && (<>
-        <line x1={size * 0.08} y1={size * 0.45} x2={size * 0.02} y2={size * 0.45} stroke="rgba(255,100,100,0.5)" strokeWidth={1.5} strokeLinecap="round" />
-        <line x1={size * 0.92} y1={size * 0.45} x2={size * 0.98} y2={size * 0.45} stroke="rgba(255,100,100,0.5)" strokeWidth={1.5} strokeLinecap="round" />
-      </>)}
-    </svg>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   TYPED TEXT — character-by-character reveal
-───────────────────────────────────────────────────────────── */
-function TypedText({ text, onDone }) {
+function TypedText({ text }) {
   const [displayed, setDisplayed] = useState("");
   useEffect(() => {
     setDisplayed("");
@@ -223,238 +97,58 @@ function TypedText({ text, onDone }) {
     const t = setInterval(() => {
       i++;
       setDisplayed(text.slice(0, i));
-      if (i >= text.length) { clearInterval(t); if (onDone) onDone(); }
-    }, 20);
+      if (i >= text.length) clearInterval(t);
+    }, 22);
     return () => clearInterval(t);
   }, [text]);
-  return <span>{displayed}<span style={{ opacity: displayed.length < (text||"").length ? 0.4 : 0, transition: "opacity 0.15s" }}>|</span></span>;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   MASCOT PANEL — the living, reactive companion strip
-   Sits in the chat column as a fixed-position floating panel
-───────────────────────────────────────────────────────────── */
-const MOOD_LABELS = {
-  idle:        "Here with you",
-  warm:        "Thinking of you",
-  curious:     "I'm listening",
-  empathetic:  "I understand",
-  urgent:      "Please act now",
-  alert:       "Important",
-  reassuring:  "You're okay",
-  happy:       "Good news",
-  celebrating: "Well done!",
-  informing:   "Here's what I know",
-  typing:      "Thinking…",
-  listening:   "Go on…",
-};
-
-const MOOD_ANIMATIONS = {
-  idle:        "msc-idle",
-  warm:        "msc-pulse",
-  curious:     "msc-tilt",
-  empathetic:  "msc-breathe",
-  urgent:      "msc-shake",
-  alert:       "msc-bounce",
-  reassuring:  "msc-sway",
-  happy:       "msc-bounce",
-  celebrating: "msc-spin-once",
-  informing:   "msc-nod",
-  typing:      "msc-idle",
-  listening:   "msc-lean",
-};
-
-function MascotPanel({ mood, message, isTyping, messageCount, lastMessageRole, inputLength }) {
-  const [displayedMood, setDisplayedMood] = useState(mood);
-  const [displayedMsg,  setDisplayedMsg]  = useState(message);
-  const [visible,       setVisible]       = useState(true);
-  const [blinking,      setBlinking]      = useState(false);
-  const [particleKey,   setParticleKey]   = useState(0);
-  const prevMoodRef = useRef(mood);
-
-  /* Mood transition with brief dim */
-  useEffect(() => {
-    if (mood === prevMoodRef.current) return;
-    prevMoodRef.current = mood;
-    setVisible(false);
-    const t = setTimeout(() => {
-      setDisplayedMood(mood);
-      setDisplayedMsg(message);
-      setVisible(true);
-      if (mood === "celebrating") setParticleKey(k => k + 1);
-    }, 250);
-    return () => clearTimeout(t);
-  }, [mood, message]);
-
-  /* Random blink every 3–6s */
-  useEffect(() => {
-    const blink = () => {
-      setBlinking(true);
-      setTimeout(() => setBlinking(false), 150);
-      const next = 3000 + Math.random() * 3000;
-      blinkTimer = setTimeout(blink, next);
-    };
-    let blinkTimer = setTimeout(blink, 2500);
-    return () => clearTimeout(blinkTimer);
-  }, []);
-
-  const animClass = MOOD_ANIMATIONS[displayedMood] || "msc-idle";
-  const moodLabel = MOOD_LABELS[displayedMood] || "Here with you";
-
-  /* Color for the mood label pill */
-  const pillColors = {
-    idle: { bg: "#1a1917", text: "#666" }, warm: { bg: "#faf5ff", text: "#7c3aed" },
-    curious: { bg: "#eff6ff", text: "#2563eb" }, empathetic: { bg: "#faf5ff", text: "#7c3aed" },
-    urgent: { bg: "#fef2f2", text: "#dc2626" }, alert: { bg: "#fffbeb", text: "#d97706" },
-    reassuring: { bg: "#f0fdf4", text: "#15803d" }, happy: { bg: "#f0fdf4", text: "#16a34a" },
-    celebrating: { bg: "#faf5ff", text: "#7c3aed" }, informing: { bg: "#eff6ff", text: "#0369a1" },
-    typing: { bg: "#1a1917", text: "#555" }, listening: { bg: "#eff6ff", text: "#2563eb" },
-  };
-  const pill = pillColors[displayedMood] || pillColors.idle;
-
   return (
-    <>
-      <style>{`
-        @keyframes msc-idle    { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-2px) scale(1.01)} }
-        @keyframes msc-pulse   { 0%,100%{transform:scale(1)} 30%{transform:scale(1.06)} 60%{transform:scale(0.97)} }
-        @keyframes msc-tilt    { 0%,100%{transform:rotate(0deg)} 25%{transform:rotate(-6deg)} 75%{transform:rotate(5deg)} }
-        @keyframes msc-breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
-        @keyframes msc-shake   { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 60%{transform:translateX(-3px)} 80%{transform:translateX(3px)} }
-        @keyframes msc-bounce  { 0%,100%{transform:translateY(0)} 40%{transform:translateY(-6px)} 70%{transform:translateY(-3px)} }
-        @keyframes msc-sway    { 0%,100%{transform:rotate(0deg)} 33%{transform:rotate(-4deg)} 66%{transform:rotate(3deg)} }
-        @keyframes msc-spin-once { 0%{transform:rotate(0deg) scale(1)} 50%{transform:rotate(180deg) scale(1.1)} 100%{transform:rotate(360deg) scale(1)} }
-        @keyframes msc-nod     { 0%,100%{transform:translateY(0)} 25%{transform:translateY(-4px)} 75%{transform:translateY(2px)} }
-        @keyframes msc-lean    { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(-8deg)} }
-        @keyframes msc-in      { from{opacity:0;transform:translateY(8px) scale(0.92)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes msc-bubble  { from{opacity:0;transform:translateX(-6px)} to{opacity:1;transform:translateX(0)} }
-        @keyframes msc-particle { 0%{transform:translate(0,0) scale(1);opacity:1} 100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0} }
-        @keyframes msc-blink   { 0%,100%{scaleY:1} 50%{scaleY:0.1} }
-        @keyframes typing-dot  { 0%,60%,100%{transform:translateY(0);opacity:.35} 30%{transform:translateY(-4px);opacity:1} }
-      `}</style>
-
-      <div style={{
-        position: "absolute",
-        bottom: 90,
-        right: 16,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        gap: 8,
-        zIndex: 40,
-        pointerEvents: "none",
-        opacity: visible ? 1 : 0,
-        transition: "opacity 0.25s ease",
-        animation: "msc-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
-      }}>
-        {/* Celebration particles */}
-        {displayedMood === "celebrating" && (
-          <div key={particleKey} style={{ position: "absolute", width: 80, height: 80, top: 0, right: 0, pointerEvents: "none" }}>
-            {[...Array(8)].map((_, i) => (
-              <div key={i} style={{
-                position: "absolute",
-                width: 5, height: 5,
-                borderRadius: "50%",
-                background: ["#f59e0b","#8b5cf6","#34d399","#f472b6","#60a5fa","#fbbf24","#a78bfa","#6ee7b7"][i],
-                top: "50%", left: "50%",
-                "--dx": `${(Math.random() - 0.5) * 60}px`,
-                "--dy": `${-(Math.random() * 50 + 20)}px`,
-                animation: `msc-particle 0.8s ease-out ${i * 0.07}s both`,
-              }} />
-            ))}
-          </div>
-        )}
-
-        {/* Speech bubble */}
-        {displayedMsg && (
-          <div style={{
-            maxWidth: 200,
-            background: "#fff",
-            border: displayedMood === "urgent" ? "1.5px solid #fca5a5" : "1px solid #e8e6e1",
-            borderRadius: "14px 14px 4px 14px",
-            padding: "10px 14px",
-            fontSize: 12.5,
-            lineHeight: 1.55,
-            color: displayedMood === "urgent" ? "#7f1d1d" : "#222",
-            fontFamily: "'Manrope', sans-serif",
-            fontWeight: 400,
-            boxShadow: displayedMood === "urgent"
-              ? "0 4px 20px rgba(220,38,38,0.15)"
-              : "0 4px 20px rgba(0,0,0,0.08)",
-            animation: "msc-bubble 0.35s cubic-bezier(0.34,1.56,0.64,1) both",
-            pointerEvents: "auto",
-          }}>
-            {isTyping
-              ? <span style={{ display: "flex", gap: 4, alignItems: "center", height: 18 }}>
-                  {[0,1,2].map(i => <span key={i} style={{ width: 5, height: 5, borderRadius: "50%", background: "#bbb", display: "inline-block", animation: `typing-dot 1.2s ${i * 0.15}s infinite` }} />)}
-                </span>
-              : <TypedText key={displayedMsg} text={displayedMsg} />
-            }
-          </div>
-        )}
-
-        {/* Mood label + face */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-          <span style={{
-            fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase",
-            fontFamily: "'Manrope', sans-serif",
-            padding: "3px 9px", borderRadius: 20,
-            background: pill.bg, color: pill.text,
-            border: `1px solid ${pill.text}22`,
-            transition: "all 0.4s ease",
-          }}>
-            {isTyping ? "Thinking…" : moodLabel}
-          </span>
-
-          <div style={{
-            animation: `${animClass} ${
-              displayedMood === "urgent" ? "0.4s" :
-              displayedMood === "celebrating" ? "0.7s" :
-              displayedMood === "tilt" ? "1.2s" : "3s"
-            } ease-in-out ${
-              displayedMood === "celebrating" ? "1" : "infinite"
-            }`,
-            filter: blinking ? "brightness(0.7)" : "none",
-            transition: "filter 0.05s",
-            cursor: "pointer",
-            pointerEvents: "auto",
-          }}>
-            <MascotFace mood={isTyping ? "typing" : displayedMood} size={64} />
-          </div>
-        </div>
-      </div>
-    </>
+    <span>
+      {displayed}
+      <span style={{ opacity: displayed.length < (text || "").length ? 0.4 : 0, transition: "opacity 0.1s" }}>|</span>
+    </span>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   MASCOT GREETING — appears at top of chat, fades after first message
+   MASCOT STRIP — same pattern as Home.jsx MascotStrip
+   Uses the real Mascot component with mood + message props
 ───────────────────────────────────────────────────────────── */
-function MascotGreeting({ visible, mood }) {
+function MascotStrip({ mood, message, size = 80, visible }) {
+  if (!visible) return null;
   return (
     <div style={{
       display: "flex",
-      alignItems: "center",
-      gap: 12,
-      padding: "14px 20px",
-      background: "rgba(255,255,255,0.6)",
-      backdropFilter: "blur(8px)",
-      borderBottom: "1px solid #eceae6",
-      opacity: visible ? 1 : 0,
-      maxHeight: visible ? 80 : 0,
-      overflow: "hidden",
-      transition: "opacity 0.4s ease, max-height 0.4s ease",
+      alignItems: "flex-end",
+      gap: "10px",
+      padding: "8px 0 0 0",
+      animation: "msc-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both",
     }}>
-      <div style={{ animation: "msc-breathe 3s ease-in-out infinite" }}>
-        <MascotFace mood={mood} size={44} />
+      <div style={{ flexShrink: 0 }}>
+        <Mascot
+          mood={mood}
+          message=""
+          position="left"
+          size={size}
+        />
       </div>
-      <div>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "#111", fontFamily: "'Manrope', sans-serif", margin: 0 }}>SafeMum Assistant</p>
-        <p style={{ fontSize: 11, color: "#9ca3af", fontFamily: "'Manrope', sans-serif", fontWeight: 300, margin: 0 }}>Always here · Week 2 Recovery</p>
-      </div>
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-        <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 0 3px rgba(74,222,128,0.25)", animation: "pulse 2s infinite" }} />
-        <span style={{ fontSize: 11, color: "#6b7280", fontFamily: "'Manrope', sans-serif" }}>Online</span>
-      </div>
+      {message && (
+        <div style={{
+          flex: 1,
+          background: "#fff",
+          border: "1px solid #e8e6e1",
+          borderRadius: "14px 14px 14px 4px",
+          padding: "10px 14px",
+          fontSize: "13px",
+          lineHeight: 1.55,
+          color: "#222",
+          fontFamily: "'Manrope', sans-serif",
+          fontWeight: 400,
+          maxWidth: "260px",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        }}>
+          <TypedText key={message} text={message} />
+        </div>
+      )}
     </div>
   );
 }
@@ -503,7 +197,6 @@ function VoiceMode({ onClose }) {
         @keyframes ring-out{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.9);opacity:0}}
         @keyframes wave-bar{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
         @keyframes txt-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(74,222,128,.25)}50%{box-shadow:0 0 0 5px rgba(74,222,128,.1)}}
       `}</style>
 
       <div style={{ width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
@@ -522,8 +215,13 @@ function VoiceMode({ onClose }) {
             <div style={{ position:"absolute",inset:-16,borderRadius:"50%",border:"1.5px solid rgba(99,102,241,.35)",animation:"ring-out 1.8s linear infinite" }} />
             <div style={{ position:"absolute",inset:-16,borderRadius:"50%",border:"1.5px solid rgba(99,102,241,.2)",animation:"ring-out 1.8s linear .6s infinite" }} />
           </>)}
-          <div style={{ width:140,height:140,borderRadius:"50%",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:isActive?"0 0 60px rgba(99,102,241,.25)":isSpeaking?"0 0 60px rgba(167,139,250,.2)":"0 8px 32px rgba(0,0,0,.4)",animation:isActive?"orb-listen 1.2s ease-in-out infinite":isSpeaking?"orb-speak 1s ease-in-out infinite":"orb-idle 3s ease-in-out infinite",border:"1px solid #1e1d1b" }}>
-            <MascotFace mood={isActive ? "listening" : isSpeaking ? "informing" : "idle"} size={140} />
+          <div style={{ width:140,height:140,display:"flex",alignItems:"center",justifyContent:"center",animation:isActive?"orb-listen 1.2s ease-in-out infinite":isSpeaking?"orb-speak 1s ease-in-out infinite":"orb-idle 3s ease-in-out infinite" }}>
+            <Mascot
+              mood={isActive ? "curious" : isSpeaking ? "idle" : "idle"}
+              message=""
+              position="left"
+              size={120}
+            />
           </div>
         </div>
         <p key={phase} style={{ fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"clamp(16px,4vw,22px)",fontWeight:300,color:isMuted?"#333":"#777",textAlign:"center",maxWidth:300,lineHeight:1.5,animation:"txt-in .4s ease",marginBottom:12 }}>
@@ -709,6 +407,15 @@ function QuickReplies({ replies, type, onSelect, revealed }) {
 /* ─────────────────────────────────────────────────────────────
    MAIN
 ───────────────────────────────────────────────────────────── */
+
+const IDLE_MESSAGES = [
+  "Your follow-up appointment is tomorrow at 10am.",
+  "Remember to drink plenty of water today.",
+  "You are doing better than you think.",
+  "It's okay to take things one hour at a time.",
+  "I'm always here whenever you need me.",
+];
+
 export default function AIAssistant() {
   const navigate = useNavigate();
   const [messages,      setMessages]      = useState(INITIAL_MESSAGES);
@@ -719,13 +426,65 @@ export default function AIAssistant() {
   const [activeConvo,   setActiveConvo]   = useState("c1");
   const [revealedIds,   setRevealedIds]   = useState(new Set(["intro"]));
   const [isDesktop,     setIsDesktop]     = useState(window.innerWidth >= 768);
-  const [mascotMood,    setMascotMood]    = useState("warm");
-  const [mascotMessage, setMascotMessage] = useState("Hello Amina — I'm so glad you're here.");
-  const [greetingVisible, setGreetingVisible] = useState(true);
-  const [inputFocused,  setInputFocused]  = useState(false);
 
-  const bottomRef = useRef(null);
-  const inputRef  = useRef(null);
+  /* ── Mascot state — same pattern as Home.jsx ── */
+  const [mascotMood,    setMascotMood]    = useState("idle");
+  const [mascotMessage, setMascotMessage] = useState("");
+  const [mascotVisible, setMascotVisible] = useState(false);
+
+  /* ── Refs ── */
+  const bottomRef        = useRef(null);
+  const inputRef         = useRef(null);
+  const idleTimerRef     = useRef(null);
+  const idleRotationRef  = useRef(null);
+  const idleIndexRef     = useRef(0);
+  const entranceDoneRef  = useRef(false);
+  const celebrateTimerRef = useRef(null);
+
+  /* ── Show mascot helper — same as Home.jsx show() ── */
+  const show = useCallback((mood, message) => {
+    setMascotMood(mood);
+    setMascotMessage(message);
+    setMascotVisible(true);
+  }, []);
+
+  /* ── Idle rotation — same pattern as Home.jsx ── */
+  const startIdleRotation = useCallback(() => {
+    if (idleRotationRef.current) clearInterval(idleRotationRef.current);
+    idleRotationRef.current = setInterval(() => {
+      const msg = IDLE_MESSAGES[idleIndexRef.current % IDLE_MESSAGES.length];
+      idleIndexRef.current++;
+      show("idle", msg);
+    }, 6000);
+  }, [show]);
+
+  /* ── Reset idle timer — same as Home.jsx ── */
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current)    clearTimeout(idleTimerRef.current);
+    if (idleRotationRef.current) clearInterval(idleRotationRef.current);
+    if (!entranceDoneRef.current) return;
+    idleTimerRef.current = setTimeout(startIdleRotation, 8000);
+  }, [startIdleRotation]);
+
+  /* ── Entrance sequence — same pattern as Home.jsx ── */
+  useEffect(() => {
+    const msg1 = "Hello Amina. I've been thinking about you.";
+    const msg2 = "What would you like to talk about today?";
+    const delay1 = msg1.length * 28 + 1000;
+
+    const t1 = setTimeout(() => { show("idle", msg1); }, 800);
+    const t2 = setTimeout(() => {
+      show("idle", msg2);
+      entranceDoneRef.current = true;
+      idleTimerRef.current = setTimeout(startIdleRotation, 8000);
+    }, 800 + delay1);
+
+    return () => {
+      clearTimeout(t1); clearTimeout(t2);
+      if (idleTimerRef.current)    clearTimeout(idleTimerRef.current);
+      if (idleRotationRef.current) clearInterval(idleRotationRef.current);
+    };
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     const handler = () => setIsDesktop(window.innerWidth >= 768);
@@ -741,40 +500,18 @@ export default function AIAssistant() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  /* Hide greeting after first user message */
-  useEffect(() => {
-    const hasUser = messages.some(m => m.role === "user");
-    if (hasUser) setGreetingVisible(false);
-  }, [messages]);
-
-  /* Mascot reacts when user starts typing */
-  useEffect(() => {
-    if (inputFocused && inputText.length > 0 && inputText.length < 5) {
-      setMascotMood("listening");
-      setMascotMessage("Go on…");
-    } else if (inputFocused && inputText.length >= 5) {
-      setMascotMood("curious");
-      setMascotMessage("I'm reading every word.");
-    }
-  }, [inputText, inputFocused]);
-
-  /* Mascot reacts while AI is typing */
-  useEffect(() => {
-    if (isTyping) {
-      setMascotMood("typing");
-      setMascotMessage("");
-    }
-  }, [isTyping]);
-
   const sendMessage = useCallback((text, qrId) => {
     const userText = text?.trim();
     if (!userText) return;
+
     const userMsg = { id: Date.now(), role: "user", text: userText };
     setMessages(prev => [...prev, userMsg]);
     setInputText("");
     setIsTyping(true);
-    setMascotMood("typing");
-    setMascotMessage("");
+    resetIdleTimer();
+
+    /* Mascot reacts: curious while thinking */
+    show("curious", "Let me think about that…");
 
     setTimeout(() => {
       const resp  = getAIResponse(userText, qrId);
@@ -782,29 +519,39 @@ export default function AIAssistant() {
       setMessages(prev => [...prev, { id: newId, role: "assistant", ...resp }]);
       setIsTyping(false);
 
-      /* Mascot reacts to the response */
-      setMascotMood(resp.mascotMood || "idle");
-      setMascotMessage(resp.mascotSay || "");
+      /* Mascot reacts to the AI response */
+      show(resp.mascotMood || "idle", resp.mascotSay || "");
 
       setTimeout(() => setRevealedIds(prev => new Set([...prev, newId])), 80);
 
-      /* After a few seconds, mascot settles */
-      setTimeout(() => {
-        if (!resp.urgent) {
-          setMascotMood("idle");
-          setMascotMessage("I'm here whenever you need me.");
-        }
+      /* After some time, mascot settles into idle rotation */
+      if (celebrateTimerRef.current) clearTimeout(celebrateTimerRef.current);
+      celebrateTimerRef.current = setTimeout(() => {
+        if (!resp.urgent) startIdleRotation();
       }, 7000);
+
     }, 1100 + Math.random() * 500);
-  }, []);
+  }, [show, resetIdleTimer, startIdleRotation]);
+
+  /* Mascot reacts when user focuses input */
+  const handleInputFocus = () => {
+    resetIdleTimer();
+    show("curious", "I'm listening — go ahead.");
+  };
+
+  /* Mascot reacts when user types */
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
+    if (e.target.value.length === 1) {
+      show("curious", "I'm reading every word.");
+    }
+  };
 
   const handleNewConvo = () => {
     setMessages(INITIAL_MESSAGES);
     setRevealedIds(new Set(["intro"]));
     setActiveConvo("new");
-    setGreetingVisible(true);
-    setMascotMood("warm");
-    setMascotMessage("Hello Amina — I'm so glad you're here.");
+    show("idle", "Let's start fresh. What's on your mind?");
   };
 
   const renderMessage = msg => {
@@ -814,8 +561,8 @@ export default function AIAssistant() {
     return (
       <div key={msg.id} style={{ display:"flex",flexDirection:isUser?"row-reverse":"row",alignItems:"flex-start",gap:10,marginBottom:22,animation:"ai-fadein .28s ease both" }}>
         {!isUser && (
-          <div style={{ flexShrink: 0, marginTop: 2 }}>
-            <MascotFace mood={isUrgent ? "urgent" : (msg.mascotMood || "idle")} size={30} />
+          <div style={{ width:30,height:30,borderRadius:10,flexShrink:0,background:isUrgent?"#dc2626":"#111",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 6px rgba(0,0,0,.1)",marginTop:2 }}>
+            {isUrgent?<AlertTriangle size={13} color="#fff" strokeWidth={2}/>:<Bot size={13} color="#fff" strokeWidth={1.5}/>}
           </div>
         )}
         <div style={{ maxWidth:"78%",minWidth:40 }}>
@@ -845,41 +592,27 @@ export default function AIAssistant() {
 
         @keyframes ai-fadein { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
         @keyframes ai-tdot {0%,60%,100%{transform:translateY(0);opacity:.35}30%{transform:translateY(-5px);opacity:1}}
-        @keyframes pulse { 0%,100%{box-shadow:0 0 0 3px rgba(74,222,128,.25)}50%{box-shadow:0 0 0 5px rgba(74,222,128,.1)} }
-        @keyframes msc-breathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+        @keyframes msc-in { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
 
-        .ai-shell {
-          font-family: 'Manrope', sans-serif;
-          background: #f4f3f0;
-          height: 100dvh;
-          display: flex;
-          flex-direction: row;
-          overflow: hidden;
-        }
+        .ai-shell { font-family:'Manrope',sans-serif; background:#f4f3f0; height:100dvh; display:flex; flex-direction:row; overflow:hidden; }
 
-        @media (min-width: 768px) {
-          .sb-drawer { transform: translateX(0) !important; position: relative !important; }
-        }
+        @media(min-width:768px){ .sb-drawer{transform:translateX(0) !important;position:relative !important} }
 
-        .ai-chat { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; position: relative; }
+        .ai-chat { flex:1; display:flex; flex-direction:column; overflow:hidden; min-width:0; position:relative; }
 
         .ai-menu-btn {
-          position: absolute; top: max(env(safe-area-inset-top,0px), 16px); left: 16px; z-index: 50;
-          width: 38px; height: 38px; border-radius: 12px;
-          background: rgba(244,243,240,.9); backdrop-filter: blur(8px);
-          border: 1px solid #e8e6e1; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 2px 10px rgba(0,0,0,.08); transition: background .15s;
+          position:absolute; top:max(env(safe-area-inset-top,0px),16px); left:16px; z-index:50;
+          width:38px; height:38px; border-radius:12px;
+          background:rgba(244,243,240,.9); backdrop-filter:blur(8px);
+          border:1px solid #e8e6e1; cursor:pointer;
+          display:flex; align-items:center; justify-content:center;
+          box-shadow:0 2px 10px rgba(0,0,0,.08); transition:background .15s;
         }
-        .ai-menu-btn:hover { background: #eceae6; }
+        .ai-menu-btn:hover { background:#eceae6; }
 
-        .ai-msgs {
-          flex: 1; overflow-y: auto;
-          padding: 16px 20px 16px;
-          scroll-behavior: smooth; position: relative;
-        }
-        .ai-msgs::-webkit-scrollbar { width: 0; }
-        .ai-msgs-inner { max-width: 640px; margin: 0 auto; padding-bottom: 80px; }
+        .ai-msgs { flex:1; overflow-y:auto; padding:max(env(safe-area-inset-top,0px),64px) 20px 16px; scroll-behavior:smooth; }
+        .ai-msgs::-webkit-scrollbar { width:0; }
+        .ai-msgs-inner { max-width:640px; margin:0 auto; }
 
         .ai-date-chip { text-align:center; margin-bottom:24px; }
         .ai-date-chip span { display:inline-block;background:#eceae6;border-radius:20px;padding:4px 14px;font-size:11px;color:#aaa;font-weight:500;letter-spacing:.06em;font-family:'Manrope',sans-serif; }
@@ -887,34 +620,21 @@ export default function AIAssistant() {
         .ai-tdot { width:6px;height:6px;border-radius:50%;background:#ccc;animation:ai-tdot 1.2s infinite; }
         .ai-tdot:nth-child(2){animation-delay:.15s}.ai-tdot:nth-child(3){animation-delay:.3s}
 
-        .ai-bar {
-          flex-shrink: 0; padding: 8px 20px;
-          padding-bottom: calc(env(safe-area-inset-bottom,0px) + 12px);
-          background: #f4f3f0; position: relative; z-index: 30;
-        }
-        .ai-bar-inner {
-          max-width: 640px; margin: 0 auto;
-          background: #fff; border: 1px solid #e0ddd8;
-          border-radius: 20px; padding: 4px 4px 4px 18px;
-          display: flex; align-items: flex-end; gap: 6px;
-          box-shadow: 0 2px 14px rgba(0,0,0,.06); transition: border-color .2s, box-shadow .2s;
-        }
-        .ai-bar-inner:focus-within { border-color: #c8c5bf; box-shadow: 0 2px 20px rgba(0,0,0,.09); }
-        .ai-bar-inner.listening-active { border-color: #2563eb; box-shadow: 0 2px 20px rgba(37,99,235,0.15); }
-        .ai-textarea {
-          flex: 1; background: none; border: none; outline: none;
-          font-family: 'Manrope', sans-serif; font-size: 14px;
-          font-weight: 300; color: #111; resize: none;
-          max-height: 120px; line-height: 1.55; padding: 11px 0;
-        }
-        .ai-textarea::placeholder { color: #c0bdb8; }
+        /* Mascot zone — inline in message stream, below last message */
+        .ai-mascot-zone { max-width:640px; margin:0 auto 12px; padding:0 0 8px; }
+
+        .ai-bar { flex-shrink:0; padding:8px 20px; padding-bottom:calc(env(safe-area-inset-bottom,0px) + 12px); background:#f4f3f0; }
+        .ai-bar-inner { max-width:640px;margin:0 auto;background:#fff;border:1px solid #e0ddd8;border-radius:20px;padding:4px 4px 4px 18px;display:flex;align-items:flex-end;gap:6px;box-shadow:0 2px 14px rgba(0,0,0,.06);transition:border-color .2s; }
+        .ai-bar-inner:focus-within { border-color:#c8c5bf;box-shadow:0 2px 20px rgba(0,0,0,.09); }
+        .ai-textarea { flex:1;background:none;border:none;outline:none;font-family:'Manrope',sans-serif;font-size:14px;font-weight:300;color:#111;resize:none;max-height:120px;line-height:1.55;padding:11px 0; }
+        .ai-textarea::placeholder { color:#c0bdb8; }
         .ai-bar-actions { display:flex;align-items:center;gap:4px;padding:5px; }
         .ai-bar-btn { width:36px;height:36px;border-radius:12px;border:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s; }
         .ai-voice-btn { width:36px;height:36px;border-radius:12px;border:1px solid #e0ddd8;background:#f4f3f0;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s; }
         .ai-voice-btn:hover { background:#eceae6;border-color:#d5d0c8; }
-        .ai-send { background: #111; }
-        .ai-send:hover { background: #2563eb; }
-        .ai-send:disabled { background: #ddd8d0; cursor: default; }
+        .ai-send { background:#111; }
+        .ai-send:hover { background:#2563eb; }
+        .ai-send:disabled { background:#ddd8d0;cursor:default; }
       `}</style>
 
       {voiceMode && <VoiceMode onClose={() => setVoiceMode(false)} />}
@@ -936,22 +656,19 @@ export default function AIAssistant() {
             </button>
           )}
 
-          {/* Mascot greeting strip */}
-          <MascotGreeting visible={greetingVisible} mood={mascotMood} />
-
           {/* Messages */}
           <div className="ai-msgs">
             <div className="ai-msgs-inner">
               <div className="ai-date-chip">
-                <span>{new Date().toLocaleDateString("en-GB", { weekday:"long",day:"numeric",month:"long" })}</span>
+                <span>{new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"})}</span>
               </div>
 
               {messages.map(renderMessage)}
 
               {isTyping && (
                 <div style={{ display:"flex",alignItems:"flex-start",gap:10,marginBottom:22,animation:"ai-fadein .25s ease" }}>
-                  <div style={{ flexShrink: 0, marginTop: 2 }}>
-                    <MascotFace mood="typing" size={30} />
+                  <div style={{ width:30,height:30,borderRadius:10,background:"#111",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:2 }}>
+                    <Bot size={13} color="#fff" strokeWidth={1.5}/>
                   </div>
                   <div style={{ background:"#fff",border:"1px solid #eceae6",borderRadius:"6px 18px 18px 18px",padding:"14px 16px",display:"flex",gap:5,alignItems:"center",boxShadow:"0 1px 4px rgba(0,0,0,.04)" }}>
                     <div className="ai-tdot"/><div className="ai-tdot"/><div className="ai-tdot"/>
@@ -959,33 +676,32 @@ export default function AIAssistant() {
                 </div>
               )}
 
-              <div ref={bottomRef} style={{ height: 4 }} />
+              {/* ── MASCOT ZONE — sits right in the message stream, same as Home.jsx ── */}
+              <div className="ai-mascot-zone">
+                <MascotStrip
+                  mood={mascotMood}
+                  message={mascotMessage}
+                  size={80}
+                  visible={mascotVisible}
+                />
+              </div>
+
+              <div ref={bottomRef} style={{ height:4 }} />
             </div>
           </div>
 
-          {/* Floating mascot panel */}
-          <MascotPanel
-            mood={mascotMood}
-            message={mascotMessage}
-            isTyping={isTyping}
-            messageCount={messages.length}
-            lastMessageRole={messages[messages.length - 1]?.role}
-            inputLength={inputText.length}
-          />
-
           {/* Input */}
           <div className="ai-bar">
-            <div className={`ai-bar-inner${inputFocused && inputText ? " listening-active" : ""}`}>
+            <div className="ai-bar-inner">
               <textarea
                 ref={inputRef}
                 className="ai-textarea"
                 rows={1}
                 placeholder="Ask me anything…"
                 value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                onFocus={() => { setInputFocused(true); setMascotMood("listening"); setMascotMessage("I'm all ears, Amina."); }}
-                onBlur={() => { setInputFocused(false); if (!inputText) { setMascotMood("idle"); setMascotMessage("I'm here whenever you need me."); } }}
-                onKeyDown={e => { if (e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage(inputText);}}}
+                onChange={handleInputChange}
+                onFocus={handleInputFocus}
+                onKeyDown={e => { if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage(inputText);}}}
               />
               <div className="ai-bar-actions">
                 <button className="ai-voice-btn" onClick={() => setVoiceMode(true)}>
