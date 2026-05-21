@@ -5,16 +5,26 @@ import {
   CheckCircle2, XCircle, Plus, Filter, ChevronLeft,
   ChevronRight, Home, Navigation, Bell, AlertCircle,
   Video, MessageCircle, Star, Users, Heart,
-  Sun, Moon, Cloud, Droplets, Activity
+  Sun, Moon, Cloud, Droplets, Activity, Send,
+  Trash2, Edit2, X
 } from "lucide-react";
 import NavCHW from "../../Components/NavCHW";
 
 /* ─── Dummy Data ─── */
+const dummyPatients = [
+  { id: 1, name: "Sarah Mwangi", phone: "+254711000001", location: "Parklands, Nairobi" },
+  { id: 2, name: "Amara Ochieng", phone: "+254711000002", location: "Kibera, Nairobi" },
+  { id: 3, name: "Fatuma Hassan", phone: "+254711000003", location: "Eastleigh, Nairobi" },
+  { id: 4, name: "Wanjiru Kimani", phone: "+254711000004", location: "Westlands, Nairobi" },
+  { id: 5, name: "Blessing Okonkwo", phone: "+254711000005", location: "Kasarani, Nairobi" },
+  { id: 6, name: "Grace Muthoni", phone: "+254711000006", location: "Westlands, Nairobi" }
+];
+
 const dummySchedule = [
   {
     id: 1,
-    patientName: "Sarah Mwangi",
     patientId: 1,
+    patientName: "Sarah Mwangi",
     type: "Home visit",
     date: "2026-05-25",
     time: "10:00 AM",
@@ -22,14 +32,16 @@ const dummySchedule = [
     location: "Parklands, Nairobi",
     phone: "+254711000001",
     status: "confirmed",
+    patientConfirmed: true,
     notes: "First home visit. Bring counselling materials.",
     priority: "high",
+    createdAt: "2026-05-20",
     reminderSent: true
   },
   {
     id: 2,
-    patientName: "Amara Ochieng",
     patientId: 2,
+    patientName: "Amara Ochieng",
     type: "Follow-up call",
     date: "2026-05-25",
     time: "2:00 PM",
@@ -37,14 +49,16 @@ const dummySchedule = [
     location: "Phone call",
     phone: "+254711000002",
     status: "pending",
+    patientConfirmed: false,
     notes: "Check on emotional state and medication adherence.",
     priority: "medium",
+    createdAt: "2026-05-21",
     reminderSent: false
   },
   {
     id: 3,
-    patientName: "Fatuma Hassan",
     patientId: 3,
+    patientName: "Fatuma Hassan",
     type: "Wellness check",
     date: "2026-05-26",
     time: "11:30 AM",
@@ -52,29 +66,33 @@ const dummySchedule = [
     location: "Eastleigh, Nairobi",
     phone: "+254711000003",
     status: "confirmed",
+    patientConfirmed: true,
     notes: "First week post-loss assessment.",
     priority: "high",
+    createdAt: "2026-05-19",
     reminderSent: true
   },
   {
     id: 4,
-    patientName: "Wanjiru Kimani",
     patientId: 4,
+    patientName: "Wanjiru Kimani",
     type: "Check-in call",
     date: "2026-05-27",
     time: "9:00 AM",
     duration: 20,
     location: "Phone call",
     phone: "+254711000004",
-    status: "confirmed",
+    status: "pending",
+    patientConfirmed: false,
     notes: "Monthly follow-up for resolved case.",
     priority: "low",
+    createdAt: "2026-05-22",
     reminderSent: false
   },
   {
     id: 5,
-    patientName: "Blessing Okonkwo",
     patientId: 5,
+    patientName: "Blessing Okonkwo",
     type: "Hospital follow-up",
     date: "2026-05-23",
     time: "3:00 PM",
@@ -82,24 +100,11 @@ const dummySchedule = [
     location: "Kenyatta National Hospital",
     phone: "+254711000005",
     status: "completed",
+    patientConfirmed: true,
     notes: "Check post-escalation status.",
     priority: "high",
+    createdAt: "2026-05-18",
     reminderSent: true
-  },
-  {
-    id: 6,
-    patientName: "Grace Muthoni",
-    patientId: 6,
-    type: "Home visit",
-    date: "2026-05-28",
-    time: "1:00 PM",
-    duration: 60,
-    location: "Westlands, Nairobi",
-    phone: "+254711000006",
-    status: "pending",
-    notes: "New case - initial assessment.",
-    priority: "high",
-    reminderSent: false
   }
 ];
 
@@ -113,8 +118,8 @@ const taskTypes = [
 ];
 
 const statusConfig = {
+  pending: { color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200", label: "Pending confirmation" },
   confirmed: { color: "text-green-600", bg: "bg-green-50", border: "border-green-200", label: "Confirmed" },
-  pending: { color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200", label: "Pending" },
   completed: { color: "text-gray-500", bg: "bg-gray-50", border: "border-gray-200", label: "Completed" },
   cancelled: { color: "text-red-500", bg: "bg-red-50", border: "border-red-200", label: "Cancelled" }
 };
@@ -150,6 +155,15 @@ function SectionLabel({ children }) {
   );
 }
 
+function Toast({ message, visible, onClose }) {
+  if (!visible) return null;
+  return (
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white rounded-full px-5 py-2.5 text-xs font-medium font-['Manrope'] z-[9999] whitespace-nowrap shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+      {message}
+    </div>
+  );
+}
+
 export default function CHWSchedule() {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -159,6 +173,20 @@ export default function CHWSchedule() {
   const [schedule, setSchedule] = useState(dummySchedule);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: "" });
+  
+  const [newAppointment, setNewAppointment] = useState({
+    patientId: "",
+    patientName: "",
+    type: "Home visit",
+    date: "",
+    time: "",
+    duration: 30,
+    notes: "",
+    priority: "medium",
+    location: ""
+  });
 
   const weekDays = getWeekDays(currentDate);
   const selectedDateKey = formatDateKey(selectedDate);
@@ -182,6 +210,11 @@ export default function CHWSchedule() {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 3);
 
+  const showToast = (message) => {
+    setToast({ visible: true, message });
+    setTimeout(() => setToast({ visible: false, message: "" }), 3000);
+  };
+
   const navigateWeek = (direction) => {
     const newDate = new Date(currentDate);
     newDate.setDate(currentDate.getDate() + direction * 7);
@@ -198,6 +231,9 @@ export default function CHWSchedule() {
     setSchedule(prev => prev.map(task =>
       task.id === taskId ? { ...task, status: newStatus } : task
     ));
+    if (newStatus === "completed") {
+      showToast(`Appointment marked as completed`);
+    }
     setShowTaskModal(false);
   };
 
@@ -209,9 +245,75 @@ export default function CHWSchedule() {
     }
   };
 
-  const isToday = (date) => {
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
+  const handleCreateAppointment = () => {
+    if (!newAppointment.patientId || !newAppointment.date || !newAppointment.time) {
+      showToast("Please fill in all required fields");
+      return;
+    }
+
+    const selectedPatient = dummyPatients.find(p => p.id === parseInt(newAppointment.patientId));
+    
+    const newId = Math.max(...schedule.map(t => t.id), 0) + 1;
+    
+    const appointment = {
+      id: newId,
+      patientId: parseInt(newAppointment.patientId),
+      patientName: selectedPatient.name,
+      type: newAppointment.type,
+      date: newAppointment.date,
+      time: newAppointment.time,
+      duration: newAppointment.duration,
+      location: newAppointment.type === "Phone call" ? "Phone call" : selectedPatient.location,
+      phone: selectedPatient.phone,
+      status: "pending",
+      patientConfirmed: false,
+      notes: newAppointment.notes,
+      priority: newAppointment.priority,
+      createdAt: new Date().toISOString().split('T')[0],
+      reminderSent: false
+    };
+
+    setSchedule(prev => [...prev, appointment]);
+    
+    // Simulate sending notification to patient
+    console.log(`📱 NOTIFICATION SENT TO ${selectedPatient.name}:`);
+    console.log(`   You have a new appointment scheduled:`);
+    console.log(`   ${newAppointment.type} on ${newAppointment.date} at ${newAppointment.time}`);
+    console.log(`   Location: ${appointment.location}`);
+    console.log(`   Notes: ${newAppointment.notes || "None"}`);
+    
+    showToast(`Appointment scheduled! Patient ${selectedPatient.name} has been notified.`);
+    
+    // Reset form
+    setNewAppointment({
+      patientId: "",
+      patientName: "",
+      type: "Home visit",
+      date: "",
+      time: "",
+      duration: 30,
+      notes: "",
+      priority: "medium",
+      location: ""
+    });
+    setShowCreateModal(false);
+  };
+
+  const handlePatientSelect = (patientId) => {
+    const patient = dummyPatients.find(p => p.id === parseInt(patientId));
+    setNewAppointment(prev => ({
+      ...prev,
+      patientId,
+      patientName: patient.name,
+      location: patient.location
+    }));
+  };
+
+  const handleResendReminder = (task) => {
+    showToast(`Reminder sent to ${task.patientName}`);
+    setSchedule(prev => prev.map(t =>
+      t.id === task.id ? { ...t, reminderSent: true } : t
+    ));
   };
 
   const getTaskIcon = (type) => {
@@ -223,6 +325,11 @@ export default function CHWSchedule() {
       case "Hospital follow-up": return Activity;
       default: return Calendar;
     }
+  };
+
+  const isToday = (date) => {
+    const today = new Date();
+    return date.toDateString() === today.toDateString();
   };
 
   return (
@@ -237,13 +344,19 @@ export default function CHWSchedule() {
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between">
                 <button 
-                  onClick={() => navigate("/chw")}
+                  onClick={() => navigate("/chw/dashboard")}
                   className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition"
                 >
                   <ArrowLeft size={20} className="text-gray-600" />
                 </button>
                 <h1 className="text-lg font-bold text-gray-900">My Schedule</h1>
-                <div className="w-9" />
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition"
+                >
+                  <Plus size={14} />
+                  Schedule
+                </button>
               </div>
             </div>
           </div>
@@ -270,6 +383,11 @@ export default function CHWSchedule() {
                           <div className="flex items-center gap-2">
                             <p className="text-sm font-semibold text-gray-900">{task.patientName}</p>
                             <div className={`w-1.5 h-1.5 rounded-full ${priorityStyles.dot}`} />
+                            {!task.patientConfirmed && task.status === "pending" && (
+                              <span className="text-[9px] font-semibold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded-full">
+                                Awaiting confirmation
+                              </span>
+                            )}
                           </div>
                           <p className="text-xs text-gray-500">{task.type}</p>
                           <div className="flex items-center gap-3 mt-1">
@@ -297,7 +415,7 @@ export default function CHWSchedule() {
                   <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
                     <CheckCircle2 size={32} className="text-green-500 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">No upcoming tasks</p>
-                    <p className="text-xs text-gray-400">All caught up for now!</p>
+                    <p className="text-xs text-gray-400 mt-1">Click "Schedule" to create a new appointment</p>
                   </div>
                 )}
               </div>
@@ -419,7 +537,12 @@ export default function CHWSchedule() {
                 <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
                   <Calendar size={40} className="text-gray-300 mx-auto mb-3" />
                   <p className="text-sm text-gray-500 font-medium">No tasks scheduled for this day</p>
-                  <p className="text-xs text-gray-400 mt-1">Enjoy your free time!</p>
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="mt-3 text-xs text-green-600 font-medium"
+                  >
+                    + Schedule an appointment
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -461,6 +584,18 @@ export default function CHWSchedule() {
                               <MapPin size={12} className="text-gray-400" />
                               <span className="text-xs text-gray-600">{task.location}</span>
                             </div>
+                            {!task.patientConfirmed && task.status === "pending" && (
+                              <div className="flex items-center gap-2">
+                                <Bell size={12} className="text-amber-500" />
+                                <span className="text-xs text-amber-600">Awaiting patient confirmation</span>
+                                <button
+                                  onClick={() => handleResendReminder(task)}
+                                  className="ml-auto text-[10px] text-green-600 font-medium"
+                                >
+                                  Send reminder
+                                </button>
+                              </div>
+                            )}
                             {task.notes && (
                               <div className="flex items-start gap-2">
                                 <AlertCircle size={12} className="text-gray-400 mt-0.5" />
@@ -507,7 +642,7 @@ export default function CHWSchedule() {
                             {task.status === "completed" && (
                               <div className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-gray-50 text-gray-500 text-xs font-medium">
                                 <CheckCircle2 size={12} />
-                                Completed
+                                Completed on {new Date(task.date).toLocaleDateString()}
                               </div>
                             )}
                           </div>
@@ -521,6 +656,154 @@ export default function CHWSchedule() {
           </div>
         </div>
       </div>
+
+      {/* Create Appointment Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Schedule Appointment</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-2 rounded-full hover:bg-gray-100 transition"
+              >
+                <X size={18} className="text-gray-400" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              {/* Patient Selection */}
+              <div>
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">Select Patient *</label>
+                <select
+                  value={newAppointment.patientId}
+                  onChange={(e) => handlePatientSelect(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
+                >
+                  <option value="">Select a patient</option>
+                  {dummyPatients.map(patient => (
+                    <option key={patient.id} value={patient.id}>{patient.name} - {patient.location}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Appointment Type */}
+              <div>
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">Appointment Type *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {["Home visit", "Follow-up call", "Check-in call", "Wellness check", "Hospital follow-up"].map(type => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setNewAppointment(prev => ({ ...prev, type }))}
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
+                        newAppointment.type === type
+                          ? "bg-gray-900 text-white"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date & Time */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-1 block">Date *</label>
+                  <input
+                    type="date"
+                    value={newAppointment.date}
+                    onChange={(e) => setNewAppointment(prev => ({ ...prev, date: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
+                    min={new Date().toISOString().split('T')[0]}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-1 block">Time *</label>
+                  <input
+                    type="time"
+                    value={newAppointment.time}
+                    onChange={(e) => setNewAppointment(prev => ({ ...prev, time: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
+                  />
+                </div>
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">Duration (minutes)</label>
+                <select
+                  value={newAppointment.duration}
+                  onChange={(e) => setNewAppointment(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
+                >
+                  <option value={15}>15 minutes</option>
+                  <option value={30}>30 minutes</option>
+                  <option value={45}>45 minutes</option>
+                  <option value={60}>1 hour</option>
+                  <option value={90}>1.5 hours</option>
+                </select>
+              </div>
+
+              {/* Priority */}
+              <div>
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">Priority</label>
+                <div className="flex gap-2">
+                  {["low", "medium", "high"].map(priority => (
+                    <button
+                      key={priority}
+                      type="button"
+                      onClick={() => setNewAppointment(prev => ({ ...prev, priority }))}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition ${
+                        newAppointment.priority === priority
+                          ? priority === "high" ? "bg-red-500 text-white" : priority === "medium" ? "bg-amber-500 text-white" : "bg-green-500 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {priority}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="text-xs font-semibold text-gray-700 mb-1 block">Notes (for patient)</label>
+                <textarea
+                  value={newAppointment.notes}
+                  onChange={(e) => setNewAppointment(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                  placeholder="E.g., Bring medical records, fasting required, etc."
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400 resize-none"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateAppointment}
+                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <Send size={14} />
+                  Schedule & Notify
+                </button>
+              </div>
+
+              <p className="text-center text-[10px] text-gray-400 pt-2">
+                Patient will receive a notification about this appointment
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Task Detail Modal */}
       {showTaskModal && selectedTask && (
@@ -540,7 +823,7 @@ export default function CHWSchedule() {
                 onClick={() => setShowTaskModal(false)}
                 className="p-2 rounded-full hover:bg-gray-100 transition"
               >
-                <XCircle size={18} className="text-gray-400" />
+                <X size={18} className="text-gray-400" />
               </button>
             </div>
 
@@ -588,6 +871,18 @@ export default function CHWSchedule() {
                 </div>
               )}
 
+              {/* Patient Confirmation Status */}
+              <div className="bg-amber-50 rounded-xl p-3">
+                <div className="flex items-center gap-2">
+                  <Bell size={14} className="text-amber-600" />
+                  <p className="text-xs text-amber-700">
+                    {selectedTask.patientConfirmed 
+                      ? "✓ Patient has confirmed this appointment" 
+                      : "⏳ Awaiting patient confirmation"}
+                  </p>
+                </div>
+              </div>
+
               <div className="flex gap-3 pt-3">
                 <button
                   onClick={() => handleStartTask(selectedTask)}
@@ -608,6 +903,8 @@ export default function CHWSchedule() {
           </div>
         </div>
       )}
+
+      <Toast message={toast.message} visible={toast.visible} />
     </>
   );
 }
