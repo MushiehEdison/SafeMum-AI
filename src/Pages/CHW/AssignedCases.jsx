@@ -137,7 +137,7 @@ export default function AssignedCases() {
             <div className="max-w-7xl mx-auto">
               <div className="flex items-center justify-between mb-2">
                 <button 
-                  onClick={() => navigate("/chw/dashboard")}
+                  onClick={() => navigate("/chw")}
                   className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition"
                 >
                   <ArrowLeft size={20} className="text-gray-600" />

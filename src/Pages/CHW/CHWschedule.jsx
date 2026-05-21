@@ -237,7 +237,7 @@ export default function CHWSchedule() {
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between">
                 <button 
-                  onClick={() => navigate("/chw/dashboard")}
+                  onClick={() => navigate("/chw")}
                   className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition"
                 >
                   <ArrowLeft size={20} className="text-gray-600" />

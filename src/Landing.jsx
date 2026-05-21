@@ -153,7 +153,7 @@ export default function Landing() {
               </Link>
 
               <Link
-                to="/chw/dashboard"
+                to="/chw"
                 className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-[#dcfce7] text-[#14532d] border border-[#bbf7d0] no-underline hover:bg-[#d1fae5]"
               >
                 <div className="flex flex-col gap-0.5">
@@ -164,7 +164,7 @@ export default function Landing() {
               </Link>
 
               <Link
-                to="/facility/dashboard"
+                to="/facility"
                 className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-transparent text-[#0e0e0e] border border-[#e4e0d8] no-underline hover:bg-[#f1ede6] hover:border-[#ccc]"
               >
                 <div className="flex flex-col gap-0.5">
