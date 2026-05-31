@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Phone, PhoneOff, PhoneCall, Loader, Mic, MicOff, Delete, Send, Signal, Battery, Wifi } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL || "https://safemumapi.onrender.com";
 
 function generateId(prefix) {
   return prefix + "-" + Math.random().toString(36).substring(2, 10).toUpperCase();
