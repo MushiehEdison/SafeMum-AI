@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Baby, Heart, MapPin } from "lucide-react";
+import { Baby, Heart, MapPin, X } from "lucide-react";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -26,7 +26,7 @@ const COUNTRIES = [
   { flag: "🇸🇳", code: "+221", name: "SN" },
 ];
 
-const DEFAULT_POS = [3.848, 11.502]; // Yaoundé, Cameroon
+const DEFAULT_POS = [3.848, 11.502];
 
 function DraggableMarker({ position, onDragEnd }) {
   const markerRef = useRef(null);
@@ -164,20 +164,56 @@ function LocationPicker({ formData, setFormData }) {
   );
 }
 
+// ── Dev OTP Popup ─────────────────────────────────────────────────────────────
+function DevOtpPopup({ code, onClose }) {
+  if (!code) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center pb-8 px-4 pointer-events-none">
+      <div className="pointer-events-auto bg-white border border-amber-200 rounded-2xl shadow-2xl p-5 w-full max-w-sm animate-slide-up">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🧪</span>
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Prototype Mode</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X size={16} />
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mb-3">
+          SMS delivery is disabled in this demo. Use the code below to verify:
+        </p>
+        <div className="bg-amber-50 border border-amber-100 rounded-xl py-3 px-4 text-center">
+          <p className="text-3xl font-bold tracking-[0.4em] text-amber-700 font-mono">{code}</p>
+        </div>
+        <p className="text-xs text-gray-400 mt-3 text-center">
+          In production, this code would be sent via SMS.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function PatientAuth() {
   const navigate = useNavigate();
   const { verifyOtp } = useUserAuth();
-  const [step, setStep]       = useState(1);
+  const [step, setStep]         = useState(1);
   const [isNewUser, setIsNewUser] = useState(true);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData]  = useState({
     name: "", countryCode: "+237", phone: "", email: "", language: "English",
     latitude: null, longitude: null, locationName: "",
   });
-  const [userType, setUserType] = useState(null);
-  const [otp, setOtp]           = useState(["", "", "", "", "", ""]);
-  const [otpTimer, setOtpTimer] = useState(60);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState("");
+  const [userType, setUserType]  = useState(null);
+  const [otp, setOtp]            = useState(["", "", "", "", "", ""]);
+  const [otpTimer, setOtpTimer]  = useState(60);
+  const [loading, setLoading]    = useState(false);
+  const [error, setError]        = useState("");
+
+  // ── NEW: dev OTP popup state ──────────────────────────────────────────────
+  const [devOtp, setDevOtp]      = useState(null);
+
   const inputRefs = useRef([]);
 
   // OTP countdown
@@ -193,7 +229,7 @@ export default function PatientAuth() {
     setError("");
     setLoading(true);
     try {
-      await registerPatient({
+      const res = await registerPatient({
         name:         formData.name.trim(),
         phone:        formData.phone.trim(),
         countryCode:  formData.countryCode,
@@ -204,6 +240,8 @@ export default function PatientAuth() {
         longitude:    formData.longitude,
         locationName: formData.locationName,
       });
+      // ── NEW: capture dev OTP from response ──
+      setDevOtp(res.data?.data?.dev_otp || null);
       setStep(2);
     } catch (err) {
       setError(err.response?.data?.error || "Registration failed. Please try again.");
@@ -218,10 +256,12 @@ export default function PatientAuth() {
     setError("");
     setLoading(true);
     try {
-      await API.post("/api/patient/auth/send-otp", {
+      const res = await API.post("/api/patient/auth/send-otp", {
         phone:       formData.phone.trim(),
         countryCode: formData.countryCode,
       });
+      // ── NEW: capture dev OTP from response ──
+      setDevOtp(res.data?.data?.dev_otp || null);
       setStep(2);
     } catch (err) {
       setError(err.response?.data?.error || "Could not send OTP. Please check your number.");
@@ -251,10 +291,12 @@ export default function PatientAuth() {
     if (otpTimer > 0) return;
     setError("");
     try {
-      await API.post("/api/patient/auth/send-otp", {
+      const res = await API.post("/api/patient/auth/send-otp", {
         phone:       formData.phone.trim(),
         countryCode: formData.countryCode,
       });
+      // ── NEW: capture dev OTP from response ──
+      setDevOtp(res.data?.data?.dev_otp || null);
       setOtpTimer(60);
       setOtp(["", "", "", "", "", ""]);
     } catch (err) {
@@ -284,7 +326,19 @@ export default function PatientAuth() {
 
   return (
     <>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;1,400&display=swap'); * { font-family: 'DM Sans', sans-serif; }`}</style>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;1,400&display=swap');
+        * { font-family: 'DM Sans', sans-serif; }
+        @keyframes slide-up {
+          from { transform: translateY(40px); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+        .animate-slide-up { animation: slide-up 0.3s ease-out forwards; }
+      `}</style>
+
+      {/* ── Dev OTP Popup — rendered outside main layout so it floats ── */}
+      <DevOtpPopup code={devOtp} onClose={() => setDevOtp(null)} />
+
       <div className="min-h-screen flex bg-[#f8f6f2]">
 
         {/* LEFT PANEL */}
@@ -366,7 +420,7 @@ export default function PatientAuth() {
                       <p className="text-sm font-medium text-black mb-3">Which best describes you right now?</p>
                       <div className="grid grid-cols-2 gap-3">
                         {[
-                          { key: "pregnant", Icon: Baby,  title: "I am currently pregnant",           sub: "I want to monitor my pregnancy and prevent complications" },
+                          { key: "pregnant", Icon: Baby,  title: "I am currently pregnant",            sub: "I want to monitor my pregnancy and prevent complications" },
                           { key: "loss",     Icon: Heart, title: "I have experienced a pregnancy loss", sub: "I am recovering from a miscarriage, ectopic pregnancy, or stillbirth" },
                         ].map(({ key, Icon, title, sub }) => (
                           <button key={key} type="button" onClick={() => setUserType(key)}
@@ -432,11 +486,22 @@ export default function PatientAuth() {
                     className={`text-sm ${otpTimer > 0 ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-black"}`}>
                     {otpTimer > 0 ? `Resend in ${otpTimer}s` : "Resend code"}
                   </button>
-                  <button onClick={() => { setStep(1); setError(""); setOtp(["","","","","",""]); }}
+                  <button onClick={() => { setStep(1); setError(""); setOtp(["","","","","",""]); setDevOtp(null); }}
                     className="text-sm text-gray-400 hover:text-black">
                     Change phone number
                   </button>
                 </div>
+
+                {/* ── NEW: show OTP hint button if popup was dismissed ── */}
+                {!devOtp && (
+                  <button
+                    type="button"
+                    onClick={() => setDevOtp("check Render logs")}
+                    className="text-xs text-amber-500 hover:text-amber-700 text-center underline"
+                  >
+                    🧪 Show prototype OTP hint
+                  </button>
+                )}
               </>
             )}
 
