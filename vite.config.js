@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://safemumapi.onrender.com',
+        target: 'https://web-production-4ddb1.up.railway.app',
         changeOrigin: true,
         secure: false,
         credentials: true,
