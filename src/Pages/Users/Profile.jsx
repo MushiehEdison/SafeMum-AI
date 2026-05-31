@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Pencil, Check, X, Bell, Plus, LogOut,
   ChevronRight, Activity, User, Heart,
@@ -6,49 +7,18 @@ import {
   FileText, Camera, AlertTriangle,
   ToggleLeft, ToggleRight, Shield,
   Wind, Leaf, BookOpen, MessageCircle,
+  Loader,
 } from "lucide-react";
+import { UserAuthContext } from "../../Context/UserAuthContext";
+import { getProfile, updateProfile, getPregnancyHistory } from "../../API/patient";
 
 /* ─────────────────────────────────────────────────────────────
    DATA
 ───────────────────────────────────────────────────────────── */
-const INITIAL_INFO = {
-  name: "Sarah Mbeki",
-  email: "sarah.mbeki@email.com",
-  phone: "+237 6XX XXX XXX",
-  language: "English",
-  location: "Nairobi, Kenya",
-};
-
-const MEDICAL_STATIC = {
-  bloodType: "O+",
-  genotype: "AA",
-  allergies: "Penicillin",
-  conditions: "None",
-  hospital: "Kenyatta National Hospital",
-  physician: "Dr. James Oloo",
-};
-
-const EMERGENCY = { name: "Amina Mbeki", relation: "Sister", phone: "+237 6XX XXX XXX" };
-
-const PREGNANCY_HISTORY = [
-  { id: 1, outcome: "Miscarriage",       date: "February 2026", age: "Lost at 11 weeks",       note: "First loss. Still processing.", color: "#dc2626" },
-  { id: 2, outcome: "Ectopic Pregnancy", date: "August 2025",   age: "Lost at 7 weeks",         note: null,                            color: "#ea580c" },
-  { id: 3, outcome: "Delivered",         date: "March 2024",    age: "Delivered at 38 weeks",   note: "Healthy baby girl.",            color: "#16a34a" },
-];
-
-const INITIAL_REMINDERS = [
-  { id: 1, type: "Follow-up Appointment", datetime: "May 22, 2026 · 10:00 AM", note: "Post-loss follow-up at Kenyatta National Hospital" },
-  { id: 2, type: "Medication",            datetime: "May 21, 2026 · 8:00 AM",  note: "Take iron supplement" },
-  { id: 3, type: "Emotional Check-in",    datetime: "May 23, 2026 · 6:00 PM",  note: null },
-];
-
-const REMINDER_TYPES = ["Follow-up Appointment","Medication","Emotional Check-in","Danger Signs Education"];
-
 const TABS = [
   { id: "overview",  label: "Overview",  Icon: User        },
   { id: "medical",   label: "Medical",   Icon: Stethoscope },
   { id: "history",   label: "History",   Icon: Heart       },
-  { id: "reminders", label: "Reminders", Icon: Bell        },
   { id: "settings",  label: "Settings",  Icon: Gear        },
 ];
 
@@ -82,7 +52,7 @@ function InfoRow({ label, value, editing, draftKey, draft, onChange, type = "tex
     <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid #f0eeea",gap:16 }}>
       <span style={{ fontSize:13,color:"#888",fontFamily:"'Manrope',sans-serif",minWidth:120,flexShrink:0,fontWeight:300 }}>{label}</span>
       {editing ? (
-        <input type={type} value={draft[draftKey]} onChange={e=>onChange({...draft,[draftKey]:e.target.value})}
+        <input type={type} value={draft[draftKey] || ""} onChange={e=>onChange({...draft,[draftKey]:e.target.value})}
           style={{ flex:1,border:"1px solid #e0ddd8",borderRadius:10,padding:"8px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8",minWidth:0,transition:"border-color .15s" }}
           onFocus={e=>e.target.style.borderColor="#c0bdb8"} onBlur={e=>e.target.style.borderColor="#e0ddd8"} />
       ) : (
@@ -108,8 +78,6 @@ function Card({ children, style = {} }) {
 function OverviewTab({ info, isEditing, editDraft, setEditDraft, startEdit, saveEdit, cancelEdit }) {
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
-
-      {/* Personal info card */}
       <Card>
         <SectionTitle action={
           isEditing ? (
@@ -139,7 +107,6 @@ function OverviewTab({ info, isEditing, editDraft, setEditDraft, startEdit, save
         ))}
       </Card>
 
-      {/* Upload medical documents */}
       <Card>
         <SectionTitle>Documents & files</SectionTitle>
         <Divider/>
@@ -175,43 +142,77 @@ function OverviewTab({ info, isEditing, editDraft, setEditDraft, startEdit, save
 }
 
 /* ── MEDICAL ── */
-function MedicalTab() {
+function MedicalTab({ medicalInfo, isEditingMedical, editMedicalDraft, setEditMedicalDraft, startEditMedical, saveEditMedical, cancelEditMedical }) {
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
       <Card>
-        <SectionTitle>Medical profile</SectionTitle>
+        <SectionTitle action={
+          isEditingMedical ? (
+            <div style={{ display:"flex",gap:6 }}>
+              <button onClick={saveEditMedical} style={{ display:"flex",alignItems:"center",gap:4,border:"none",background:"#f0fdf4",color:"#16a34a",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"'Manrope',sans-serif" }}>
+                <Check size={13}/> Save
+              </button>
+              <button onClick={cancelEditMedical} style={{ display:"flex",alignItems:"center",gap:4,border:"none",background:"#f4f3f0",color:"#888",borderRadius:8,padding:"5px 10px",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"'Manrope',sans-serif" }}>
+                <X size={13}/> Cancel
+              </button>
+            </div>
+          ) : (
+            <button onClick={startEditMedical} style={{ display:"flex",alignItems:"center",gap:5,border:"none",background:"none",color:"#888",cursor:"pointer",fontSize:12,fontWeight:500,fontFamily:"'Manrope',sans-serif",padding:"4px 6px",borderRadius:7 }}>
+              <Pencil size={13}/> Edit
+            </button>
+          )
+        }>Medical profile</SectionTitle>
         <Divider/>
         {[
-          { label:"Blood type",         value:MEDICAL_STATIC.bloodType  },
-          { label:"Genotype",           value:MEDICAL_STATIC.genotype   },
-          { label:"Allergies",          value:MEDICAL_STATIC.allergies  },
-          { label:"Chronic conditions", value:MEDICAL_STATIC.conditions },
-          { label:"Primary hospital",   value:MEDICAL_STATIC.hospital   },
-          { label:"Primary physician",  value:MEDICAL_STATIC.physician  },
+          { label:"Blood type",         key:"bloodType"  },
+          { label:"Genotype",           key:"genotype"   },
+          { label:"Allergies",          key:"allergies"  },
+          { label:"Chronic conditions", key:"conditions" },
+          { label:"Primary hospital",   key:"hospital"   },
+          { label:"Primary physician",  key:"physician"  },
         ].map(f => (
-          <div key={f.label} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid #f0eeea",gap:16 }}>
-            <span style={{ fontSize:13,color:"#888",fontFamily:"'Manrope',sans-serif",minWidth:140,flexShrink:0,fontWeight:300 }}>{f.label}</span>
-            <span style={{ fontSize:13,color:"#111",fontFamily:"'Manrope',sans-serif",textAlign:"right" }}>{f.value}</span>
-          </div>
+          <InfoRow
+            key={f.key}
+            label={f.label}
+            value={isEditingMedical ? editMedicalDraft[f.key] : (medicalInfo?.[f.key] || "—")}
+            editing={isEditingMedical}
+            draftKey={f.key}
+            draft={editMedicalDraft}
+            onChange={setEditMedicalDraft}
+          />
         ))}
       </Card>
 
       <Card>
-        <SectionTitle>Emergency contact</SectionTitle>
+        <SectionTitle action={
+          isEditingMedical ? null : (
+            <button onClick={startEditMedical} style={{ display:"flex",alignItems:"center",gap:5,border:"none",background:"none",color:"#888",cursor:"pointer",fontSize:12,fontWeight:500,fontFamily:"'Manrope',sans-serif",padding:"4px 6px",borderRadius:7 }}>
+              <Pencil size={13}/> Edit
+            </button>
+          )
+        }>Emergency contact</SectionTitle>
         <Divider/>
         {[
-          { label:"Name",     value:EMERGENCY.name     },
-          { label:"Relation", value:EMERGENCY.relation },
-          { label:"Phone",    value:EMERGENCY.phone    },
+          { label:"Name",     key:"emergencyName"     },
+          { label:"Relation", key:"emergencyRelation" },
+          { label:"Phone",    key:"emergencyPhone"    },
         ].map(f => (
-          <div key={f.label} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"11px 0",borderBottom:"1px solid #f0eeea",gap:16 }}>
-            <span style={{ fontSize:13,color:"#888",fontFamily:"'Manrope',sans-serif",minWidth:120,flexShrink:0,fontWeight:300 }}>{f.label}</span>
-            <span style={{ fontSize:13,color:"#111",fontFamily:"'Manrope',sans-serif",textAlign:"right" }}>{f.value}</span>
-          </div>
+          <InfoRow
+            key={f.key}
+            label={f.label}
+            value={isEditingMedical
+              ? editMedicalDraft[f.key]
+              : (medicalInfo?.emergencyContact?.[
+                  f.key === "emergencyName" ? "name" : f.key === "emergencyRelation" ? "relation" : "phone"
+                ] || "—")}
+            editing={isEditingMedical}
+            draftKey={f.key}
+            draft={editMedicalDraft}
+            onChange={setEditMedicalDraft}
+          />
         ))}
       </Card>
 
-      {/* Danger signs quick ref */}
       <Card style={{ background:"#fff8f8",border:"1px solid #fecaca" }}>
         <div style={{ display:"flex",alignItems:"center",gap:9,marginBottom:10 }}>
           <div style={{ width:32,height:32,borderRadius:9,background:"#fef2f2",border:"1px solid #fecaca",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
@@ -234,107 +235,92 @@ function MedicalTab() {
 }
 
 /* ── HISTORY ── */
-function HistoryTab() {
-  return (
-    <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
-      <Card>
-        <SectionTitle>Pregnancy history</SectionTitle>
-        <Divider/>
-        {PREGNANCY_HISTORY.length === 0 ? (
-          <p style={{ fontSize:13,color:"#aaa",fontStyle:"italic",fontFamily:"'Manrope',sans-serif" }}>No history recorded yet.</p>
-        ) : (
-          <div>
-            {PREGNANCY_HISTORY.map((item, idx) => (
-              <div key={item.id} style={{ display:"flex",gap:14,position:"relative" }}>
-                {/* Left spine */}
-                <div style={{ display:"flex",flexDirection:"column",alignItems:"center",width:14,flexShrink:0 }}>
-                  <div style={{ width:12,height:12,borderRadius:"50%",background:item.color,marginTop:4,flexShrink:0,boxShadow:`0 0 0 3px ${item.color}22` }}/>
-                  {idx < PREGNANCY_HISTORY.length - 1 && (
-                    <div style={{ flex:1,width:1,background:"#e8e6e1",marginTop:4 }}/>
-                  )}
-                </div>
-                {/* Content */}
-                <div style={{ flex:1,paddingBottom:idx < PREGNANCY_HISTORY.length-1 ? 22 : 4 }}>
-                  <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:4 }}>
-                    <span style={{ fontSize:14,fontWeight:600,color:"#111",fontFamily:"'Manrope',sans-serif" }}>{item.outcome}</span>
-                    <span style={{ fontSize:11,color:"#bbb",fontFamily:"'Manrope',sans-serif" }}>{item.date}</span>
-                  </div>
-                  <p style={{ fontSize:13,color:"#888",fontFamily:"'Manrope',sans-serif",margin:"0 0 3px",fontWeight:300 }}>{item.age}</p>
-                  {item.note && (
-                    <p style={{ fontSize:12,color:"#aaa",fontStyle:"italic",fontFamily:"'Fraunces',serif",margin:0,fontWeight:300 }}>{item.note}</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+function HistoryTab({ pregnancyHistory, loadingHistory, onAddHistory, onUpdateHistory }) {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newEntry, setNewEntry] = useState({ outcome: "", date: "", age: "", note: "" });
+  const [editingId, setEditingId] = useState(null);
+  const [editEntry, setEditEntry] = useState({});
 
-      {/* Emotional support callout */}
-      <Card style={{ background:"#faf5ff",border:"1px solid #e9d5ff" }}>
-        <div style={{ display:"flex",alignItems:"center",gap:9,marginBottom:8 }}>
-          <div style={{ width:32,height:32,borderRadius:9,background:"#f5f3ff",border:"1px solid #ddd6fe",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
-            <Heart size={15} color="#9333ea" strokeWidth={1.8}/>
-          </div>
-          <p style={{ margin:0,fontSize:13,fontWeight:600,color:"#6b21a8",fontFamily:"'Manrope',sans-serif" }}>You are not alone</p>
-        </div>
-        <p style={{ margin:0,fontSize:13,color:"#7e22ce",fontWeight:300,lineHeight:1.6,fontFamily:"'Manrope',sans-serif" }}>
-          Each loss is part of your story, not a definition of your future. The Recovery Hub has peer stories and support tools whenever you need them.
-        </p>
-      </Card>
-    </div>
-  );
-}
-
-/* ── REMINDERS ── */
-function RemindersTab({ reminders, setReminders }) {
-  const [showModal, setShowModal] = useState(false);
-  const [nr, setNr] = useState({ type: REMINDER_TYPES[0], date: "", time: "", note: "" });
-
-  const addReminder = () => {
-    if (!nr.date || !nr.time) return;
-    setReminders(prev => [...prev, { id: Date.now(), type: nr.type, datetime: `${nr.date} · ${nr.time}`, note: nr.note || null }]);
-    setNr({ type: REMINDER_TYPES[0], date: "", time: "", note: "" });
-    setShowModal(false);
+  const OUTCOME_OPTIONS = ["Miscarriage", "Ectopic Pregnancy", "Stillbirth", "Delivered", "Other"];
+  const OUTCOME_COLORS = {
+    "Miscarriage": "#dc2626",
+    "Ectopic Pregnancy": "#ea580c",
+    "Stillbirth": "#9333ea",
+    "Delivered": "#16a34a",
+    "Other": "#6b7280",
   };
 
-  const typeColor = (t) => t === "Follow-up Appointment" ? "#2563eb" : t === "Medication" ? "#16a34a" : t === "Emotional Check-in" ? "#9333ea" : "#ea580c";
+  function handleAdd() {
+    if (!newEntry.outcome || !newEntry.date) return;
+    const entry = {
+      ...newEntry,
+      id: Date.now(),
+      color: OUTCOME_COLORS[newEntry.outcome] || "#888",
+    };
+    onAddHistory(entry);
+    setNewEntry({ outcome: "", date: "", age: "", note: "" });
+    setShowAddModal(false);
+  }
+
+  function startEdit(entry) {
+    setEditingId(entry.id);
+    setEditEntry({ ...entry });
+  }
+
+  function saveEdit() {
+    if (!editEntry.outcome || !editEntry.date) return;
+    onUpdateHistory({
+      ...editEntry,
+      color: OUTCOME_COLORS[editEntry.outcome] || "#888",
+    });
+    setEditingId(null);
+    setEditEntry({});
+  }
 
   return (
     <>
-      {showModal && (
+      {/* Add Modal */}
+      {showAddModal && (
         <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.4)",backdropFilter:"blur(4px)",zIndex:400,display:"flex",alignItems:"flex-end",justifyContent:"center" }}
-          onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+          onClick={e=>e.target===e.currentTarget&&setShowAddModal(false)}>
           <div style={{ background:"#fff",borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",width:"100%",maxWidth:480,animation:"mslide .25s ease" }}>
             <style>{`@keyframes mslide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
             <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20 }}>
-              <p style={{ margin:0,fontFamily:"'Fraunces',serif",fontSize:20,fontWeight:600,color:"#111",letterSpacing:"-.02em" }}>New reminder</p>
-              <button onClick={()=>setShowModal(false)} style={{ background:"#f4f3f0",border:"none",borderRadius:9,width:32,height:32,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>
+              <p style={{ margin:0,fontFamily:"'Fraunces',serif",fontSize:20,fontWeight:600,color:"#111" }}>Add pregnancy history</p>
+              <button onClick={()=>setShowAddModal(false)} style={{ background:"#f4f3f0",border:"none",borderRadius:9,width:32,height:32,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>
                 <X size={15} color="#555"/>
               </button>
             </div>
             {[
-              { label:"Type", el:<select value={nr.type} onChange={e=>setNr(r=>({...r,type:e.target.value}))} style={{ width:"100%",border:"1px solid #e5e7eb",borderRadius:11,padding:"10px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8" }}>{REMINDER_TYPES.map(t=><option key={t}>{t}</option>)}</select> },
+              { label:"Outcome", el:
+                <select value={newEntry.outcome} onChange={e=>setNewEntry(p=>({...p,outcome:e.target.value}))}
+                  style={{ width:"100%",border:"1px solid #e5e7eb",borderRadius:11,padding:"10px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8" }}>
+                  <option value="" disabled>Select outcome</option>
+                  {OUTCOME_OPTIONS.map(o=><option key={o}>{o}</option>)}
+                </select>
+              },
+              { label:"Date", el:
+                <input type="text" placeholder="e.g. February 2026" value={newEntry.date} onChange={e=>setNewEntry(p=>({...p,date:e.target.value}))}
+                  style={{ width:"100%",border:"1px solid #e5e7eb",borderRadius:11,padding:"10px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8" }} />
+              },
+              { label:"Gestational age / details", el:
+                <input type="text" placeholder="e.g. Lost at 11 weeks" value={newEntry.age} onChange={e=>setNewEntry(p=>({...p,age:e.target.value}))}
+                  style={{ width:"100%",border:"1px solid #e5e7eb",borderRadius:11,padding:"10px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8" }} />
+              },
             ].map(f=>(
               <div key={f.label} style={{ marginBottom:12 }}>
                 <p style={{ fontSize:11,fontWeight:600,letterSpacing:".1em",textTransform:"uppercase",color:"#aaa",marginBottom:5,fontFamily:"'Manrope',sans-serif" }}>{f.label}</p>
                 {f.el}
               </div>
             ))}
-            <div style={{ display:"flex",gap:10,marginBottom:12 }}>
-              {[{label:"Date",type:"date",key:"date"},{label:"Time",type:"time",key:"time"}].map(f=>(
-                <div key={f.key} style={{ flex:1 }}>
-                  <p style={{ fontSize:11,fontWeight:600,letterSpacing:".1em",textTransform:"uppercase",color:"#aaa",marginBottom:5,fontFamily:"'Manrope',sans-serif" }}>{f.label}</p>
-                  <input type={f.type} value={nr[f.key]} onChange={e=>setNr(r=>({...r,[f.key]:e.target.value}))} style={{ width:"100%",border:"1px solid #e5e7eb",borderRadius:11,padding:"10px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8" }}/>
-                </div>
-              ))}
-            </div>
             <div style={{ marginBottom:18 }}>
               <p style={{ fontSize:11,fontWeight:600,letterSpacing:".1em",textTransform:"uppercase",color:"#aaa",marginBottom:5,fontFamily:"'Manrope',sans-serif" }}>Note (optional)</p>
-              <input placeholder="Add a note…" value={nr.note} onChange={e=>setNr(r=>({...r,note:e.target.value}))} style={{ width:"100%",border:"1px solid #e5e7eb",borderRadius:11,padding:"10px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8" }}/>
+              <textarea placeholder="Any thoughts or feelings about this experience..." value={newEntry.note} onChange={e=>setNewEntry(p=>({...p,note:e.target.value}))} rows={3}
+                style={{ width:"100%",border:"1px solid #e5e7eb",borderRadius:11,padding:"10px 12px",fontSize:13,fontFamily:"'Manrope',sans-serif",color:"#111",outline:"none",background:"#fafaf8",resize:"vertical",lineHeight:1.5 }} />
             </div>
-            <button onClick={addReminder} style={{ width:"100%",padding:"13px",background:"#111",borderRadius:13,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:14,fontWeight:600,color:"#fff" }}>
-              Add reminder
+            <button onClick={handleAdd} disabled={!newEntry.outcome || !newEntry.date}
+              style={{ width:"100%",padding:"13px",background:!newEntry.outcome || !newEntry.date ? "#d1d5db" : "#111",borderRadius:13,border:"none",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:14,fontWeight:600,color:"#fff" }}>
+              Add to history
             </button>
           </div>
         </div>
@@ -343,31 +329,81 @@ function RemindersTab({ reminders, setReminders }) {
       <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
         <Card>
           <SectionTitle action={
-            <button onClick={()=>setShowModal(true)} style={{ display:"flex",alignItems:"center",gap:5,border:"none",background:"#111",color:"#fff",borderRadius:9,padding:"6px 11px",cursor:"pointer",fontSize:12,fontWeight:500,fontFamily:"'Manrope',sans-serif" }}>
+            <button onClick={()=>setShowAddModal(true)} style={{ display:"flex",alignItems:"center",gap:5,border:"none",background:"#111",color:"#fff",borderRadius:9,padding:"6px 11px",cursor:"pointer",fontSize:12,fontWeight:500,fontFamily:"'Manrope',sans-serif" }}>
               <Plus size={13}/> Add
             </button>
-          }>Upcoming reminders</SectionTitle>
+          }>Pregnancy history</SectionTitle>
           <Divider/>
-          {reminders.length === 0 ? (
-            <p style={{ fontSize:13,color:"#aaa",fontStyle:"italic",fontFamily:"'Manrope',sans-serif" }}>No reminders yet.</p>
+          {loadingHistory ? (
+            <div style={{ display:"flex",alignItems:"center",justifyContent:"center",padding:"20px" }}>
+              <Loader size={18} className="animate-spin" color="#aaa" />
+            </div>
+          ) : pregnancyHistory.length === 0 ? (
+            <p style={{ fontSize:13,color:"#aaa",fontStyle:"italic",fontFamily:"'Manrope',sans-serif" }}>No history recorded yet. Tap + to add your first entry.</p>
           ) : (
-            <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
-              {reminders.map(r => (
-                <div key={r.id} style={{ display:"flex",alignItems:"flex-start",gap:12,padding:"12px",background:"#f8f7f4",borderRadius:13,border:"1px solid #f0eeea" }}>
-                  <div style={{ width:32,height:32,borderRadius:9,background:"#fff",border:"1px solid #e8e6e1",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
-                    <Bell size={14} color="#888" strokeWidth={1.5}/>
+            <div>
+              {pregnancyHistory.map((item, idx) => (
+                <div key={item.id || idx} style={{ display:"flex",gap:14,position:"relative" }}>
+                  <div style={{ display:"flex",flexDirection:"column",alignItems:"center",width:14,flexShrink:0 }}>
+                    <div style={{ width:12,height:12,borderRadius:"50%",background:item.color || "#888",marginTop:4,flexShrink:0,boxShadow:`0 0 0 3px ${(item.color || "#888")}22` }}/>
+                    {idx < pregnancyHistory.length - 1 && (
+                      <div style={{ flex:1,width:1,background:"#e8e6e1",marginTop:4 }}/>
+                    )}
                   </div>
-                  <div style={{ flex:1,minWidth:0 }}>
-                    <span style={{ display:"inline-block",fontSize:10,fontWeight:600,letterSpacing:".06em",textTransform:"uppercase",border:`1px solid ${typeColor(r.type)}33`,borderRadius:20,padding:"2px 9px",color:typeColor(r.type),marginBottom:4,fontFamily:"'Manrope',sans-serif" }}>
-                      {r.type}
-                    </span>
-                    <p style={{ fontSize:13,fontWeight:600,color:"#111",fontFamily:"'Manrope',sans-serif",margin:"0 0 2px" }}>{r.datetime}</p>
-                    {r.note && <p style={{ fontSize:12,color:"#888",fontWeight:300,fontFamily:"'Manrope',sans-serif",margin:0,lineHeight:1.4 }}>{r.note}</p>}
+                  <div style={{ flex:1,paddingBottom:idx < pregnancyHistory.length-1 ? 22 : 4 }}>
+                    {editingId === item.id ? (
+                      <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+                        <select value={editEntry.outcome} onChange={e=>setEditEntry(p=>({...p,outcome:e.target.value}))}
+                          style={{ border:"1px solid #e5e7eb",borderRadius:8,padding:"6px 10px",fontSize:13,fontFamily:"'Manrope',sans-serif",outline:"none",background:"#fafaf8" }}>
+                          {OUTCOME_OPTIONS.map(o=><option key={o}>{o}</option>)}
+                        </select>
+                        <input type="text" placeholder="Date" value={editEntry.date} onChange={e=>setEditEntry(p=>({...p,date:e.target.value}))}
+                          style={{ border:"1px solid #e5e7eb",borderRadius:8,padding:"6px 10px",fontSize:13,fontFamily:"'Manrope',sans-serif",outline:"none",background:"#fafaf8" }} />
+                        <input type="text" placeholder="Age / details" value={editEntry.age} onChange={e=>setEditEntry(p=>({...p,age:e.target.value}))}
+                          style={{ border:"1px solid #e5e7eb",borderRadius:8,padding:"6px 10px",fontSize:13,fontFamily:"'Manrope',sans-serif",outline:"none",background:"#fafaf8" }} />
+                        <textarea placeholder="Note" value={editEntry.note || ""} onChange={e=>setEditEntry(p=>({...p,note:e.target.value}))} rows={2}
+                          style={{ border:"1px solid #e5e7eb",borderRadius:8,padding:"6px 10px",fontSize:13,fontFamily:"'Manrope',sans-serif",outline:"none",background:"#fafaf8",resize:"vertical" }} />
+                        <div style={{ display:"flex",gap:6 }}>
+                          <button onClick={saveEdit} style={{ border:"none",background:"#f0fdf4",color:"#16a34a",borderRadius:7,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"'Manrope',sans-serif" }}>
+                            <Check size={13}/> Save
+                          </button>
+                          <button onClick={()=>setEditingId(null)} style={{ border:"none",background:"#f4f3f0",color:"#888",borderRadius:7,padding:"5px 12px",cursor:"pointer",fontSize:12,fontWeight:600,fontFamily:"'Manrope',sans-serif" }}>
+                            <X size={13}/> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:4 }}>
+                          <span style={{ fontSize:14,fontWeight:600,color:"#111",fontFamily:"'Manrope',sans-serif" }}>{item.outcome}</span>
+                          <span style={{ fontSize:11,color:"#bbb",fontFamily:"'Manrope',sans-serif" }}>{item.date}</span>
+                          <button onClick={()=>startEdit(item)} style={{ marginLeft:"auto",border:"none",background:"none",cursor:"pointer",padding:2,display:"flex" }}>
+                            <Pencil size={12} color="#bbb" />
+                          </button>
+                        </div>
+                        <p style={{ fontSize:13,color:"#888",fontFamily:"'Manrope',sans-serif",margin:"0 0 3px",fontWeight:300 }}>{item.age || item.gestationalAge}</p>
+                        {item.note && (
+                          <p style={{ fontSize:12,color:"#aaa",fontStyle:"italic",fontFamily:"'Fraunces',serif",margin:0,fontWeight:300 }}>{item.note}</p>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
           )}
+        </Card>
+
+        <Card style={{ background:"#faf5ff",border:"1px solid #e9d5ff" }}>
+          <div style={{ display:"flex",alignItems:"center",gap:9,marginBottom:8 }}>
+            <div style={{ width:32,height:32,borderRadius:9,background:"#f5f3ff",border:"1px solid #ddd6fe",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+              <Heart size={15} color="#9333ea" strokeWidth={1.8}/>
+            </div>
+            <p style={{ margin:0,fontSize:13,fontWeight:600,color:"#6b21a8",fontFamily:"'Manrope',sans-serif" }}>You are not alone</p>
+          </div>
+          <p style={{ margin:0,fontSize:13,color:"#7e22ce",fontWeight:300,lineHeight:1.6,fontFamily:"'Manrope',sans-serif" }}>
+            Each loss is part of your story, not a definition of your future. The Recovery Hub has peer stories and support tools whenever you need them.
+          </p>
         </Card>
       </div>
     </>
@@ -375,15 +411,13 @@ function RemindersTab({ reminders, setReminders }) {
 }
 
 /* ── SETTINGS ── */
-function SettingsTab() {
+function SettingsTab({ onLogout }) {
   const [language,      setLanguage]      = useState("English");
   const [notifications, setNotifications] = useState({ sms:true,whatsapp:true,app:true });
   const [anonymousMode, setAnonymousMode] = useState(false);
 
   return (
     <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
-
-      {/* Language */}
       <Card>
         <SectionTitle>Language</SectionTitle>
         <Divider/>
@@ -396,7 +430,6 @@ function SettingsTab() {
         </div>
       </Card>
 
-      {/* Notifications */}
       <Card>
         <SectionTitle>Notifications</SectionTitle>
         <Divider/>
@@ -408,7 +441,6 @@ function SettingsTab() {
         ))}
       </Card>
 
-      {/* Privacy */}
       <Card>
         <SectionTitle>Privacy</SectionTitle>
         <Divider/>
@@ -421,8 +453,7 @@ function SettingsTab() {
         </div>
       </Card>
 
-      {/* Logout */}
-      <button onClick={()=>console.log("logout")}
+      <button onClick={onLogout}
         style={{ display:"flex",alignItems:"center",justifyContent:"center",gap:9,width:"100%",padding:"14px",border:"1px solid #dc2626",borderRadius:14,background:"#fff",cursor:"pointer",fontFamily:"'Manrope',sans-serif",fontSize:14,fontWeight:500,color:"#dc2626",transition:"background .15s" }}
         onMouseEnter={e=>e.currentTarget.style.background="#fef2f2"} onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
         <LogOut size={16} strokeWidth={1.5}/> Log out
@@ -435,20 +466,144 @@ function SettingsTab() {
    MAIN
 ───────────────────────────────────────────────────────────── */
 export default function Profile() {
+  const navigate = useNavigate();
+  const { user, logout } = useContext(UserAuthContext);
   const [activeTab,  setActiveTab]  = useState("overview");
-  const [personalInfo, setPersonalInfo] = useState(INITIAL_INFO);
+  const [personalInfo, setPersonalInfo] = useState(null);
+  const [medicalInfo, setMedicalInfo] = useState(null);
   const [isEditing,    setIsEditing]    = useState(false);
-  const [editDraft,    setEditDraft]    = useState(INITIAL_INFO);
-  const [reminders,    setReminders]    = useState(INITIAL_REMINDERS);
+  const [editDraft,    setEditDraft]    = useState({});
+  const [isEditingMedical, setIsEditingMedical] = useState(false);
+  const [editMedicalDraft, setEditMedicalDraft] = useState({});
+  const [pregnancyHistory, setPregnancyHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    async function fetchProfileData() {
+      try {
+        const [profileRes, historyRes] = await Promise.all([
+          getProfile(),
+          getPregnancyHistory(),
+        ]);
+        const profile = profileRes.data.data || profileRes.data;
+        setPersonalInfo({
+          name:     profile.name     || user?.name  || "",
+          email:    profile.email    || user?.email || "",
+          phone:    profile.phone    || "",
+          language: profile.language || "English",
+          location: profile.location?.area || profile.location || "",
+        });
+        setMedicalInfo({
+          bloodType: profile.bloodType,
+          genotype: profile.genotype,
+          allergies: profile.allergies,
+          conditions: profile.conditions,
+          hospital: profile.primaryHospital?.name || profile.hospital,
+          physician: profile.primaryPhysician || profile.physician,
+          emergencyContact: profile.emergencyContact,
+        });
+        setPregnancyHistory(historyRes.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch profile:', err);
+      } finally {
+        setLoading(false);
+        setLoadingHistory(false);
+      }
+    }
+    fetchProfileData();
+  }, [user]);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth/patient");
+  };
 
   const now     = new Date();
-  const initials = personalInfo.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  const initials = personalInfo?.name
+    ? personalInfo.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()
+    : "??";
   const hour    = now.getHours();
   const nameColor = hour < 12 ? "#d97706" : hour < 17 ? "#ea580c" : "#7c3aed";
 
   const startEdit  = () => { setEditDraft({...personalInfo}); setIsEditing(true); };
-  const saveEdit   = () => { setPersonalInfo({...editDraft}); setIsEditing(false); };
+  const saveEdit = async () => {
+    try {
+      const payload = { ...editDraft };
+      await updateProfile(payload);
+      setPersonalInfo({...editDraft});
+      setIsEditing(false);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
+    }
+  };
   const cancelEdit = () => setIsEditing(false);
+
+  const startEditMedical = () => {
+    setEditMedicalDraft({
+      bloodType: medicalInfo?.bloodType || "",
+      genotype: medicalInfo?.genotype || "",
+      allergies: medicalInfo?.allergies || "",
+      conditions: medicalInfo?.conditions || "",
+      hospital: medicalInfo?.hospital || "",
+      physician: medicalInfo?.physician || "",
+      emergencyName: medicalInfo?.emergencyContact?.name || "",
+      emergencyRelation: medicalInfo?.emergencyContact?.relation || "",
+      emergencyPhone: medicalInfo?.emergencyContact?.phone || "",
+    });
+    setIsEditingMedical(true);
+  };
+  const saveEditMedical = async () => {
+    try {
+      const payload = {
+        bloodType: editMedicalDraft.bloodType,
+        genotype: editMedicalDraft.genotype,
+        allergies: editMedicalDraft.allergies,
+        conditions: editMedicalDraft.conditions,
+        hospital: editMedicalDraft.hospital,
+        physician: editMedicalDraft.physician,
+        emergencyContact: {
+          name: editMedicalDraft.emergencyName,
+          relation: editMedicalDraft.emergencyRelation,
+          phone: editMedicalDraft.emergencyPhone,
+        },
+      };
+      await updateProfile(payload);
+      setMedicalInfo({
+        bloodType: editMedicalDraft.bloodType,
+        genotype: editMedicalDraft.genotype,
+        allergies: editMedicalDraft.allergies,
+        conditions: editMedicalDraft.conditions,
+        hospital: editMedicalDraft.hospital,
+        physician: editMedicalDraft.physician,
+        emergencyContact: {
+          name: editMedicalDraft.emergencyName,
+          relation: editMedicalDraft.emergencyRelation,
+          phone: editMedicalDraft.emergencyPhone,
+        },
+      });
+      setIsEditingMedical(false);
+    } catch (err) {
+      console.error('Failed to update medical info:', err);
+    }
+  };
+  const cancelEditMedical = () => setIsEditingMedical(false);
+
+  const handleAddHistory = (entry) => {
+    setPregnancyHistory(prev => [entry, ...prev]);
+  };
+
+  const handleUpdateHistory = (updatedEntry) => {
+    setPregnancyHistory(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
+  };
+
+  if (loading) {
+    return (
+      <div className="pf-root" style={{ display:"flex",alignItems:"center",justifyContent:"center" }}>
+        <Loader size={24} className="animate-spin" color="#aaa" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -464,7 +619,6 @@ export default function Profile() {
           padding-bottom: 120px;
         }
 
-        /* ── HERO ── */
         .pf-hero {
           padding: clamp(44px,7vw,64px) clamp(20px,5vw,48px) clamp(24px,4vw,36px);
           display: flex; align-items: center; gap: 18px;
@@ -495,7 +649,6 @@ export default function Profile() {
           letter-spacing: .04em;
         }
 
-        /* ── TABS ── */
         .pf-tabs-wrap {
           position: sticky; top: 0; z-index: 10;
           background: #f4f3f0;
@@ -521,7 +674,6 @@ export default function Profile() {
         .pf-tab.active { color: #111; border-bottom-color: #111; }
         .pf-tab-icon { flex-shrink: 0; }
 
-        /* ── BODY ── */
         .pf-body {
           max-width: 640px; margin: 0 auto;
           padding: clamp(20px,4vw,32px) clamp(16px,4vw,48px) 0;
@@ -530,14 +682,13 @@ export default function Profile() {
 
       <div className="pf-root">
 
-        {/* Hero */}
         <div className="pf-hero">
           <div className="pf-avatar">
             <span className="pf-initials">{initials}</span>
           </div>
           <div>
-            <p className="pf-name" style={{ color: nameColor }}>{personalInfo.name}</p>
-            <p className="pf-email">{personalInfo.email}</p>
+            <p className="pf-name" style={{ color: nameColor }}>{personalInfo?.name}</p>
+            <p className="pf-email">{personalInfo?.email}</p>
             <div className="pf-badges">
               <span className="pf-badge" style={{ border:"1.5px solid #dc2626",color:"#dc2626" }}>In Recovery</span>
               <span className="pf-badge" style={{ border:"1.5px solid #d1d5db",color:"#888" }}>Member since May 2026</span>
@@ -545,7 +696,6 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Tab bar */}
         <div className="pf-tabs-wrap">
           <div className="pf-tabs">
             {TABS.map(t => (
@@ -557,18 +707,33 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Panel */}
         <div className="pf-body">
-          {activeTab === "overview" && (
+          {activeTab === "overview" && personalInfo && (
             <OverviewTab
               info={personalInfo} isEditing={isEditing} editDraft={editDraft}
               setEditDraft={setEditDraft} startEdit={startEdit} saveEdit={saveEdit} cancelEdit={cancelEdit}
             />
           )}
-          {activeTab === "medical"   && <MedicalTab/>}
-          {activeTab === "history"   && <HistoryTab/>}
-          {activeTab === "reminders" && <RemindersTab reminders={reminders} setReminders={setReminders}/>}
-          {activeTab === "settings"  && <SettingsTab/>}
+          {activeTab === "medical"   && (
+            <MedicalTab
+              medicalInfo={medicalInfo}
+              isEditingMedical={isEditingMedical}
+              editMedicalDraft={editMedicalDraft}
+              setEditMedicalDraft={setEditMedicalDraft}
+              startEditMedical={startEditMedical}
+              saveEditMedical={saveEditMedical}
+              cancelEditMedical={cancelEditMedical}
+            />
+          )}
+          {activeTab === "history"   && (
+            <HistoryTab
+              pregnancyHistory={pregnancyHistory}
+              loadingHistory={loadingHistory}
+              onAddHistory={handleAddHistory}
+              onUpdateHistory={handleUpdateHistory}
+            />
+          )}
+          {activeTab === "settings"  && <SettingsTab onLogout={handleLogout}/>}
         </div>
       </div>
     </>

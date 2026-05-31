@@ -1,20 +1,13 @@
-import { useState } from "react";
-import { Heart, Phone, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Heart, Phone, CheckCircle2, Loader } from "lucide-react";
+import { getCounsellors } from "../../API/recovery";
 
-const LAST_MOOD = "struggling";
 const font = "'Manrope', sans-serif";
-
-const COUNSELLORS = [
-  { id: 1, name: "Dr. Amina Yusuf",    speciality: "Grief Counsellor",    area: "Nairobi Central", available: true,  phone: "+254700000001" },
-  { id: 2, name: "Nurse Grace Otieno", speciality: "Midwife",             area: "Westlands",       available: true,  phone: "+254700000002" },
-  { id: 3, name: "Mary Kamau",          speciality: "Volunteer Counsellor",area: "Kibera",          available: false, phone: "+254700000003" },
-];
-
 const SUPPORT_TYPES = ["Counselling", "Transport", "Financial Aid"];
 
 function Initials({ name }) {
-  const parts = name.split(" ");
-  const init = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : parts[0][0];
+  const parts = (name || "").split(" ");
+  const init = parts.length >= 2 ? parts[0][0] + parts[parts.length - 1][0] : (parts[0]?.[0] || "?");
   return (
     <div style={{
       width: 42, height: 42, borderRadius: "50%", background: "#f0efeb",
@@ -26,9 +19,25 @@ function Initials({ name }) {
 }
 
 export default function SupportTab() {
-  const [supportType, setSupportType]     = useState("");
-  const [supportDesc, setSupportDesc]     = useState("");
-  const [supportSubmitted, setSubmitted]  = useState(false);
+  const [counsellors, setCounsellors]       = useState([]);
+  const [loading, setLoading]               = useState(true);
+  const [supportType, setSupportType]       = useState("");
+  const [supportDesc, setSupportDesc]       = useState("");
+  const [supportSubmitted, setSubmitted]    = useState(false);
+
+  useEffect(() => {
+    async function fetchCounsellors() {
+      try {
+        const res = await getCounsellors();
+        setCounsellors(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch counsellors:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCounsellors();
+  }, []);
 
   function handleSubmit() {
     if (!supportType || !supportDesc.trim()) return;
@@ -36,9 +45,7 @@ export default function SupportTab() {
     setTimeout(() => { setSubmitted(false); setSupportType(""); setSupportDesc(""); }, 4000);
   }
 
-  const aiMessage = LAST_MOOD === "struggling"
-    ? "Based on your recent check-ins, it looks like things have been difficult lately. You do not have to go through this alone. Here are people who are here for you."
-    : "You have shown real strength recently. If you ever need someone to talk to, these people are always here.";
+  const aiMessage = "You have shown real strength recently. If you ever need someone to talk to, these people are always here.";
 
   return (
     <div style={{ fontFamily: font, display: "flex", flexDirection: "column", gap: 32 }}>
@@ -62,35 +69,43 @@ export default function SupportTab() {
         <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: "#bbb", marginBottom: 16 }}>
           Talk to someone
         </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {COUNSELLORS.map(c => (
-            <div key={c.id} style={{ background: "#fff", border: "1.5px solid #e8e6e1", borderRadius: 18, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
-              <Initials name={c.name} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>{c.name}</p>
-                <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 9 }}>{c.speciality} · {c.area}</p>
-                <span style={{
-                  fontSize: 11, fontWeight: 500, padding: "3px 11px", borderRadius: 20,
-                  border: c.available ? "1px solid #bbf7d0" : "1px solid #e5e7eb",
-                  color: c.available ? "#15803d" : "#9ca3af",
-                  background: c.available ? "#f0fdf4" : "transparent",
+        {loading ? (
+          <div style={{ display: "flex", justifyContent: "center", padding: "20px" }}>
+            <Loader size={20} className="animate-spin" color="#aaa" />
+          </div>
+        ) : counsellors.length === 0 ? (
+          <p style={{ fontSize: 13, color: "#aaa", fontStyle: "italic" }}>No counsellors available at the moment.</p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {counsellors.map(c => (
+              <div key={c.id || c._id} style={{ background: "#fff", border: "1.5px solid #e8e6e1", borderRadius: 18, padding: "16px 18px", display: "flex", alignItems: "center", gap: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+                <Initials name={c.name} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "#111", marginBottom: 2 }}>{c.name}</p>
+                  <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 9 }}>{c.speciality} · {c.area}</p>
+                  <span style={{
+                    fontSize: 11, fontWeight: 500, padding: "3px 11px", borderRadius: 20,
+                    border: c.available ? "1px solid #bbf7d0" : "1px solid #e5e7eb",
+                    color: c.available ? "#15803d" : "#9ca3af",
+                    background: c.available ? "#f0fdf4" : "transparent",
+                  }}>
+                    {c.available ? "Available now" : "Unavailable"}
+                  </span>
+                </div>
+                <a href={`tel:${c.phone}`} onClick={e => !c.available && e.preventDefault()} style={{
+                  display: "flex", alignItems: "center", gap: 6, padding: "10px 16px",
+                  background: c.available ? "#111" : "#f3f4f6",
+                  color: c.available ? "#fff" : "#bbb",
+                  border: "none", borderRadius: 12, fontSize: 13, fontWeight: 500,
+                  cursor: c.available ? "pointer" : "not-allowed", textDecoration: "none",
+                  fontFamily: font, flexShrink: 0,
                 }}>
-                  {c.available ? "Available now" : "Unavailable"}
-                </span>
+                  <Phone size={13} strokeWidth={1.8} /> Call
+                </a>
               </div>
-              <a href={`tel:${c.phone}`} onClick={e => !c.available && e.preventDefault()} style={{
-                display: "flex", alignItems: "center", gap: 6, padding: "10px 16px",
-                background: c.available ? "#111" : "#f3f4f6",
-                color: c.available ? "#fff" : "#bbb",
-                border: "none", borderRadius: 12, fontSize: 13, fontWeight: 500,
-                cursor: c.available ? "pointer" : "not-allowed", textDecoration: "none",
-                fontFamily: font, flexShrink: 0,
-              }}>
-                <Phone size={13} strokeWidth={1.8} /> Call
-              </a>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* NGO form */}

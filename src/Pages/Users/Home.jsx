@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bot, AlertTriangle, Heart, MapPin,
@@ -12,6 +12,11 @@ import {
 } from "lucide-react";
 import Mascot from "../../Components/Mascot/Mascot";
 import SymptomChecklist from "../../Components/SymptomChecklist";
+import { UserAuthContext } from "../../Context/UserAuthContext";
+import { getReminders, createReminder, completeReminder, deleteReminder, updateReminder } from "../../API/reminders";
+import { getPregnancyTip, getProfile } from "../../API/patient";
+import { getCheckinHistory, submitCheckin } from "../../API/recovery";
+import { getNearbyFacilities, getFacility } from "../../API/facilities";
 
 /* ─────────────────────────────────
    DATA
@@ -30,7 +35,7 @@ const TIPS = [
 ];
 
 const AI_MESSAGES = [
-  { text: "How are you feeling right now, Amina?", type: "checkin" },
+  { text: "How are you feeling right now?", type: "checkin" },
   { text: "Have you had enough water today?", type: "checkin" },
   { text: "Did you sleep well last night?", type: "checkin" },
   { text: "Any pain or discomfort since yesterday?", type: "checkin" },
@@ -41,24 +46,11 @@ const AI_MESSAGES = [
   { text: "Can you explain what's normal to feel right now?", type: "prompt" },
 ];
 
-const FACILITIES = [
-  { name: "Kenyatta National Hospital", type: "General Hospital", dist: "1.2 km", open: true,  Icon: StethoscopeIcon },
-  { name: "Nairobi Women's Hospital",   type: "Women's Health",   dist: "2.8 km", open: true,  Icon: Heart       },
-  { name: "MP Shah Hospital",           type: "Private Clinic",   dist: "3.4 km", open: false, Icon: Activity    },
-];
-
 const RECOVERY_ITEMS = [
   { label: "Mental wellness",  Icon: Wind,         sub: "Breathing & grounding exercises" },
   { label: "Nutrition guide",  Icon: Leaf,          sub: "Foods that help you heal" },
   { label: "Peer stories",     Icon: MessageCircle, sub: "You are not alone" },
   { label: "Read & learn",     Icon: BookOpen,      sub: "Understanding your recovery" },
-];
-
-const STATS = [
-  { label: "Physical",   value: "Stable",    color: "#22c55e" },
-  { label: "Emotional",  value: "Monitored", color: "#a78bfa" },
-  { label: "Follow-up",  value: "Tomorrow",  color: "#94a3b8" },
-  { label: "Risk Level", value: "Low",       color: "#22c55e" },
 ];
 
 /* ─── Mascot sections ─── */
@@ -68,15 +60,6 @@ const IDLE_MESSAGES = [
   "You are doing better than you think.",
   "Tap the map to find a care centre near you.",
   "Remember to take your medication today.",
-];
-
-/* ─── Reminder dummy data ─── */
-const dummyReminders = [
-  { id:1, type:'Follow-up Appointment', datetime:'May 22, 2026 at 10:00 AM', note:'Post-loss follow-up at Kenyatta National Hospital', aiMessage:'Sarah, your follow-up appointment at Kenyatta National Hospital is tomorrow at 10am.', missedCount:0, completed:false, overdue:false },
-  { id:2, type:'Medication', datetime:'May 21, 2026 at 8:00 AM', note:'Iron supplement', aiMessage:'Taking your iron supplement today helps your body rebuild after your loss.', missedCount:0, completed:false, overdue:true },
-  { id:3, type:'Emotional Check-in', datetime:'May 23, 2026 at 6:00 PM', note:null, aiMessage:'A few minutes to sit with how you are feeling is always worth it.', missedCount:0, completed:false, overdue:false },
-  { id:4, type:'Follow-up Appointment', datetime:'May 18, 2026 at 9:00 AM', note:'Missed twice now', aiMessage:'This appointment has been missed. Your recovery matters — please try to reschedule.', missedCount:2, completed:false, overdue:true },
-  { id:5, type:'Danger Signs Education', datetime:'May 25, 2026 at 7:00 PM', note:null, aiMessage:'Knowing the warning signs of incomplete recovery could be life-saving.', missedCount:0, completed:false, overdue:false },
 ];
 
 const TYPE_META = {
@@ -131,9 +114,20 @@ function AddReminderModal({ onClose, onAdd }) {
   const [selectedTime, setSelectedTime] = useState('');
   const [noteText, setNoteText] = useState('');
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!selectedDate || !selectedTime) return;
-    onAdd({ id:Date.now(), type:selectedType, datetime:selectedDate+' at '+selectedTime, note:noteText||null, aiMessage:generateAIMessage(selectedType), missedCount:0, completed:false, overdue:false });
+    try {
+      const reminderData = {
+        type: selectedType,
+        datetime: selectedDate+' at '+selectedTime,
+        note: noteText || null,
+        aiMessage: generateAIMessage(selectedType),
+      };
+      const res = await createReminder(reminderData);
+      onAdd(res.data.data);
+    } catch (err) {
+      console.error('Failed to create reminder:', err);
+    }
     onClose();
   }
   const inp = { width:'100%', padding:'10px 12px', borderRadius:'10px', border:'1px solid #e5e7eb', background:'#f8f7f4', fontSize:'13px', color:'#111', fontFamily:"'Manrope', sans-serif", outline:'none', boxSizing:'border-box' };
@@ -147,7 +141,7 @@ function AddReminderModal({ onClose, onAdd }) {
         <div style={{ marginBottom:'14px' }}><label style={lbl}>Date</label><input type="date" value={selectedDate} onChange={e=>setSelectedDate(e.target.value)} style={inp} /></div>
         <div style={{ marginBottom:'14px' }}><label style={lbl}>Time</label><input type="time" value={selectedTime} onChange={e=>setSelectedTime(e.target.value)} style={inp} /></div>
         <div style={{ marginBottom:'20px' }}><label style={lbl}>Note</label><textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Add a note (optional)" rows={3} style={{...inp, resize:'vertical', lineHeight:1.5}} /></div>
-        <button onClick={handleAdd} style={{ width:'100%', padding:'12px', borderRadius:'10px', border:'none', background:'#111', color:'#fff', fontSize:'14px', fontWeight:600, cursor:'pointer', fontFamily:"'Manrope', sans-serif" }}>Add reminder</button>
+        <button onClick={handleAdd} style={{ width:'100%', padding:'12px', borderRadius:'10px', border:'none', background:'#111', color:'#fff', fontSize:'14px', fontWeight:600, cursor:'pointer', fontFamily:'Manrope' }}> Add reminder </button>
       </div>
     </div>
   );
@@ -247,16 +241,54 @@ function AiTicker({ onSelect }) {
    COMPACT REMINDERS
 ───────────────────────────────── */
 function CompactReminders({ navigate, onReminderHover, onReminderComplete }) {
-  const [reminders, setReminders] = useState(dummyReminders);
+  const [reminders, setReminders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [toast, setToast] = useState({ visible:false, message:'' });
 
+  useEffect(() => {
+    async function fetchReminders() {
+      try {
+        const res = await getReminders();
+        setReminders(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch reminders:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchReminders();
+  }, []);
+
   function showToast(msg) { setToast({ visible:true, message:msg }); setTimeout(()=>setToast({ visible:false, message:'' }), 2000); }
-  function handleComplete(id) { setReminders(rs=>rs.map(r=>r.id===id?{...r, completed:true}:r)); showToast('Marked as done.'); if(onReminderComplete) onReminderComplete(); }
-  function handleAdd(reminder) { setReminders(rs=>[...rs, reminder]); showToast('Reminder added.'); }
+  
+  async function handleComplete(id) {
+    try {
+      await completeReminder(id);
+      setReminders(rs=>rs.map(r=>r.id===id?{...r, completed:true}:r)); 
+      showToast('Marked as done.'); 
+      if(onReminderComplete) onReminderComplete();
+    } catch (err) {
+      console.error('Failed to complete reminder:', err);
+      showToast('Failed to mark as done.');
+    }
+  }
+  
+  function handleAdd(reminder) { 
+    setReminders(rs=>[...rs, reminder]); 
+    showToast('Reminder added.'); 
+  }
 
   const upcoming     = reminders.filter(r=>!r.completed).slice(0,4);
   const overdueCount = reminders.filter(r=>!r.completed && r.overdue).length;
+
+  if (loading) {
+    return (
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'20px' }}>
+        <p style={{ fontSize:'13px', color:'#aaa', fontFamily:"'Manrope', sans-serif" }}>Loading reminders...</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -396,11 +428,20 @@ function SymptomChecklistCard({ onOpen }) {
 ───────────────────────────────── */
 export default function Home() {
   const navigate = useNavigate();
+  const { user } = useContext(UserAuthContext);
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
   const now      = new Date();
-  const tip      = TIPS[now.getDay()];
-  const TipIcon  = tip.Icon;
+  
+  // Real data states
+  const [tip, setTip] = useState(null);
+  const [stats, setStats] = useState([]);
+  const [facilities, setFacilities] = useState([]);
+  const [nextAppointment, setNextAppointment] = useState(null);
+  const [loadingTip, setLoadingTip] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingFacilities, setLoadingFacilities] = useState(true);
+  
   const dateStr  = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   const hour     = now.getHours();
   const nameColor = hour < 12 ? "#d97706" : hour < 17 ? "#ea580c" : "#7c3aed";
@@ -427,6 +468,49 @@ export default function Home() {
   const savedMsgRef       = useRef("");
   const savedMoodRef      = useRef("idle");
   const savedZoneRef      = useRef("hero");
+
+  /* ── Fetch real data on mount ── */
+  useEffect(() => {
+    async function fetchHomeData() {
+      try {
+        // Fetch pregnancy tip
+        const tipRes = await getPregnancyTip();
+        setTip(tipRes.data.data);
+        setLoadingTip(false);
+
+        // Fetch check-in history for stats
+        const statsRes = await getCheckinHistory();
+        const historyData = statsRes.data.data;
+        if (historyData && historyData.stats) {
+          setStats([
+            { label: "Physical",   value: historyData.stats.physical || "Stable",    color: "#22c55e" },
+            { label: "Emotional",  value: historyData.stats.emotional || "Monitored", color: "#a78bfa" },
+            { label: "Follow-up",  value: historyData.stats.followUp || "Tomorrow",  color: "#94a3b8" },
+            { label: "Risk Level", value: historyData.stats.riskLevel || "Low",       color: "#22c55e" },
+          ]);
+        }
+        setLoadingStats(false);
+
+        // Fetch nearby facilities
+        const facilitiesRes = await getNearbyFacilities();
+        setFacilities(facilitiesRes.data.data || []);
+        setLoadingFacilities(false);
+
+        // Set next appointment from reminders if available
+        const remindersRes = await getReminders();
+        const appointments = remindersRes.data.data?.filter(r => r.type === 'Follow-up Appointment' && !r.completed) || [];
+        if (appointments.length > 0) {
+          setNextAppointment(appointments[0]);
+        }
+      } catch (err) {
+        console.error('Error fetching home data:', err);
+        setLoadingTip(false);
+        setLoadingStats(false);
+        setLoadingFacilities(false);
+      }
+    }
+    fetchHomeData();
+  }, []);
 
   /* ── Show mascot in a zone ── */
   const show = useCallback((zone, mood, message) => {
@@ -461,7 +545,8 @@ export default function Home() {
   /* ── Entrance sequence ── */
   useEffect(() => {
     const greeting = getTimeGreeting();
-    const msg1 = `${greeting}, Sarah. I have been thinking about you.`;
+    const userName = user?.name || "Sarah";
+    const msg1 = `${greeting}, ${userName}. I have been thinking about you.`;
     const msg2 = "How are you feeling today?";
     const delay1 = msg1.length * 28 + 1000;
 
@@ -479,7 +564,7 @@ export default function Home() {
       if (idleTimerRef.current)    clearTimeout(idleTimerRef.current);
       if (idleRotationRef.current) clearInterval(idleRotationRef.current);
     };
-  }, []);
+  }, [user]);
 
   /* ── Attention pulse every 30s ── */
   useEffect(() => {
@@ -564,6 +649,11 @@ export default function Home() {
 
   /* ── Mascot size per zone ── */
   const sizeForZone = { hero:90, status:80, reminders:80, emergency:76, hub:76 };
+
+  // Fallback tip if API hasn't loaded yet
+  const fallbackTip = TIPS[now.getDay()];
+  const displayTip = tip || fallbackTip;
+  const TipIcon = displayTip.Icon;
 
   return (
     <>
@@ -704,7 +794,7 @@ export default function Home() {
             <div>
               <p className="hm-date">{dateStr}</p>
               <h1 className="hm-greeting">
-                {getGreeting()}, <span className="hm-name" style={{ color: nameColor }}>Amina.</span>
+                {getGreeting()}, <span className="hm-name" style={{ color: nameColor }}>{user?.name || 'Amina'}.</span>
               </h1>
             </div>
             <div className="hm-hero-right">
@@ -738,12 +828,16 @@ export default function Home() {
               <p className="hm-status-title">Steady &amp; Recovering</p>
               <p className="hm-status-sub">You're making solid progress. Keep monitoring your symptoms daily.</p>
               <div className="hm-stats">
-                {STATS.map(s => (
-                  <div className="hm-stat" key={s.label}>
-                    <p className="hm-stat-l">{s.label}</p>
-                    <p className="hm-stat-v" style={{ color: s.color }}>{s.value}</p>
-                  </div>
-                ))}
+                {loadingStats ? (
+                  <p style={{ color: '#666', fontSize: '13px', gridColumn: '1/-1' }}>Loading stats...</p>
+                ) : (
+                  stats.map(s => (
+                    <div className="hm-stat" key={s.label}>
+                      <p className="hm-stat-l">{s.label}</p>
+                      <p className="hm-stat-v" style={{ color: s.color }}>{s.value}</p>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* MASCOT ZONE: status */}
@@ -765,33 +859,51 @@ export default function Home() {
             {/* Today's Health Tip */}
             <div className="mb-4">
               <p className="hm-lbl">Today's Health Tip</p>
-              <div className="hm-tip" style={{ background: tip.bg }}>
-                <div className="hm-tip-wm" style={{ color: tip.accent }}>"</div>
+              <div className="hm-tip" style={{ background: displayTip.bg }}>
+                <div className="hm-tip-wm" style={{ color: displayTip.accent }}>"</div>
                 <div className="hm-tip-head">
-                  <div className="hm-tip-ico" style={{ background: tip.accent + "20" }}>
-                    <TipIcon size={16} color={tip.accent} strokeWidth={1.8} />
+                  <div className="hm-tip-ico" style={{ background: displayTip.accent + "20" }}>
+                    {loadingTip ? (
+                      <Droplets size={16} color={displayTip.accent} strokeWidth={1.8} />
+                    ) : (
+                      <TipIcon size={16} color={displayTip.accent} strokeWidth={1.8} />
+                    )}
                   </div>
-                  <span className="hm-tip-badge" style={{ color: tip.accent }}>{tip.label}</span>
-                  <span className="hm-tip-day" style={{ color: tip.accent }}>{DAYS[now.getDay()]}</span>
+                  <span className="hm-tip-badge" style={{ color: displayTip.accent }}>{displayTip.label}</span>
+                  <span className="hm-tip-day" style={{ color: displayTip.accent }}>{DAYS[now.getDay()]}</span>
                 </div>
-                <p className="hm-tip-text" style={{ color: tip.accent }}>"{tip.tip}"</p>
+                <p className="hm-tip-text" style={{ color: displayTip.accent }}>"{displayTip.tip}"</p>
               </div>
             </div>
 
             {/* Next Appointment */}
             <div className="mb-4">
               <p className="hm-lbl">Next Appointment</p>
-              <div className="hm-appt" onClick={() => navigate("/reminders")}>
-                <div className="hm-appt-cal">
-                  <span className="hm-appt-n">19</span>
-                  <span className="hm-appt-m">May</span>
+              {nextAppointment ? (
+                <div className="hm-appt" onClick={() => navigate("/reminders")}>
+                  <div className="hm-appt-cal">
+                    <span className="hm-appt-n">{new Date(nextAppointment.datetime).getDate()}</span>
+                    <span className="hm-appt-m">{MONTHS[new Date(nextAppointment.datetime).getMonth()].slice(0,3)}</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p className="hm-appt-t">{nextAppointment.type}</p>
+                    <p className="hm-appt-d">{nextAppointment.note || 'Appointment scheduled'} · {nextAppointment.datetime}</p>
+                  </div>
+                  <ChevronRight size={16} color="#ccc" />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p className="hm-appt-t">Post-Loss Follow-up</p>
-                  <p className="hm-appt-d">Kenyatta National Hospital · 10:00 AM</p>
+              ) : (
+                <div className="hm-appt" onClick={() => navigate("/reminders")} style={{ opacity: 0.6 }}>
+                  <div className="hm-appt-cal">
+                    <span className="hm-appt-n">--</span>
+                    <span className="hm-appt-m">---</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p className="hm-appt-t">No upcoming appointments</p>
+                    <p className="hm-appt-d">Tap to schedule one</p>
+                  </div>
+                  <ChevronRight size={16} color="#ccc" />
                 </div>
-                <ChevronRight size={16} color="#ccc" />
-              </div>
+              )}
             </div>
 
             {/* Symptom Checklist Card - NEW */}
@@ -882,16 +994,22 @@ export default function Home() {
                   </div>
                   <p className="hm-card-title" style={{ marginBottom:8 }}>Nearby Facilities</p>
                   <div className="hm-fac-list">
-                    {FACILITIES.map(f => (
-                      <div className="hm-fac-item" key={f.name}>
-                        <f.Icon size={13} color="#aaa" strokeWidth={1.5} />
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <p className="hm-fac-name" style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</p>
-                          <p className="hm-fac-meta">{f.dist} · {f.type}</p>
+                    {loadingFacilities ? (
+                      <p style={{ fontSize: '11px', color: '#aaa', padding: '8px' }}>Loading facilities...</p>
+                    ) : facilities.length === 0 ? (
+                      <p style={{ fontSize: '11px', color: '#aaa', padding: '8px' }}>No facilities found nearby</p>
+                    ) : (
+                      facilities.slice(0, 3).map(f => (
+                        <div className="hm-fac-item" key={f.name || f.id}>
+                          <StethoscopeIcon size={13} color="#aaa" strokeWidth={1.5} />
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <p className="hm-fac-name" style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</p>
+                            <p className="hm-fac-meta">{f.dist || f.distance} · {f.type}</p>
+                          </div>
+                          <span className={`hm-fac-open ${f.open ? "hm-open-yes" : "hm-open-no"}`}>{f.open ? "Open" : "Closed"}</span>
                         </div>
-                        <span className={`hm-fac-open ${f.open?"hm-open-yes":"hm-open-no"}`}>{f.open?"Open":"Closed"}</span>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </div>

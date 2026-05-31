@@ -1,7 +1,9 @@
+import { useContext } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, AlertCircle, Settings2, GitMerge, User2
 } from "lucide-react";
+import { FacilityAuthContext } from "../Context/FacilityAuthContext";
 
 const NAV = [
   { id: "dashboard",    label: "Dashboard",    Icon: LayoutDashboard, path: "/facility"                },
@@ -12,19 +14,23 @@ const NAV = [
 ];
 
 export default function FacilityNav() {
-  const location = useLocation();
+  const location  = useNavigate();
   const navigate  = useNavigate();
+  const loc       = useLocation();
+  const { facility } = useContext(FacilityAuthContext) || {};
+
+  const facilityName  = facility?.name      || "Your Facility";
+  const isAvailable   = facility?.isAvailable ?? true;
 
   const isActive = (path) =>
-    location.pathname === path ||
-    (path !== "/facility" && location.pathname.startsWith(path));
+    loc.pathname === path ||
+    (path !== "/facility" && loc.pathname.startsWith(path));
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600&display=swap');
 
-        /* ─── MOBILE: floating pill at bottom ─── */
         .fn-mobile {
           display: flex;
           position: fixed;
@@ -67,13 +73,8 @@ export default function FacilityNav() {
           min-width: 0;
         }
 
-        .fn-mobile-btn.active {
-          background: rgba(255,255,255,0.1);
-        }
-
-        .fn-mobile-btn:not(.active):hover {
-          background: rgba(255,255,255,0.05);
-        }
+        .fn-mobile-btn.active  { background: rgba(255,255,255,0.1); }
+        .fn-mobile-btn:not(.active):hover { background: rgba(255,255,255,0.05); }
 
         .fn-mobile-label {
           font-family: 'Manrope', sans-serif;
@@ -84,12 +85,8 @@ export default function FacilityNav() {
           color: rgba(255,255,255,0.35);
           transition: color 0.18s;
         }
+        .fn-mobile-btn.active .fn-mobile-label { color: #fff; }
 
-        .fn-mobile-btn.active .fn-mobile-label {
-          color: #fff;
-        }
-
-        /* ─── DESKTOP: sidebar ─── */
         .fn-sidebar {
           display: none;
           position: fixed;
@@ -111,8 +108,7 @@ export default function FacilityNav() {
         }
 
         .fn-sidebar-logo-mark {
-          width: 28px;
-          height: 28px;
+          width: 28px; height: 28px;
           background: #111;
           border-radius: 8px;
           display: flex;
@@ -160,13 +156,8 @@ export default function FacilityNav() {
           text-align: left;
         }
 
-        .fn-sidebar-btn:hover:not(.active) {
-          background: #f0eeea;
-        }
-
-        .fn-sidebar-btn.active {
-          background: #111;
-        }
+        .fn-sidebar-btn:hover:not(.active) { background: #f0eeea; }
+        .fn-sidebar-btn.active             { background: #111; }
 
         .fn-sidebar-btn-label {
           font-family: 'Manrope', sans-serif;
@@ -175,14 +166,8 @@ export default function FacilityNav() {
           color: #6b7280;
           transition: color 0.15s;
         }
-
-        .fn-sidebar-btn.active .fn-sidebar-btn-label {
-          color: #fff;
-        }
-
-        .fn-sidebar-btn:hover:not(.active) .fn-sidebar-btn-label {
-          color: #111;
-        }
+        .fn-sidebar-btn.active .fn-sidebar-btn-label          { color: #fff; }
+        .fn-sidebar-btn:hover:not(.active) .fn-sidebar-btn-label { color: #111; }
 
         .fn-sidebar-section-label {
           font-family: 'Manrope', sans-serif;
@@ -195,7 +180,6 @@ export default function FacilityNav() {
           margin: 8px 0 6px;
         }
 
-        /* ─── Responsive breakpoint ─── */
         @media (min-width: 768px) {
           .fn-mobile  { display: none; }
           .fn-sidebar { display: flex; }
@@ -260,20 +244,37 @@ export default function FacilityNav() {
           })}
         </div>
 
-        {/* Bottom status */}
+        {/* Bottom status card — real data from context */}
         <div style={{
           margin: "0 4px",
           padding: "12px",
-          background: "#f0fdf4",
-          border: "1px solid #bbf7d0",
+          background: isAvailable ? "#f0fdf4" : "#fafafa",
+          border: `1px solid ${isAvailable ? "#bbf7d0" : "#e5e7eb"}`,
           borderRadius: "12px",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e", boxShadow: "0 0 0 3px rgba(34,197,94,.2)" }} />
-            <span style={{ fontFamily: "'Manrope', sans-serif", fontSize: 11, fontWeight: 600, color: "#15803d" }}>Facility Open</span>
+            <div style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: isAvailable ? "#22c55e" : "#d1d5db",
+              boxShadow: isAvailable ? "0 0 0 3px rgba(34,197,94,.2)" : "none",
+            }} />
+            <span style={{
+              fontFamily: "'Manrope', sans-serif",
+              fontSize: 11, fontWeight: 600,
+              color: isAvailable ? "#15803d" : "#9ca3af",
+            }}>
+              {isAvailable ? "Facility Open" : "Facility Closed"}
+            </span>
           </div>
-          <p style={{ fontFamily: "'Manrope', sans-serif", fontSize: 10, color: "#6b7280", lineHeight: 1.4 }}>
-            Kenyatta National Hospital
+          <p style={{
+            fontFamily: "'Manrope', sans-serif",
+            fontSize: 10, color: "#6b7280",
+            lineHeight: 1.4,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}>
+            {facilityName}
           </p>
         </div>
       </aside>

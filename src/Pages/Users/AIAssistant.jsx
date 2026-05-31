@@ -1,56 +1,29 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Bot, Mic, MicOff, Send, X, Plus,
+  Bot, Mic, Send, X, Plus,
   AlertTriangle, MessageSquare,
   Stethoscope, Heart, Leaf, ShieldAlert,
   CheckCircle2, Circle, ChevronRight,
-  Activity, PenLine, PhoneOff, Volume2,
-  VolumeX, Home, Bell, Map, Settings,
-  ArrowLeft, User2,
+  Activity, PenLine,
+  Home, User2,
 } from "lucide-react";
 import Mascot from "../../Components/Mascot/Mascot";
+import VoiceMode from "../../Components/VoiceMode";
+import { UserAuthContext } from "../../Context/UserAuthContext";
+import { getConversations, createConversation, getAIResponse as fetchAIResponse } from "../../API/chat";
 
 /* ─────────────────────────────────────────────────────────────
    DATA
 ───────────────────────────────────────────────────────────── */
-const TOPIC_OPTIONS = [
-  { id: "physical",  label: "Physical recovery", Icon: Stethoscope, accent: "#2563eb" },
-  { id: "emotional", label: "Emotional support",  Icon: Heart,       accent: "#9333ea" },
-  { id: "danger",    label: "Danger signs",        Icon: ShieldAlert, accent: "#dc2626" },
-  { id: "nutrition", label: "Nutrition & rest",    Icon: Leaf,        accent: "#15803d" },
-];
-
-const SYMPTOM_OPTIONS = [
-  { id: "bleeding_heavy", label: "Heavy bleeding",    severity: "danger", Icon: AlertTriangle },
-  { id: "bleeding_light", label: "Light spotting",    severity: "mild",   Icon: Circle        },
-  { id: "pain_severe",    label: "Severe cramping",   severity: "danger", Icon: AlertTriangle },
-  { id: "pain_mild",      label: "Mild discomfort",   severity: "mild",   Icon: Circle        },
-  { id: "fever",          label: "Fever / chills",    severity: "danger", Icon: AlertTriangle },
-  { id: "dizziness",      label: "Dizziness / faint", severity: "danger", Icon: AlertTriangle },
-  { id: "none",           label: "No symptoms",       severity: "ok",     Icon: CheckCircle2  },
-];
-
-const MOOD_OPTIONS = [
-  { id: "overwhelmed", label: "Overwhelmed"   },
-  { id: "numb",        label: "Numb / empty"  },
-  { id: "sad",         label: "Sad"           },
-  { id: "anxious",     label: "Anxious"       },
-  { id: "ok",          label: "Managing okay" },
-  { id: "good",        label: "Feeling good"  },
-];
-
-const MOCK_CONVOS = [
-  { id: "c1", title: "Recovery check-in",          preview: "Light spotting is normal in week 2…", time: "Today"     },
-  { id: "c2", title: "Emotional wellbeing",         preview: "Grief after a loss has no timeline…", time: "Yesterday" },
-  { id: "c3", title: "Nutrition questions",         preview: "Iron-rich foods help rebuild blood…",  time: "May 16"    },
-  { id: "c4", title: "Danger signs & when to act", preview: "Soak a pad every hour — go now…",      time: "May 14"    },
-];
+const INITIAL_MSG = {
+  id: "intro", role: "assistant", urgent: false,
+  text: "Hello, I'm here with you.\n\nI'm your SafeMum health assistant — here to support your recovery, answer your questions, and make sure you're safe.\n\nWhat would you like to talk about today?",
+  quickReplies: [], quickReplyType: "topics",
+};
 
 const NAV_LINKS = [
   { label: "Home",      Icon: Home,  path: "/home"      },
-  { label: "Reminders", Icon: Bell,  path: "/reminders" },
-  { label: "Map",       Icon: Map,   path: "/map"       },
   { label: "Profile",   Icon: User2, path: "/profile"   },
 ];
 
@@ -64,129 +37,10 @@ function moodFromResponse(resp) {
   return "idle";
 }
 
-function getAIResponse(userMessage, qrId) {
-  const msg = (userMessage || "").toLowerCase();
-  const id  = qrId || "";
-  if (id === "physical" || msg.includes("physical") || msg.includes("recovery"))
-    return { text: "Let's check how you're recovering physically. Are you currently experiencing any of these?", quickReplies: SYMPTOM_OPTIONS, quickReplyType: "symptoms", urgent: false };
-  if (id === "emotional" || msg.includes("feel") || msg.includes("sad") || msg.includes("emotion"))
-    return { text: "How you feel emotionally is just as important as your physical recovery.\n\nHow would you describe where you are right now?", quickReplies: MOOD_OPTIONS, quickReplyType: "mood", urgent: false };
-  if (id === "danger" || msg.includes("danger") || msg.includes("warning"))
-    return { text: "These are the danger signs that need immediate attention:\n\n**Soaking a pad every hour** for 2+ hours\n**Fever above 38°C** with chills or foul discharge\n**Severe lower belly pain** that does not ease\n**Dizziness or fainting**\n\nIf you notice any of these — go to a facility immediately.", quickReplies: [{ id: "alert", label: "Open Emergency Alert", Icon: ShieldAlert, accent: "#dc2626" }, { id: "map", label: "Find nearest facility", Icon: Stethoscope, accent: "#15803d" }], quickReplyType: "actions", urgent: false };
-  if (["bleeding_heavy","fever","dizziness","pain_severe"].includes(id))
-    return { text: "I'm concerned about what you've described. These symptoms can be serious.\n\nPlease don't wait — you need to be seen by a healthcare provider today.", quickReplies: [{ id: "alert", label: "Send Emergency Alert", Icon: ShieldAlert, accent: "#dc2626" }, { id: "map", label: "Find nearest facility", Icon: Stethoscope, accent: "#15803d" }], quickReplyType: "actions", urgent: true };
-  if (["bleeding_light","pain_mild"].includes(id))
-    return { text: "Some light spotting and mild discomfort are normal in the first 2 weeks. Your body is healing.\n\nAre you attending your follow-up appointment on May 19th?", quickReplies: [{ id: "yes_appt", label: "Yes, I am", Icon: CheckCircle2, accent: "#15803d" }, { id: "no_appt", label: "I'm not sure", Icon: Circle, accent: "#ca8a04" }], quickReplyType: "actions", urgent: false };
-  if (id === "none")
-    return { text: "That's encouraging. Rest, hydration, and your follow-up on May 19th still matter.\n\nAnything specific on your mind?", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false };
-  if (["overwhelmed","numb","sad","anxious"].includes(id))
-    return { text: "What you're feeling is completely valid. Grief after a pregnancy loss is real — it doesn't have a timeline.\n\nYou don't have to carry this alone.", quickReplies: [{ id: "hub", label: "Recovery Hub", Icon: Heart, accent: "#9333ea" }, { id: "talk", label: "Keep talking", Icon: MessageSquare, accent: "#2563eb" }], quickReplyType: "actions", urgent: false };
-  if (["ok","good"].includes(id))
-    return { text: "I'm glad you're managing. That takes real strength.\n\nIs there anything I can help with today?", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false };
-  if (id === "nutrition" || msg.includes("eat") || msg.includes("food"))
-    return { text: "Good nutrition after a pregnancy loss helps your body rebuild faster.\n\n**Iron** — lentils, spinach, beans, red meat\n**Folate** — leafy greens, eggs, avocado\n**Hydration** — at least 8 glasses of water daily", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false };
-  return { text: "I hear you. Can you tell me a bit more about what you're experiencing right now?", quickReplies: TOPIC_OPTIONS, quickReplyType: "topics", urgent: false };
-}
-
-const INITIAL_MSG = {
-  id: "intro", role: "assistant", urgent: false,
-  text: "Hello Amina, I'm here with you.\n\nI'm your SafeMum health assistant — here to support your recovery, answer your questions, and make sure you're safe.\n\nWhat would you like to talk about today?",
-  quickReplies: TOPIC_OPTIONS, quickReplyType: "topics",
-};
-
-/* ─────────────────────────────────────────────────────────────
-   VOICE MODE
-───────────────────────────────────────────────────────────── */
-function VoiceMode({ onClose }) {
-  const [phase,      setPhase]      = useState("idle");
-  const [transcript, setTranscript] = useState("");
-  const [aiText,     setAiText]     = useState("Tap the mic to speak");
-  const [isMuted,    setIsMuted]    = useState(false);
-  const [seconds,    setSeconds]    = useState(0);
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    timerRef.current = setInterval(() => setSeconds(s => s + 1), 1000);
-    return () => clearInterval(timerRef.current);
-  }, []);
-
-  const fmt = s => `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
-
-  const handleMicPress = () => {
-    if (phase === "listening") {
-      setPhase("speaking");
-      setAiText("Thank you for sharing that. Light spotting in week 2 is usually normal. How long has it been going on?");
-      setTimeout(() => setPhase("idle"), 3500);
-    } else {
-      setPhase("listening"); setTranscript("");
-      const words = ["I've been having","some light spotting","since yesterday morning"];
-      let i = 0;
-      const t = setInterval(() => { if (i < words.length) { setTranscript(p => p+(p?" ":"")+words[i]); i++; } else clearInterval(t); }, 700);
-    }
-  };
-
-  const isActive   = phase === "listening";
-  const isSpeaking = phase === "speaking";
-  const mascotMood = isMuted ? "idle" : isActive ? "idle" : isSpeaking ? "happy" : "idle";
-
-  return (
-    <div style={{ position:"fixed",inset:0,zIndex:500,background:"#0c0b0a",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"space-between",padding:"max(env(safe-area-inset-top,44px),48px) 24px max(env(safe-area-inset-bottom,24px),32px)",animation:"vc-in .3s ease" }}>
-      <style>{`
-        @keyframes vc-in{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes ring-out{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.9);opacity:0}}
-        @keyframes wave-bar{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
-        @keyframes txt-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-      `}</style>
-
-      <div style={{ width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between" }}>
-        <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-          <div style={{ width:7,height:7,borderRadius:"50%",background:"#4ade80",boxShadow:"0 0 0 3px rgba(74,222,128,.2)" }} />
-          <span style={{ fontSize:13,color:"#444",fontFamily:"'Manrope',sans-serif",fontWeight:500 }}>Voice · {fmt(seconds)}</span>
-        </div>
-        <button onClick={onClose} style={{ width:36,height:36,borderRadius:10,background:"#1a1917",border:"1px solid #2a2a27",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center" }}>
-          <X size={15} color="#555" />
-        </button>
-      </div>
-
-      {/* Mascot as the voice orb */}
-      <div style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:16,flex:1,justifyContent:"center" }}>
-        <div style={{ position:"relative" }}>
-          {isActive && (<>
-            <div style={{ position:"absolute",inset:-20,borderRadius:"50%",border:"1.5px solid rgba(99,102,241,.35)",animation:"ring-out 1.8s linear infinite",borderRadius:"60%",pointerEvents:"none" }} />
-            <div style={{ position:"absolute",inset:-20,borderRadius:"60%",border:"1.5px solid rgba(99,102,241,.2)",animation:"ring-out 1.8s linear .6s infinite",pointerEvents:"none" }} />
-          </>)}
-          <Mascot mood={mascotMood} message="" position="center" size={140} />
-        </div>
-        <p key={phase} style={{ fontFamily:"'Fraunces',serif",fontStyle:"italic",fontSize:"clamp(16px,4vw,22px)",fontWeight:300,color:isMuted?"#333":"#777",textAlign:"center",maxWidth:300,lineHeight:1.5,animation:"txt-in .4s ease",marginBottom:12 }}>
-          {isMuted?"Microphone muted":isActive?"Listening…":isSpeaking?aiText:"Tap the mic to speak"}
-        </p>
-        {isActive && transcript && (
-          <div style={{ background:"#1a1917",border:"1px solid #252320",borderRadius:14,padding:"10px 16px",maxWidth:320,textAlign:"center",animation:"txt-in .2s ease" }}>
-            <p style={{ fontSize:13,color:"#888",fontFamily:"'Manrope',sans-serif",fontWeight:300,lineHeight:1.5,margin:0 }}>{transcript}</p>
-          </div>
-        )}
-      </div>
-
-      <div style={{ display:"flex",alignItems:"center",gap:20,justifyContent:"center",width:"100%" }}>
-        <button onClick={() => setIsMuted(m=>!m)} style={{ width:54,height:54,borderRadius:"50%",background:isMuted?"#dc2626":"#1a1917",border:`1px solid ${isMuted?"#dc2626":"#2a2927"}`,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s" }}>
-          {isMuted?<VolumeX size={20} color="#fff" strokeWidth={1.5}/>:<Volume2 size={20} color="#555" strokeWidth={1.5}/>}
-        </button>
-        <button onClick={handleMicPress} style={{ width:80,height:80,borderRadius:"50%",background:isActive?"#dc2626":"#fff",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:isActive?"0 0 0 8px rgba(220,38,38,.15),0 8px 32px rgba(220,38,38,.3)":"0 8px 32px rgba(255,255,255,.15)",transition:"all .2s" }}>
-          {isActive?<MicOff size={30} color="#fff" strokeWidth={1.5}/>:<Mic size={30} color="#111" strokeWidth={1.5}/>}
-        </button>
-        <button onClick={onClose} style={{ width:54,height:54,borderRadius:"50%",background:"#1a1917",border:"1px solid #2a2927",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"background .2s" }}
-          onMouseEnter={e=>e.currentTarget.style.background="#dc2626"} onMouseLeave={e=>e.currentTarget.style.background="#1a1917"}>
-          <PhoneOff size={20} color="#555" strokeWidth={1.5}/>
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /* ─────────────────────────────────────────────────────────────
    SIDEBAR
 ───────────────────────────────────────────────────────────── */
-function Sidebar({ open, onClose, onNew, activeId, onSelect, navigate }) {
+function Sidebar({ open, onClose, onNew, activeId, onSelect, navigate, conversations, loadingConversations }) {
   return (
     <>
       <style>{`
@@ -240,15 +94,21 @@ function Sidebar({ open, onClose, onNew, activeId, onSelect, navigate }) {
         </div>
         <p className="sb-section">Recent</p>
         <div className="sb-list">
-          {MOCK_CONVOS.map(c => (
-            <button key={c.id} className={`sb-item${c.id === activeId ? " act" : ""}`} onClick={() => { onSelect(c.id); onClose(); }}>
-              <div className="sb-item-row">
-                <span className="sb-item-t">{c.title}</span>
-                <span className="sb-item-time">{c.time}</span>
-              </div>
-              <span className="sb-item-prev">{c.preview}</span>
-            </button>
-          ))}
+          {loadingConversations ? (
+            <p style={{ fontSize: '12px', color: '#aaa', padding: '12px', textAlign: 'center', fontFamily: "'Manrope', sans-serif" }}>Loading conversations...</p>
+          ) : conversations.length === 0 ? (
+            <p style={{ fontSize: '12px', color: '#aaa', padding: '12px', textAlign: 'center', fontFamily: "'Manrope', sans-serif" }}>No conversations yet</p>
+          ) : (
+            conversations.map(c => (
+              <button key={c.id} className={`sb-item${c.id === activeId ? " act" : ""}`} onClick={() => { onSelect(c.id); onClose(); }}>
+                <div className="sb-item-row">
+                  <span className="sb-item-t">{c.title}</span>
+                  <span className="sb-item-time">{c.time}</span>
+                </div>
+                <span className="sb-item-prev">{c.preview}</span>
+              </button>
+            ))
+          )}
         </div>
         <div className="sb-nav-section">
           <p className="sb-section" style={{ padding:"6px 10px 8px" }}>Navigate</p>
@@ -259,14 +119,6 @@ function Sidebar({ open, onClose, onNew, activeId, onSelect, navigate }) {
             </button>
           ))}
         </div>
-        {/* <div className="sb-obs">
-          <div className="sb-obs-head">
-            <Activity size={12} color="#9333ea" strokeWidth={1.5} />
-            <span className="sb-obs-t">AI Observations</span>
-            <span className="sb-obs-pill">Soon</span>
-          </div>
-          <p className="sb-obs-txt">Patterns & insights from your conversations will appear here.</p>
-        </div> */}
       </div>
     </>
   );
@@ -348,7 +200,7 @@ function QuickReplies({ replies, type, onSelect, revealed }) {
 /* ─────────────────────────────────────────────────────────────
    SARAH HEADER — persistent mascot at the top of chat
 ───────────────────────────────────────────────────────────── */
-function SarahHeader({ mood, isTyping, latestMessage }) {
+function SarahHeader({ mood, isTyping, userName }) {
   return (
     <div style={{
       flexShrink: 0,
@@ -359,7 +211,6 @@ function SarahHeader({ mood, isTyping, latestMessage }) {
       alignItems: "flex-end",
       gap: "0",
     }}>
-      {/* Mascot — sits at the bottom of the header strip, feet touching the divider */}
       <div style={{ flexShrink: 0, marginBottom: "-2px", marginRight: "4px" }}>
         <Mascot
           mood={mood}
@@ -369,7 +220,6 @@ function SarahHeader({ mood, isTyping, latestMessage }) {
         />
       </div>
 
-      {/* Name + status + live bubble */}
       <div style={{
         flex: 1,
         paddingBottom: "14px",
@@ -385,7 +235,7 @@ function SarahHeader({ mood, isTyping, latestMessage }) {
             fontWeight: 600,
             color: "#111",
             letterSpacing: "-.01em",
-          }}>Sarah</span>
+          }}>{userName || 'Sarah'}</span>
           <span style={{
             fontSize: "10px",
             fontWeight: 600,
@@ -399,7 +249,6 @@ function SarahHeader({ mood, isTyping, latestMessage }) {
           }}>SafeMum AI</span>
         </div>
 
-        {/* Status line — shows typing or last message preview */}
         <div style={{
           display: "flex",
           alignItems: "center",
@@ -449,11 +298,9 @@ function AIMessageRow({ msg, mood, onSelect, revealed }) {
       marginBottom: "20px",
       animation: "ai-fadein .28s ease both",
     }}>
-      {/* Small Sarah avatar — consistent left anchor */}
       <div style={{
         flexShrink: 0,
         marginTop: "2px",
-        // Small version, no message bubble from Mascot itself
       }}>
         <Mascot
           mood={mood}
@@ -463,7 +310,6 @@ function AIMessageRow({ msg, mood, onSelect, revealed }) {
         />
       </div>
 
-      {/* Bubble */}
       <div style={{ maxWidth: "78%", minWidth: 40 }}>
         <div style={{
           background: isUrgent ? "#fff5f5" : "#fff",
@@ -499,7 +345,7 @@ function AIMessageRow({ msg, mood, onSelect, revealed }) {
 /* ─────────────────────────────────────────────────────────────
    USER MESSAGE ROW
 ───────────────────────────────────────────────────────────── */
-function UserMessageRow({ msg }) {
+function UserMessageRow({ msg, userInitial }) {
   return (
     <div style={{
       display: "flex",
@@ -509,7 +355,6 @@ function UserMessageRow({ msg }) {
       marginBottom: "20px",
       animation: "ai-fadein .22s ease both",
     }}>
-      {/* User avatar */}
       <div style={{
         width: 34, height: 34,
         borderRadius: "50%",
@@ -520,7 +365,7 @@ function UserMessageRow({ msg }) {
         fontFamily: "'Fraunces', serif",
         color: "#fff",
         fontStyle: "italic",
-      }}>A</div>
+      }}>{userInitial || 'A'}</div>
 
       <div style={{
         maxWidth: "72%",
@@ -542,7 +387,7 @@ function UserMessageRow({ msg }) {
 /* ─────────────────────────────────────────────────────────────
    TYPING INDICATOR — Sarah's small avatar + dots
 ───────────────────────────────────────────────────────────── */
-function TypingIndicator({ mood }) {
+function TypingIndicator() {
   return (
     <div style={{
       display:"flex", flexDirection:"row", alignItems:"flex-start",
@@ -572,20 +417,24 @@ function TypingIndicator({ mood }) {
 ───────────────────────────────────────────────────────────── */
 export default function AIAssistant() {
   const navigate = useNavigate();
+  const { user } = useContext(UserAuthContext);
   const [messages,    setMessages]    = useState([INITIAL_MSG]);
   const [inputText,   setInputText]   = useState("");
   const [isTyping,    setIsTyping]    = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [voiceMode,   setVoiceMode]   = useState(false);
-  const [activeConvo, setActiveConvo] = useState("c1");
+  const [activeConvo, setActiveConvo] = useState(null);
   const [revealedIds, setRevealedIds] = useState(new Set(["intro"]));
   const [isDesktop,   setIsDesktop]   = useState(window.innerWidth >= 768);
+  const [conversations, setConversations] = useState([]);
+  const [loadingConversations, setLoadingConversations] = useState(true);
 
   /* ── Mascot mood tracks the latest AI message ── */
   const [sarahMood, setSarahMood] = useState("idle");
 
   const bottomRef = useRef(null);
   const inputRef  = useRef(null);
+  const currentConvoRef = useRef(null);
 
   useEffect(() => {
     const handler = () => setIsDesktop(window.innerWidth >= 768);
@@ -601,37 +450,150 @@ export default function AIAssistant() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const sendMessage = useCallback((text, qrId) => {
+  // Fetch conversations on mount
+  useEffect(() => {
+    async function fetchConversations() {
+      try {
+        const res = await getConversations();
+        setConversations(res.data.data || []);
+        if (res.data.data && res.data.data.length > 0) {
+          setActiveConvo(res.data.data[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to fetch conversations:', err);
+      } finally {
+        setLoadingConversations(false);
+      }
+    }
+    fetchConversations();
+  }, []);
+
+  const handleVoiceSend = useCallback(async (text) => {
+    const userMsg = { id: Date.now(), role: "user", text };
+    setMessages(prev => [...prev, userMsg]);
+    setIsTyping(true);
+    try {
+      const res  = await fetchAIResponse({ message: text, conversationId: currentConvoRef.current });
+      const resp = res.data.data;
+      const newId = Date.now() + 1;
+      setMessages(prev => [...prev, {
+        id: newId, role: "assistant",
+        text: resp.text, urgent: resp.urgent || false,
+        quickReplies: resp.quickReplies || [],
+        quickReplyType: resp.quickReplyType || "topics",
+      }]);
+      setIsTyping(false);
+      setSarahMood(moodFromResponse(resp));
+      if (resp.conversationId) currentConvoRef.current = resp.conversationId;
+      setTimeout(() => setRevealedIds(prev => new Set([...prev, newId])), 80);
+      return { text: resp.text, urgent: resp.urgent };
+    } catch {
+      setIsTyping(false);
+      return { text: "I'm having trouble right now. Please try again." };
+    }
+  }, []);
+
+  const sendMessage = useCallback(async (text, qrId) => {
     const userText = text?.trim();
     if (!userText) return;
+    
     const userMsg = { id: Date.now(), role: "user", text: userText };
     setMessages(prev => [...prev, userMsg]);
     setInputText("");
     setIsTyping(true);
-    setSarahMood("idle"); // thinking
-    setTimeout(() => {
-      const resp  = getAIResponse(userText, qrId);
+    setSarahMood("idle");
+
+    try {
+      const res = await fetchAIResponse({
+        message: userText,
+        quickReplyId: qrId,
+        conversationId: currentConvoRef.current,
+      });
+
+      const resp = res.data.data;
       const newId = Date.now() + 1;
-      const mood  = moodFromResponse(resp);
-      setMessages(prev => [...prev, { id: newId, role: "assistant", ...resp }]);
+      const mood = moodFromResponse(resp);
+      
+      setMessages(prev => [...prev, { 
+        id: newId, 
+        role: "assistant", 
+        text: resp.text,
+        urgent: resp.urgent || false,
+        quickReplies: resp.quickReplies || [],
+        quickReplyType: resp.quickReplyType || "topics",
+      }]);
+      
       setIsTyping(false);
       setSarahMood(mood);
-      // Return to idle after celebrating/concerned moments
+      
+      if (resp.conversationId) {
+        currentConvoRef.current = resp.conversationId;
+      }
+
       if (mood !== "idle") {
         setTimeout(() => setSarahMood("idle"), 4000);
       }
+      
       setTimeout(() => setRevealedIds(prev => new Set([...prev, newId])), 80);
-    }, 1100 + Math.random() * 500);
+
+      const convosRes = await getConversations();
+      setConversations(convosRes.data.data || []);
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setIsTyping(false);
+      
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: "assistant",
+        text: "I'm having trouble connecting right now. Please try again in a moment.",
+        urgent: false,
+        quickReplies: [],
+        quickReplyType: "topics",
+      }]);
+    }
   }, []);
 
-  const handleNewConvo = () => {
-    setMessages([INITIAL_MSG]);
-    setRevealedIds(new Set(["intro"]));
-    setActiveConvo("new");
-    setSarahMood("idle");
+  const handleNewConvo = async () => {
+    try {
+      const res = await createConversation();
+      const newConvo = res.data.data;
+      setMessages([INITIAL_MSG]);
+      setRevealedIds(new Set(["intro"]));
+      setActiveConvo(newConvo.id);
+      currentConvoRef.current = newConvo.id;
+      setSarahMood("idle");
+      
+      const convosRes = await getConversations();
+      setConversations(convosRes.data.data || []);
+    } catch (err) {
+      console.error('Failed to create conversation:', err);
+      setMessages([INITIAL_MSG]);
+      setRevealedIds(new Set(["intro"]));
+      setActiveConvo("new");
+      currentConvoRef.current = null;
+      setSarahMood("idle");
+    }
   };
 
+  const handleSelectConversation = useCallback(async (convoId) => {
+    setActiveConvo(convoId);
+    currentConvoRef.current = convoId;
+    
+    try {
+      const res = await getConversations(convoId);
+      const convo = res.data.data;
+      if (convo && convo.messages) {
+        setMessages(convo.messages);
+        setRevealedIds(new Set(convo.messages.map(m => m.id)));
+      }
+    } catch (err) {
+      console.error('Failed to load conversation:', err);
+    }
+  }, []);
+
   const sidebarVisible = isDesktop ? true : sidebarOpen;
+  const userName = user?.name || 'Amina';
+  const userInitial = userName.charAt(0).toUpperCase();
 
   return (
     <>
@@ -667,7 +629,6 @@ export default function AIAssistant() {
           position:relative;
         }
 
-        /* Mobile menu button — shown ONLY when sidebar is closed on mobile */
         .ai-menu-btn {
           position:absolute;
           top:max(env(safe-area-inset-top,0px),14px);
@@ -734,7 +695,13 @@ export default function AIAssistant() {
         .ai-send:disabled { background:#ddd8d0;cursor:default; }
       `}</style>
 
-      {voiceMode && <VoiceMode onClose={() => setVoiceMode(false)} />}
+      {voiceMode && (
+        <VoiceMode
+          onClose={() => setVoiceMode(false)}
+          onSendMessage={handleVoiceSend}
+          defaultLang="en-NG"
+        />
+      )}
 
       <div className="ai-shell">
 
@@ -743,24 +710,22 @@ export default function AIAssistant() {
           onClose={() => { if (!isDesktop) setSidebarOpen(false); }}
           onNew={handleNewConvo}
           activeId={activeConvo}
-          onSelect={setActiveConvo}
+          onSelect={handleSelectConversation}
           navigate={navigate}
+          conversations={conversations}
+          loadingConversations={loadingConversations}
         />
 
-        {/* Chat panel */}
         <div className="ai-chat">
 
-          {/* Sarah header — always visible at top */}
-         
+          <SarahHeader mood={sarahMood} isTyping={isTyping} userName={userName} />
 
-          {/* Mobile menu button */}
           {!isDesktop && (
             <button className="ai-menu-btn" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
               <MessageSquare size={15} color="#555" strokeWidth={1.5} />
             </button>
           )}
 
-          {/* Messages */}
           <div className="ai-msgs">
             <div className="ai-msgs-inner">
               <div className="ai-date-chip">
@@ -776,16 +741,15 @@ export default function AIAssistant() {
                       onSelect={sendMessage}
                       revealed={revealedIds.has(msg.id)}
                     />
-                  : <UserMessageRow key={msg.id} msg={msg} />
+                  : <UserMessageRow key={msg.id} msg={msg} userInitial={userInitial} />
               )}
 
-              {isTyping && <TypingIndicator mood={sarahMood} />}
+              {isTyping && <TypingIndicator />}
 
               <div ref={bottomRef} style={{ height:4 }} />
             </div>
           </div>
 
-          {/* Input bar */}
           <div className="ai-bar">
             <div className="ai-bar-inner">
               <textarea

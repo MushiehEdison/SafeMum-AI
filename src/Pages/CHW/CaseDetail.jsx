@@ -1,45 +1,14 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft, MapPin, Calendar, Bot, Phone, AlertTriangle,
   LayoutDashboard, FolderOpen, User, ChevronDown, FileUp,
   CheckCircle2, Clock, Heart, MessageCircle, Upload,
-  TrendingUp, TrendingDown, Star, Activity
+  TrendingUp, TrendingDown, Star, Activity, Loader,
 } from "lucide-react";
 import NavCHW from "../../Components/NavCHW";
-
-const dummyCase = {
-  id: 1,
-  patientFirstName: "Sarah",
-  location: "Parklands, Nairobi",
-  daysSinceLoss: 21,
-  lossType: "Miscarriage",
-  riskLevel: "High",
-  status: "New",
-  assignedDate: "May 20, 2026",
-  phone: "+254711000001",
-  aiReason: "Sarah has had 3 consecutive very low mood check-ins and has not confirmed her follow-up appointment from May 18th. Immediate follow-up is recommended.",
-  checkinHistory: [
-    { date: "May 19", mood: "Very low", note: "Cannot stop crying.", color: "red" },
-    { date: "May 17", mood: "Very low", note: "Hard day.", color: "red" },
-    { date: "May 15", mood: "Very low", note: null, color: "red" },
-    { date: "May 13", mood: "Low", note: "Not great.", color: "gray" },
-    { date: "May 11", mood: "Okay", note: "Had a good moment today.", color: "green" }
-  ],
-  reminders: [
-    { type: "Follow-up Appointment", datetime: "May 18, 2026 at 9:00 AM", overdue: true, missedCount: 2 },
-    { type: "Medication", datetime: "May 22, 2026 at 8:00 AM", overdue: false, missedCount: 0 }
-  ],
-  caseHistory: [
-    { date: "May 20, 2026 at 11:00 AM", action: "Case assigned by AI", notes: null }
-  ]
-};
-
-const dummyNearbyHospitals = [
-  { id: 1, name: "Kenyatta National Hospital", distance: "3.2 km", hasPostLossCare: true },
-  { id: 2, name: "Aga Khan University Hospital", distance: "4.1 km", hasPostLossCare: true },
-  { id: 3, name: "MP Shah Hospital", distance: "5.3 km", hasPostLossCare: false }
-];
+import { getCHWCaseById, updateCHWCase } from "../../API/chw";
+import { getNearbyFacilities } from "../../API/facilities";
 
 const TABS = ["Overview", "Check-ins", "Reminders", "Actions", "History"];
 
@@ -48,13 +17,13 @@ const statusConfig = {
   Contacted: { color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
   Visited: { color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200" },
   Escalated: { color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" },
-  Resolved: { color: "text-green-600", bg: "bg-green-50", border: "border-green-200" }
+  Resolved: { color: "text-green-600", bg: "bg-green-50", border: "border-green-200" },
 };
 
 const moodConfig = {
   red: { bg: "bg-red-100", border: "border-red-300", text: "text-red-700", dot: "bg-red-500" },
   gray: { bg: "bg-gray-100", border: "border-gray-300", text: "text-gray-600", dot: "bg-gray-400" },
-  green: { bg: "bg-green-100", border: "border-green-300", text: "text-green-700", dot: "bg-green-500" }
+  green: { bg: "bg-green-100", border: "border-green-300", text: "text-green-700", dot: "bg-green-500" },
 };
 
 function SectionLabel({ children }) {
@@ -76,54 +45,109 @@ function Toast({ message, visible }) {
 
 export default function CaseDetail() {
   const navigate = useNavigate();
-  const [caseData, setCaseData] = useState(dummyCase);
+  const { id } = useParams();
+  const [caseData, setCaseData] = useState(null);
+  const [nearbyHospitals, setNearbyHospitals] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Overview");
-  const [selectedStatus, setSelectedStatus] = useState(dummyCase.status);
+  const [selectedStatus, setSelectedStatus] = useState("");
   const [statusNotes, setStatusNotes] = useState("");
   const [selectedHospital, setSelectedHospital] = useState(null);
   const [toast, setToast] = useState({ visible: false, message: "" });
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [caseRes, facilitiesRes] = await Promise.all([
+          getCHWCaseById(id),
+          getNearbyFacilities(),
+        ]);
+        const caseDataRes = caseRes.data.data || caseRes.data;
+        setCaseData(caseDataRes);
+        setSelectedStatus(caseDataRes.status);
+        setNearbyHospitals(facilitiesRes.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch case data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, [id]);
 
   const showToast = (message) => {
     setToast({ visible: true, message });
     setTimeout(() => setToast({ visible: false, message: "" }), 2000);
   };
 
-  const handleSaveUpdate = () => {
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-    const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    const newEntry = {
-      date: `${dateStr} at ${timeStr}`,
-      action: `Status updated to ${selectedStatus}`,
-      notes: statusNotes || null
-    };
-    setCaseData(prev => ({
-      ...prev,
-      status: selectedStatus,
-      caseHistory: [...prev.caseHistory, newEntry]
-    }));
-    setStatusNotes("");
-    showToast("Case updated successfully");
+  const handleSaveUpdate = async () => {
+    try {
+      await updateCHWCase(id, { status: selectedStatus, notes: statusNotes || null });
+      setCaseData(prev => ({
+        ...prev,
+        status: selectedStatus,
+        caseHistory: [
+          ...(prev.caseHistory || []),
+          {
+            date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) + " at " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            action: `Status updated to ${selectedStatus}`,
+            notes: statusNotes || null,
+          },
+        ],
+      }));
+      setStatusNotes("");
+      showToast("Case updated successfully");
+    } catch (err) {
+      console.error('Failed to update case:', err);
+      showToast("Failed to update case");
+    }
   };
 
-  const handleEscalate = () => {
+  const handleEscalate = async () => {
     if (!selectedHospital) return;
-    const now = new Date();
-    const dateStr = now.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-    const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-    const newEntry = {
-      date: `${dateStr} at ${timeStr}`,
-      action: `Escalated to ${selectedHospital.name}`,
-      notes: null
-    };
-    setCaseData(prev => ({
-      ...prev,
-      status: "Escalated",
-      caseHistory: [...prev.caseHistory, newEntry]
-    }));
-    setSelectedStatus("Escalated");
-    showToast(`Patient escalated to ${selectedHospital.name}`);
+    try {
+      await updateCHWCase(id, { status: "Escalated", escalatedTo: selectedHospital.id || selectedHospital._id });
+      setCaseData(prev => ({
+        ...prev,
+        status: "Escalated",
+        caseHistory: [
+          ...(prev.caseHistory || []),
+          {
+            date: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) + " at " + new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
+            action: `Escalated to ${selectedHospital.name}`,
+            notes: null,
+          },
+        ],
+      }));
+      setSelectedStatus("Escalated");
+      showToast(`Patient escalated to ${selectedHospital.name}`);
+    } catch (err) {
+      console.error('Failed to escalate case:', err);
+      showToast("Failed to escalate case");
+    }
   };
+
+  if (loading) {
+    return (
+      <>
+        <NavCHW />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Loader size={24} className="animate-spin text-gray-400" />
+        </div>
+      </>
+    );
+  }
+
+  if (!caseData) {
+    return (
+      <>
+        <NavCHW />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <p className="text-gray-500">Case not found</p>
+        </div>
+      </>
+    );
+  }
 
   const statusStyles = statusConfig[caseData.status] || statusConfig.New;
   const getMoodStyles = (color) => moodConfig[color] || moodConfig.gray;
@@ -151,7 +175,6 @@ export default function CaseDetail() {
                 </div>
               </div>
               
-              {/* Patient Name & Basic Info */}
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{caseData.patientFirstName}</h2>
                 <div className="flex flex-wrap items-center gap-3 mt-2">
@@ -196,7 +219,6 @@ export default function CaseDetail() {
             {/* OVERVIEW TAB */}
             {activeTab === "Overview" && (
               <div className="space-y-6">
-                {/* Patient Info Card */}
                 <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -220,7 +242,6 @@ export default function CaseDetail() {
                   </div>
                 </div>
 
-                {/* AI Reason */}
                 <div>
                   <SectionLabel>Why this case was assigned</SectionLabel>
                   <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
@@ -235,7 +256,6 @@ export default function CaseDetail() {
                   </div>
                 </div>
 
-                {/* Patient Documents */}
                 <div>
                   <SectionLabel>Patient documents</SectionLabel>
                   <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
@@ -257,32 +277,36 @@ export default function CaseDetail() {
               <div>
                 <SectionLabel>Recent emotional check-ins</SectionLabel>
                 <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-                  <div className="space-y-4">
-                    {caseData.checkinHistory.map((c, idx) => {
-                      const moodStyles = getMoodStyles(c.color);
-                      return (
-                        <div key={idx} className="flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <div className={`w-2.5 h-2.5 rounded-full ${moodStyles.dot}`} />
-                            {idx < caseData.checkinHistory.length - 1 && (
-                              <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[20px]" />
-                            )}
-                          </div>
-                          <div className="flex-1 pb-3">
-                            <div className="flex items-center justify-between mb-1">
-                              <p className="text-xs text-gray-400">{c.date}</p>
-                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${moodStyles.bg} ${moodStyles.text}`}>
-                                {c.mood}
-                              </span>
+                  {(caseData.checkinHistory || []).length === 0 ? (
+                    <p className="text-sm text-gray-400 text-center py-4">No check-in history yet</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {(caseData.checkinHistory || []).map((c, idx) => {
+                        const moodStyles = getMoodStyles(c.color);
+                        return (
+                          <div key={idx} className="flex gap-3">
+                            <div className="flex flex-col items-center">
+                              <div className={`w-2.5 h-2.5 rounded-full ${moodStyles.dot}`} />
+                              {idx < (caseData.checkinHistory || []).length - 1 && (
+                                <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[20px]" />
+                              )}
                             </div>
-                            {c.note && (
-                              <p className="text-sm text-gray-600 italic mt-1">{c.note}</p>
-                            )}
+                            <div className="flex-1 pb-3">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-xs text-gray-400">{c.date}</p>
+                                <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${moodStyles.bg} ${moodStyles.text}`}>
+                                  {c.mood}
+                                </span>
+                              </div>
+                              {c.note && (
+                                <p className="text-sm text-gray-600 italic mt-1">{c.note}</p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -291,39 +315,42 @@ export default function CaseDetail() {
             {activeTab === "Reminders" && (
               <div>
                 <SectionLabel>Reminders</SectionLabel>
-                <div className="space-y-3">
-                  {caseData.reminders.map((r, idx) => (
-                    <div key={idx} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                            r.overdue ? "bg-red-50 border-red-200 text-red-600" : "bg-gray-100 border-gray-200 text-gray-600"
+                {(caseData.reminders || []).length === 0 ? (
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm text-center">
+                    <p className="text-sm text-gray-400">No reminders</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {(caseData.reminders || []).map((r, idx) => (
+                      <div key={idx} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                              r.overdue ? "bg-red-50 border-red-200 text-red-600" : "bg-gray-100 border-gray-200 text-gray-600"
+                            }`}>
+                              {r.type}
+                            </span>
+                            <p className="text-sm font-medium text-gray-900 mt-2">{r.datetime}</p>
+                            {r.overdue && r.missedCount > 0 && (
+                              <p className="text-xs text-red-500 mt-1">Missed {r.missedCount} time{r.missedCount !== 1 ? "s" : ""}</p>
+                            )}
+                          </div>
+                          <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${
+                            r.overdue ? "bg-red-500 text-white" : "bg-gray-100 text-gray-500"
                           }`}>
-                            {r.type}
+                            {r.overdue ? "Overdue" : "Upcoming"}
                           </span>
-                          <p className="text-sm font-medium text-gray-900 mt-2">{r.datetime}</p>
-                          {r.overdue && r.missedCount > 0 && (
-                            <p className="text-xs text-red-500 mt-1">Missed {r.missedCount} time{r.missedCount !== 1 ? "s" : ""}</p>
-                          )}
                         </div>
-                        <span className={`text-[11px] font-semibold px-2 py-1 rounded-full ${
-                          r.overdue 
-                            ? "bg-red-500 text-white" 
-                            : "bg-gray-100 text-gray-500"
-                        }`}>
-                          {r.overdue ? "Overdue" : "Upcoming"}
-                        </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
             {/* ACTIONS TAB */}
             {activeTab === "Actions" && (
               <div className="space-y-5">
-                {/* Call Patient */}
                 <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-900 mb-1">Call patient</h3>
                   <p className="text-sm text-gray-600 mb-3">{caseData.phone}</p>
@@ -336,7 +363,6 @@ export default function CaseDetail() {
                   </button>
                 </div>
 
-                {/* Update Status */}
                 <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-900 mb-3">Update status</h3>
                   <select
@@ -363,43 +389,46 @@ export default function CaseDetail() {
                   </button>
                 </div>
 
-                {/* Escalate to Hospital */}
                 {caseData.status !== "Escalated" && (
                   <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
                     <h3 className="text-sm font-bold text-gray-900 mb-1">Escalate to hospital</h3>
                     <p className="text-sm text-gray-500 mb-4">
                       If this patient needs immediate physical care, escalate her to the nearest capable facility.
                     </p>
-                    <div className="space-y-3 mb-4">
-                      {dummyNearbyHospitals.map(h => (
-                        <div 
-                          key={h.id}
-                          onClick={() => setSelectedHospital(h)}
-                          className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
-                            selectedHospital?.id === h.id 
-                              ? "border-gray-900 bg-gray-50" 
-                              : "border-gray-100 hover:border-gray-200"
-                          }`}
-                        >
-                          <div>
-                            <p className="text-sm font-semibold text-gray-900">{h.name}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-xs text-gray-400">{h.distance}</span>
-                              {h.hasPostLossCare && (
-                                <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Post-loss care</span>
-                              )}
+                    {nearbyHospitals.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-4">No facilities found nearby</p>
+                    ) : (
+                      <div className="space-y-3 mb-4">
+                        {nearbyHospitals.slice(0, 3).map(h => (
+                          <div 
+                            key={h.id || h._id}
+                            onClick={() => setSelectedHospital(h)}
+                            className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${
+                              selectedHospital?.id === h.id || selectedHospital?._id === h._id
+                                ? "border-gray-900 bg-gray-50" 
+                                : "border-gray-100 hover:border-gray-200"
+                            }`}
+                          >
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">{h.name}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-xs text-gray-400">{h.distance || h.dist}</span>
+                                {h.hasPostLossCare && (
+                                  <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Post-loss care</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                              (selectedHospital?.id === h.id || selectedHospital?._id === h._id)
+                                ? "border-gray-900 bg-gray-900" 
+                                : "border-gray-300"
+                            }`}>
+                              {(selectedHospital?.id === h.id || selectedHospital?._id === h._id) && <CheckCircle2 size={12} className="text-white" />}
                             </div>
                           </div>
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            selectedHospital?.id === h.id 
-                              ? "border-gray-900 bg-gray-900" 
-                              : "border-gray-300"
-                          }`}>
-                            {selectedHospital?.id === h.id && <CheckCircle2 size={12} className="text-white" />}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                     <button
                       onClick={handleEscalate}
                       disabled={!selectedHospital}
@@ -421,27 +450,33 @@ export default function CaseDetail() {
             {activeTab === "History" && (
               <div>
                 <SectionLabel>Case history</SectionLabel>
-                <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-                  <div className="space-y-4">
-                    {caseData.caseHistory.map((h, idx) => (
-                      <div key={idx} className="flex gap-3">
-                        <div className="flex flex-col items-center">
-                          <div className="w-2 h-2 rounded-full bg-gray-300 mt-1.5" />
-                          {idx < caseData.caseHistory.length - 1 && (
-                            <div className="w-px flex-1 bg-gray-100 mt-1 min-h-[20px]" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-semibold text-gray-900">{h.action}</p>
-                          <p className="text-xs text-gray-400 mt-1">{h.date}</p>
-                          {h.notes && (
-                            <p className="text-sm text-gray-500 italic mt-2">{h.notes}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
+                {(caseData.caseHistory || []).length === 0 ? (
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm text-center">
+                    <p className="text-sm text-gray-400">No history yet</p>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+                    <div className="space-y-4">
+                      {(caseData.caseHistory || []).map((h, idx) => (
+                        <div key={idx} className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <div className="w-2 h-2 rounded-full bg-gray-300 mt-1.5" />
+                            {idx < (caseData.caseHistory || []).length - 1 && (
+                              <div className="w-px flex-1 bg-gray-100 mt-1 min-h-[20px]" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-gray-900">{h.action}</p>
+                            <p className="text-xs text-gray-400 mt-1">{h.date}</p>
+                            {h.notes && (
+                              <p className="text-sm text-gray-500 italic mt-2">{h.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

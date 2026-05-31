@@ -1,141 +1,32 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Search, MapPin, Calendar, Phone, Mail,
   User, Heart, Activity, Clock, Filter, X, ChevronRight,
   Plus, MoreHorizontal, Eye, MessageCircle, AlertTriangle,
   CheckCircle2, Droplets, Thermometer, Wind, Baby,
-  Navigation, Star, PhoneCall, Video, FileText
+  Navigation, Star, PhoneCall, Video, FileText, Loader,
 } from "lucide-react";
 import NavCHW from "../../Components/NavCHW";
-
-/* ─── Dummy Data ─── */
-const dummyPatients = [
-  {
-    id: 1,
-    firstName: "Sarah",
-    lastName: "Mwangi",
-    location: "Parklands, Nairobi",
-    phone: "+254711000001",
-    email: "sarah.mwangi@email.com",
-    daysSinceLoss: 21,
-    lossType: "Miscarriage",
-    riskLevel: "High",
-    status: "Active",
-    lastContact: "2 days ago",
-    nextFollowUp: "May 25, 2026",
-    assignedDate: "May 20, 2026",
-    checkIns: [
-      { date: "May 19", mood: "Very low", note: "Cannot stop crying" },
-      { date: "May 17", mood: "Very low", note: "Hard day" },
-      { date: "May 15", mood: "Very low", note: null }
-    ],
-    notes: "Patient needs frequent check-ins. Has limited family support.",
-    profileImage: null
-  },
-  {
-    id: 2,
-    firstName: "Amara",
-    lastName: "Ochieng",
-    location: "Kibera, Nairobi",
-    phone: "+254711000002",
-    email: "amara.ochieng@email.com",
-    daysSinceLoss: 14,
-    lossType: "Stillbirth",
-    riskLevel: "Moderate",
-    status: "Active",
-    lastContact: "Yesterday",
-    nextFollowUp: "May 24, 2026",
-    assignedDate: "May 18, 2026",
-    checkIns: [
-      { date: "May 18", mood: "Low", note: "Not sleeping well" },
-      { date: "May 16", mood: "Okay", note: "Had a good moment" }
-    ],
-    notes: "Husband is supportive. Patient responding well to counselling.",
-    profileImage: null
-  },
-  {
-    id: 3,
-    firstName: "Fatuma",
-    lastName: "Hassan",
-    location: "Eastleigh, Nairobi",
-    phone: "+254711000003",
-    email: "fatuma.hassan@email.com",
-    daysSinceLoss: 7,
-    lossType: "Miscarriage",
-    riskLevel: "Low",
-    status: "Active",
-    lastContact: "3 days ago",
-    nextFollowUp: "May 26, 2026",
-    assignedDate: "May 19, 2026",
-    checkIns: [
-      { date: "May 20", mood: "Good", note: "Feeling better today" },
-      { date: "May 18", mood: "Okay", note: "Managed to eat well" }
-    ],
-    notes: "First week post-loss. Recovery on track.",
-    profileImage: null
-  },
-  {
-    id: 4,
-    firstName: "Wanjiru",
-    lastName: "Kimani",
-    location: "Westlands, Nairobi",
-    phone: "+254711000004",
-    email: "wanjiru.kimani@email.com",
-    daysSinceLoss: 45,
-    lossType: "Ectopic pregnancy",
-    riskLevel: "Low",
-    status: "Resolved",
-    lastContact: "5 days ago",
-    nextFollowUp: null,
-    assignedDate: "May 10, 2026",
-    checkIns: [
-      { date: "May 15", mood: "Good", note: "Back to work" },
-      { date: "May 12", mood: "Good", note: "Sleeping better" }
-    ],
-    notes: "Patient discharged from active care. Monthly follow-up only.",
-    profileImage: null
-  },
-  {
-    id: 5,
-    firstName: "Blessing",
-    lastName: "Okonkwo",
-    location: "Kasarani, Nairobi",
-    phone: "+254711000005",
-    email: "blessing.okonkwo@email.com",
-    daysSinceLoss: 10,
-    lossType: "Miscarriage",
-    riskLevel: "High",
-    status: "Escalated",
-    lastContact: "Today",
-    nextFollowUp: "May 23, 2026",
-    assignedDate: "May 18, 2026",
-    checkIns: [
-      { date: "May 19", mood: "Very low", note: "Severe pain reported" },
-      { date: "May 18", mood: "Very low", note: "Referred to hospital" }
-    ],
-    notes: "Escalated to hospital for physical examination.",
-    profileImage: null
-  }
-];
+import { getCHWPatients } from "../../API/chw";
 
 const statusConfig = {
   Active: { color: "text-green-600", bg: "bg-green-50", border: "border-green-200", dot: "bg-green-500" },
   Resolved: { color: "text-gray-500", bg: "bg-gray-50", border: "border-gray-200", dot: "bg-gray-400" },
-  Escalated: { color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200", dot: "bg-orange-500" }
+  Escalated: { color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200", dot: "bg-orange-500" },
 };
 
 const riskConfig = {
   High: { color: "text-red-700", bg: "bg-red-50", border: "border-red-200", dot: "bg-red-500" },
   Moderate: { color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200", dot: "bg-orange-500" },
-  Low: { color: "text-green-700", bg: "bg-green-50", border: "border-green-200", dot: "bg-green-500" }
+  Low: { color: "text-green-700", bg: "bg-green-50", border: "border-green-200", dot: "bg-green-500" },
 };
 
 const lossTypeIcons = {
   "Miscarriage": Droplets,
   "Stillbirth": Baby,
   "Ectopic pregnancy": Activity,
-  "Neonatal loss": Heart
+  "Neonatal loss": Heart,
 };
 
 const statusFilters = ["All", "Active", "Resolved", "Escalated"];
@@ -151,7 +42,8 @@ function SectionLabel({ children }) {
 
 export default function CHWPatients() {
   const navigate = useNavigate();
-  const [patients, setPatients] = useState(dummyPatients);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [riskFilter, setRiskFilter] = useState("All");
@@ -159,11 +51,25 @@ export default function CHWPatients() {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [showPatientModal, setShowPatientModal] = useState(false);
 
+  useEffect(() => {
+    async function fetchPatients() {
+      try {
+        const res = await getCHWPatients();
+        setPatients(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch patients:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPatients();
+  }, []);
+
   const filteredPatients = patients.filter(patient => {
     const matchSearch = !searchQuery || 
-      patient.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.location.toLowerCase().includes(searchQuery.toLowerCase());
+      (patient.firstName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (patient.lastName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (patient.location || "").toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchStatus = statusFilter === "All" || patient.status === statusFilter;
     const matchRisk = riskFilter === "All" || patient.riskLevel === riskFilter;
@@ -182,6 +88,17 @@ export default function CHWPatients() {
 
   const getStatusStyles = (status) => statusConfig[status] || statusConfig.Active;
   const getRiskStyles = (risk) => riskConfig[risk] || riskConfig.Moderate;
+
+  if (loading) {
+    return (
+      <>
+        <NavCHW />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Loader size={24} className="animate-spin text-gray-400" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -253,7 +170,6 @@ export default function CHWPatients() {
                 </button>
               </div>
 
-              {/* Filter Chips */}
               {(showFilters || statusFilter !== "All" || riskFilter !== "All") && (
                 <div className="mt-3 space-y-3">
                   <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -306,21 +222,21 @@ export default function CHWPatients() {
                   const riskStyles = getRiskStyles(patient.riskLevel);
                   const LossIcon = lossTypeIcons[patient.lossType] || Heart;
                   const isHighRisk = patient.riskLevel === "High";
+                  const patientId = patient.id || patient._id;
                   
                   return (
                     <div 
-                      key={patient.id}
+                      key={patientId}
                       className={`bg-white rounded-xl border shadow-sm transition-all hover:shadow-md ${
                         isHighRisk ? "border-l-4 border-l-red-500" : "border-gray-100"
                       }`}
                     >
                       <div className="p-4">
-                        {/* Header */}
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
                               <span className="text-sm font-bold text-gray-600">
-                                {patient.firstName[0]}{patient.lastName[0]}
+                                {(patient.firstName || "")[0]}{(patient.lastName || "")[0]}
                               </span>
                             </div>
                             <div>
@@ -345,7 +261,6 @@ export default function CHWPatients() {
                           </button>
                         </div>
 
-                        {/* Details */}
                         <div className="space-y-2 mb-3">
                           <div className="flex items-center gap-2">
                             <MapPin size={12} className="text-gray-400" />
@@ -365,7 +280,6 @@ export default function CHWPatients() {
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
                         <div className="flex gap-2 pt-3 border-t border-gray-100">
                           <button
                             onClick={() => window.open(`tel:${patient.phone}`)}
@@ -375,7 +289,7 @@ export default function CHWPatients() {
                             Call
                           </button>
                           <button
-                            onClick={() => navigate(`/chw/cases/${patient.id}`)}
+                            onClick={() => navigate(`/chw/cases/${patientId}`)}
                             className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition"
                           >
                             <Eye size={12} />
@@ -396,12 +310,11 @@ export default function CHWPatients() {
       {showPatientModal && selectedPatient && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
                   <span className="text-lg font-bold text-gray-600">
-                    {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
+                    {(selectedPatient.firstName || "")[0]}{(selectedPatient.lastName || "")[0]}
                   </span>
                 </div>
                 <div>
@@ -426,9 +339,7 @@ export default function CHWPatients() {
               </button>
             </div>
 
-            {/* Modal Content */}
             <div className="p-5 space-y-5">
-              {/* Contact Info */}
               <div>
                 <SectionLabel>Contact information</SectionLabel>
                 <div className="space-y-2">
@@ -453,7 +364,6 @@ export default function CHWPatients() {
                 </div>
               </div>
 
-              {/* Medical Info */}
               <div>
                 <SectionLabel>Medical information</SectionLabel>
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
@@ -472,11 +382,10 @@ export default function CHWPatients() {
                 </div>
               </div>
 
-              {/* Recent Check-ins */}
               <div>
                 <SectionLabel>Recent check-ins</SectionLabel>
                 <div className="space-y-3">
-                  {selectedPatient.checkIns.slice(0, 3).map((check, idx) => (
+                  {(selectedPatient.checkIns || []).slice(0, 3).map((check, idx) => (
                     <div key={idx} className="bg-gray-50 rounded-xl p-3">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-semibold text-gray-900">{check.date}</span>
@@ -490,7 +399,6 @@ export default function CHWPatients() {
                 </div>
               </div>
 
-              {/* Notes */}
               <div>
                 <SectionLabel>CHW notes</SectionLabel>
                 <div className="bg-amber-50 rounded-xl p-3">
@@ -498,10 +406,9 @@ export default function CHWPatients() {
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() => navigate(`/chw/cases/${selectedPatient.id}`)}
+                  onClick={() => navigate(`/chw/cases/${selectedPatient.id || selectedPatient._id}`)}
                   className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold"
                 >
                   View full case

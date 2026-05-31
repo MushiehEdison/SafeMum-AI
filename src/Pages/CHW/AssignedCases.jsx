@@ -1,74 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Search, MapPin, Clock, LayoutDashboard, FolderOpen,
   User, Bell, AlertTriangle, ChevronRight, Filter, X,
-  Phone, Calendar, MessageCircle, Heart, CheckCircle2
+  Phone, Calendar, MessageCircle, Heart, CheckCircle2, Loader,
 } from "lucide-react";
 import NavCHW from "../../Components/NavCHW";
-
-const dummyCases = [
-  {
-    id: 1,
-    patientFirstName: "Sarah",
-    location: "Parklands",
-    daysSinceLoss: 21,
-    riskLevel: "High",
-    status: "New",
-    flagReason: "3 consecutive very low mood check-ins",
-    daysSinceAssigned: 1,
-    lastContact: null,
-    phone: "+254700000001"
-  },
-  {
-    id: 2,
-    patientFirstName: "Amara",
-    location: "Kibera",
-    daysSinceLoss: 14,
-    riskLevel: "Moderate",
-    status: "Contacted",
-    flagReason: "Missed follow-up appointment",
-    daysSinceAssigned: 3,
-    lastContact: "Yesterday",
-    phone: "+254700000002"
-  },
-  {
-    id: 3,
-    patientFirstName: "Fatuma",
-    location: "Eastleigh",
-    daysSinceLoss: 7,
-    riskLevel: "Low",
-    status: "Visited",
-    flagReason: "First week post-loss check — recovery on track",
-    daysSinceAssigned: 5,
-    lastContact: "2 days ago",
-    phone: "+254700000003"
-  },
-  {
-    id: 4,
-    patientFirstName: "Wanjiru",
-    location: "Westlands",
-    daysSinceLoss: 45,
-    riskLevel: "Low",
-    status: "Resolved",
-    flagReason: "Emotional support follow-up — patient discharged",
-    daysSinceAssigned: 14,
-    lastContact: "5 days ago",
-    phone: "+254700000004"
-  },
-  {
-    id: 5,
-    patientFirstName: "Blessing",
-    location: "Kasarani",
-    daysSinceLoss: 10,
-    riskLevel: "High",
-    status: "Escalated",
-    flagReason: "High risk symptom reported — referred to hospital",
-    daysSinceAssigned: 2,
-    lastContact: "Today",
-    phone: "+254700000005"
-  }
-];
+import { getCHWCases } from "../../API/chw";
 
 const STATUS_FILTERS = ["All", "New", "Contacted", "Visited", "Escalated", "Resolved"];
 
@@ -77,13 +15,13 @@ const statusConfig = {
   Contacted: { color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
   Visited: { color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200" },
   Escalated: { color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" },
-  Resolved: { color: "text-green-600", bg: "bg-green-50", border: "border-green-200" }
+  Resolved: { color: "text-green-600", bg: "bg-green-50", border: "border-green-200" },
 };
 
 const riskConfig = {
   High: { color: "text-red-700", bg: "bg-red-50", border: "border-red-200", dot: "bg-red-500" },
   Moderate: { color: "text-orange-700", bg: "bg-orange-50", border: "border-orange-200", dot: "bg-orange-500" },
-  Low: { color: "text-green-700", bg: "bg-green-50", border: "border-green-200", dot: "bg-green-500" }
+  Low: { color: "text-green-700", bg: "bg-green-50", border: "border-green-200", dot: "bg-green-500" },
 };
 
 function SectionLabel({ children }) {
@@ -95,20 +33,36 @@ function SectionLabel({ children }) {
 }
 
 export default function AssignedCases() {
+  const [cases, setCases] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
 
-  const activeCaseCount = dummyCases.filter(c => c.status !== "Resolved").length;
+  useEffect(() => {
+    async function fetchCases() {
+      try {
+        const res = await getCHWCases();
+        setCases(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch cases:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCases();
+  }, []);
 
-  const filtered = dummyCases.filter(c => {
+  const activeCaseCount = cases.filter(c => c.status !== "Resolved").length;
+
+  const filtered = cases.filter(c => {
     const matchFilter = activeFilter === "All" || c.status === activeFilter;
     const q = searchQuery.toLowerCase();
     const matchSearch = !q || 
-      c.patientFirstName.toLowerCase().includes(q) ||
-      c.location.toLowerCase().includes(q) ||
-      c.flagReason.toLowerCase().includes(q);
+      (c.patientFirstName || "").toLowerCase().includes(q) ||
+      (c.location || "").toLowerCase().includes(q) ||
+      (c.flagReason || "").toLowerCase().includes(q);
     return matchFilter && matchSearch;
   });
 
@@ -124,6 +78,17 @@ export default function AssignedCases() {
   const handleViewDetails = (caseId) => {
     navigate(`/chw/cases/${caseId}`);
   };
+
+  if (loading) {
+    return (
+      <>
+        <NavCHW />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Loader size={24} className="animate-spin text-gray-400" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -191,7 +156,6 @@ export default function AssignedCases() {
                 </button>
               </div>
 
-              {/* Filter Pills */}
               {(showFilters || activeFilter !== "All") && (
                 <div className="flex gap-2 overflow-x-auto pb-1 mt-3 scrollbar-hide">
                   {STATUS_FILTERS.map(f => (
@@ -232,10 +196,11 @@ export default function AssignedCases() {
                   const statusStyles = getStatusStyles(c.status);
                   const riskStyles = getRiskStyles(c.riskLevel);
                   const isResolved = c.status === "Resolved";
+                  const caseId = c.id || c._id;
                   
                   return (
                     <div 
-                      key={c.id} 
+                      key={caseId} 
                       className={`bg-white rounded-xl border shadow-sm transition-all hover:shadow-md ${
                         isResolved ? "border-gray-100 opacity-75" : "border-gray-100"
                       }`}
@@ -297,7 +262,7 @@ export default function AssignedCases() {
                           <div className="flex gap-2">
                             {c.status !== "Resolved" && c.status !== "Escalated" && (
                               <button
-                                onClick={() => handleContact(c.id)}
+                                onClick={() => handleContact(caseId)}
                                 className="px-3 py-1.5 rounded-lg border border-green-500 bg-white text-green-600 text-xs font-semibold hover:bg-green-50 transition"
                               >
                                 <Phone size={11} className="inline mr-1" />
@@ -305,7 +270,7 @@ export default function AssignedCases() {
                               </button>
                             )}
                             <button
-                              onClick={() => handleViewDetails(c.id)}
+                              onClick={() => handleViewDetails(caseId)}
                               className="px-3 py-1.5 rounded-lg border border-gray-900 bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition"
                             >
                               View details

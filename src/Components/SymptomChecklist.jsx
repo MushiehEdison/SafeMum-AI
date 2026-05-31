@@ -6,6 +6,8 @@ import {
   MessageCircle, Droplets, Wind, Thermometer, Brain,
   Moon, Utensils, Users, Frown, Meh, Smile
 } from "lucide-react";
+import { submitSymptomCheckin } from "../API/recovery";
+import Mascot from "../Components/Mascot/Mascot";
 
 const PHYSICAL_SYMPTOMS = [
   "Heavy or unusual bleeding",
@@ -66,37 +68,25 @@ function classifySymptoms(selected) {
     level: "emergency", color: "#dc2626", bgColor: "#fee2e2", borderColor: "#fecaca",
     icon: AlertTriangle,
     title: "Some of your symptoms need immediate attention",
-    message: "The combination of symptoms you selected can sometimes indicate a serious complication. Please seek medical care immediately or trigger an emergency alert. Do not wait.",
     action: "emergency",
-    actionLabel: "Send emergency alert",
-    actionBg: "#dc2626", actionHover: "#b91c1c",
   };
   if (hasUrgent) return {
     level: "urgent", color: "#d97706", bgColor: "#fef3c7", borderColor: "#fde68a",
     icon: AlertCircle,
     title: "You should see a doctor today",
-    message: "Some of what you are experiencing needs to be checked by a healthcare provider today. It may be nothing serious but it is better to confirm. Use the map to find the nearest facility.",
     action: "map",
-    actionLabel: "Find nearest facility",
-    actionBg: "#d97706", actionHover: "#b45309",
   };
   if (allPositive) return {
     level: "stable", color: "#16a34a", bgColor: "#dcfce7", borderColor: "#bbf7d0",
     icon: CheckCircle2,
     title: "You are showing good signs of recovery",
-    message: "Based on what you selected, your body and mind are on a stable path. Keep monitoring daily and reach out if anything changes. You are doing well.",
     action: "chat",
-    actionLabel: "Talk to the AI assistant",
-    actionBg: "#111", actionHover: "#333",
   };
   return {
     level: "monitor", color: "#6b7280", bgColor: "#f3f4f6", borderColor: "#e5e7eb",
     icon: Eye,
     title: "Keep monitoring how you feel",
-    message: "What you are experiencing is worth paying attention to. Check in with the AI assistant and describe your symptoms in more detail so it can give you better guidance.",
     action: "chat",
-    actionLabel: "Talk to the AI assistant",
-    actionBg: "#111", actionHover: "#333",
   };
 }
 
@@ -198,12 +188,44 @@ function Section({ icon: Icon, title, color, symptoms, selectedSymptoms, onToggl
   );
 }
 
+function MascotStrip({ mood, message, visible, dark = false, size = 52 }) {
+  if (!visible || !message) return null;
+  return (
+    <div style={{
+      display: "flex",
+      alignItems: "flex-start",
+      gap: "10px",
+    }}>
+      <div style={{ flexShrink: 0, marginTop: 4 }}>
+        <Mascot mood={mood} message="" position="left" size={size} />
+      </div>
+      <div style={{
+        flex: 1,
+        background: dark ? "rgba(255,255,255,0.07)" : "#f8f7f4",
+        border: dark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #e8e6e1",
+        borderRadius: "4px 14px 14px 14px",
+        padding: "10px 14px",
+        fontSize: "13px",
+        lineHeight: 1.55,
+        color: dark ? "rgba(255,255,255,0.85)" : "#444",
+        fontFamily: "'Manrope', sans-serif",
+        fontWeight: 400,
+        boxShadow: dark ? "none" : "0 1px 8px rgba(0,0,0,0.05)",
+      }}>
+        {message}
+      </div>
+    </div>
+  );
+}
+
 export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
   const navigate = useNavigate();
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [screen, setScreen] = useState("checklist");
   const [result, setResult] = useState(null);
-  const [primaryHover, setPrimaryHover] = useState(false);
+
+  const [aiResponse, setAiResponse] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const toggleSymptom = (symptom) => {
     setSelectedSymptoms(prev =>
@@ -211,12 +233,22 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
     );
   };
 
-  const handleSeeResults = () => {
+  const handleSeeResults = async () => {
     if (selectedSymptoms.length === 0) return;
     const classification = classifySymptoms(selectedSymptoms);
     setResult(classification);
     setScreen("result");
     if (onResult) onResult(classification);
+
+    setSubmitting(true);
+    try {
+      const res = await submitSymptomCheckin({ symptoms: selectedSymptoms });
+      setAiResponse(res.data.ai_response);
+    } catch (err) {
+      console.error('Symptom checkin failed:', err);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handlePrimaryAction = () => {
@@ -232,13 +264,42 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
     }
   };
 
-  const handleGoBack = () => { setScreen("checklist"); setResult(null); };
+  const handleGoBack = () => { setScreen("checklist"); setResult(null); setAiResponse(null); };
 
   const hasSelection = selectedSymptoms.length > 0;
   const selectedPhysical = selectedSymptoms.filter(s => PHYSICAL_SYMPTOMS.includes(s));
   const selectedEmotional = selectedSymptoms.filter(s => EMOTIONAL_SYMPTOMS.includes(s));
   const selectedPositive = selectedSymptoms.filter(s => POSITIVE_SYMPTOMS.includes(s));
   const IconComponent = result?.icon || AlertCircle;
+
+  // Mascot mood based on result level
+  const getMascotMood = () => {
+    if (!result) return "neutral";
+    switch (result.level) {
+      case "emergency": return "worried";
+      case "urgent": return "concerned";
+      case "stable": return "happy";
+      case "monitor": return "neutral";
+      default: return "idle";
+    }
+  };
+
+  // Dynamic button label and color
+  const getActionButtonConfig = () => {
+    if (!result) return { label: "", bg: "#111", hoverBg: "#333" };
+    switch (result.level) {
+      case "emergency":
+        return { label: "Send emergency alert", bg: "#dc2626", hoverBg: "#b91c1c" };
+      case "urgent":
+        return { label: "Find nearest facility", bg: "#d97706", hoverBg: "#b45309" };
+      case "stable":
+      case "monitor":
+      default:
+        return { label: "Talk to AI assistant", bg: "#111", hoverBg: "#333" };
+    }
+  };
+
+  const actionConfig = getActionButtonConfig();
 
   return (
     <>
@@ -254,13 +315,14 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
         .sc-icon-btn:hover { background:#f0eeea; }
         .sc-body { flex:1; overflow-y:auto; padding:0 20px 0; -webkit-overflow-scrolling:touch; }
         .sc-body::-webkit-scrollbar { width:0; }
-        .sc-footer { flex-shrink:0; padding:16px 20px calc(28px + 80px); background:#f4f3f0; border-top:1px solid #e8e6e1; }        .sc-cta { width:100%; padding:14px; border-radius:14px; border:none; font-family:'Manrope', sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s, transform .1s; }
+        .sc-footer { flex-shrink:0; padding:16px 20px calc(28px + 80px); background:#f4f3f0; border-top:1px solid #e8e6e1; }
+        .sc-cta { width:100%; padding:14px; border-radius:14px; border:none; font-family:'Manrope', sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s, transform .1s; }
         .sc-cta:active { transform:scale(0.98); }
         .sc-ghost { background:none; border:none; font-family:'Manrope', sans-serif; font-size:12px; color:#aaa; cursor:pointer; padding:10px; display:block; width:100%; text-align:center; transition:color .15s; }
         .sc-ghost:hover { color:#555; }
         .sc-counter { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:50%; background:#111; color:#fff; font-size:10px; font-weight:600; margin-left:6px; }
         .sc-result-icon-wrap { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px; flex-shrink:0; }
-        .sc-selected-tag { display:inline-flex; align-items:center; gap:4px; padding:5px 10px; border-radius:20px; font-size:11px; font-weight:500; font-family:'Manrope', sans-serif; white-space:nowrap; }
+        .sc-selected-tag { display:inline-flex; align-items:center; gap:4px; padding:5px 10px; border-radius:20px; font-size:11px; font-weight:500; font-family:'Manrope', sans-serif; whiteSpace:nowrap; }
       `}</style>
 
       <div className="sc-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -294,7 +356,6 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
           <div className="sc-body">
             {screen === "checklist" ? (
               <>
-                {/* Intro */}
                 <div style={{ marginBottom: "24px" }}>
                   <h1 style={{
                     fontFamily: "'Fraunces', serif", fontSize: "24px",
@@ -312,34 +373,15 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
                   </p>
                 </div>
 
-                {/* Sections */}
-                <Section
-                  icon={Activity}
-                  title="Physical symptoms"
-                  color="#dc2626"
-                  symptoms={PHYSICAL_SYMPTOMS}
-                  selectedSymptoms={selectedSymptoms}
-                  onToggle={toggleSymptom}
-                  type="physical"
-                />
-                <Section
-                  icon={Heart}
-                  title="Emotional symptoms"
-                  color="#9333ea"
-                  symptoms={EMOTIONAL_SYMPTOMS}
-                  selectedSymptoms={selectedSymptoms}
-                  onToggle={toggleSymptom}
-                  type="emotional"
-                />
-                <Section
-                  icon={CheckCircle2}
-                  title="Positive signs"
-                  color="#16a34a"
-                  symptoms={POSITIVE_SYMPTOMS}
-                  selectedSymptoms={selectedSymptoms}
-                  onToggle={toggleSymptom}
-                  type="positive"
-                />
+                <Section icon={Activity} title="Physical symptoms" color="#dc2626"
+                  symptoms={PHYSICAL_SYMPTOMS} selectedSymptoms={selectedSymptoms}
+                  onToggle={toggleSymptom} type="physical" />
+                <Section icon={Heart} title="Emotional symptoms" color="#9333ea"
+                  symptoms={EMOTIONAL_SYMPTOMS} selectedSymptoms={selectedSymptoms}
+                  onToggle={toggleSymptom} type="emotional" />
+                <Section icon={CheckCircle2} title="Positive signs" color="#16a34a"
+                  symptoms={POSITIVE_SYMPTOMS} selectedSymptoms={selectedSymptoms}
+                  onToggle={toggleSymptom} type="positive" />
 
                 <div style={{ height: "8px" }} />
               </>
@@ -361,10 +403,26 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
                       fontWeight: 600, color: "#111", lineHeight: 1.2,
                       letterSpacing: "-.015em", marginBottom: "10px",
                     }}>{result.title}</h2>
-                    <p style={{
-                      fontSize: "13px", color: "#777", fontWeight: 300,
-                      fontFamily: "'Manrope', sans-serif", lineHeight: 1.65,
-                    }}>{result.message}</p>
+
+                    {/* AI Response with Mascot */}
+                    <div style={{ marginTop: "16px", textAlign: "left" }}>
+                      {submitting ? (
+                        <p style={{
+                          fontSize: "13px", color: "#aaa", fontFamily: "'Manrope', sans-serif",
+                          lineHeight: 1.6, textAlign: "center",
+                        }}>
+                          Analysing your symptoms...
+                        </p>
+                      ) : aiResponse ? (
+                        <MascotStrip
+                          mood={getMascotMood()}
+                          message={aiResponse}
+                          visible={true}
+                          dark={false}
+                          size={42}
+                        />
+                      ) : null}
+                    </div>
                   </div>
 
                   {/* Selected symptoms summary */}
@@ -384,9 +442,7 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                           {selectedPhysical.map(s => (
                             <span key={s} className="sc-selected-tag"
-                              style={{ background: "#fff5f5", color: "#dc2626", border: "1px solid #fecaca" }}>
-                              {s}
-                            </span>
+                              style={{ background: "#fff5f5", color: "#dc2626", border: "1px solid #fecaca" }}>{s}</span>
                           ))}
                         </div>
                       </div>
@@ -397,9 +453,7 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                           {selectedEmotional.map(s => (
                             <span key={s} className="sc-selected-tag"
-                              style={{ background: "#faf5ff", color: "#9333ea", border: "1px solid #e9d5ff" }}>
-                              {s}
-                            </span>
+                              style={{ background: "#faf5ff", color: "#9333ea", border: "1px solid #e9d5ff" }}>{s}</span>
                           ))}
                         </div>
                       </div>
@@ -410,9 +464,7 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
                         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
                           {selectedPositive.map(s => (
                             <span key={s} className="sc-selected-tag"
-                              style={{ background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>
-                              {s}
-                            </span>
+                              style={{ background: "#f0fdf4", color: "#16a34a", border: "1px solid #bbf7d0" }}>{s}</span>
                           ))}
                         </div>
                       </div>
@@ -458,11 +510,14 @@ export default function SymptomChecklist({ onClose, onResult, onStartChat }) {
                   <button
                     className="sc-cta"
                     onClick={handlePrimaryAction}
-                    style={{ background: primaryHover ? result.actionHover : result.actionBg, color: "#fff" }}
-                    onMouseEnter={() => setPrimaryHover(true)}
-                    onMouseLeave={() => setPrimaryHover(false)}
+                    style={{
+                      background: actionConfig.bg,
+                      color: "#fff",
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = actionConfig.hoverBg}
+                    onMouseLeave={e => e.currentTarget.style.background = actionConfig.bg}
                   >
-                    {result.actionLabel}
+                    {actionConfig.label}
                   </button>
                   <button className="sc-ghost" onClick={handleGoBack}>
                     Go back and change my answers

@@ -8,21 +8,6 @@ const TYPES = [
   'Danger Signs Education',
 ];
 
-function generateAIMessage(type) {
-  switch (type) {
-    case 'Follow-up Appointment':
-      return "Sarah, this follow-up visit is important for confirming your recovery. Please do not skip it.";
-    case 'Medication':
-      return "Taking your medication consistently makes a real difference in your recovery. This one is worth keeping.";
-    case 'Emotional Check-in':
-      return "Checking in with yourself is just as important as physical recovery. Set aside a few minutes for this one.";
-    case 'Danger Signs Education':
-      return "Understanding the warning signs helps you act fast if something changes. This reminder is here to keep you informed.";
-    default:
-      return "This reminder is set to support your recovery.";
-  }
-}
-
 export default function AddReminderModal({ onClose, onAdd }) {
   const [selectedType, setSelectedType] = useState(TYPES[0]);
   const [selectedDate, setSelectedDate] = useState('');
@@ -32,11 +17,9 @@ export default function AddReminderModal({ onClose, onAdd }) {
   function handleAdd() {
     if (!selectedDate || !selectedTime) return;
     const reminder = {
-      id:          Date.now(),
       type:        selectedType,
       datetime:    selectedDate + ' at ' + selectedTime,
       note:        noteText || null,
-      aiMessage:   generateAIMessage(selectedType),
       missedCount: 0,
       completed:   false,
       overdue:     false,

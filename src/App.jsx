@@ -1,12 +1,16 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import BottomNav from "./Components/BottomNav";
 import MascotTestPage from "./Mascottestpage";
-import Landing from "./Landing";
+import { PatientRoute, CHWRoute, FacilityRoute } from "./Components/ProtectedRoute";
+import { UserAuthProvider } from "./Context/UserAuthContext";
+import { CHWAuthProvider } from "./Context/CHWAuthContext";
+import { FacilityAuthProvider } from "./Context/FacilityAuthContext";
+import PhoneSimulator from "./Pages/Public/Simulator";
+
 // ── Auth ─────────────────────────────────────────────────────────────────────
-// import Login         from "./Pages/Auth/Login";
-// import CHWLogin      from "./Pages/Auth/CHWLogin";
-// import FacilityLogin from "./Pages/Auth/FacilityLogin";
-// import Register      from "./Pages/Auth/Register";
+import PatientAuth from "./Pages/Auth/Patientauth";
+import CHWAuth from "./Pages/Auth/Chwauth";
+import FacilityAuth from "./Pages/Auth/Facilityauth";
 
 // ── Patient (Users) pages ────────────────────────────────────────────────────
 import Home from "./Pages/Users/Home";
@@ -16,15 +20,6 @@ import MapPage         from "./Pages/Users/Map";
 import ReminderSystem  from "./Pages/Users/ReminderSystem";
 import SafeRecoveryHub from "./Pages/Users/SafeRecoveryHub";
 import Profile from "./Pages/Users/Profile";
-
-// ── Admin pages ──────────────────────────────────────────────────────────────
-// import AdminDashboard     from "./Pages/Admin/AdminDashboard";
-// import FacilityMgmt       from "./Pages/Admin/FacilityManagement";
-// import InsightReports     from "./Pages/Admin/InsightReports";
-// import ManageCHW          from "./Pages/Admin/ManageCHW";
-// import ManageHC           from "./Pages/Admin/ManageHC";
-// import ReferralFailureMap from "./Pages/Admin/ReferralFailureMap";
-// import RiskAreaMap        from "./Pages/Admin/RiskAreaMap";
 
 // ── CHW pages ─────────────────────────────────────────────────────────────────
 import AssignedCases from "./Pages/CHW/AssignedCases";
@@ -39,18 +34,13 @@ import FacilityDashboard  from "./Pages/HealthCenters/FacilityDashboard";
 import IncomingAlerts     from "./Pages/HealthCenters/IncomingAlerts";
 import FacilityProfile  from "./Pages/HealthCenters/FacilityProfile";
 import UpdateCapabilities from "./Pages/HealthCenters/UpdateCapabilities";
+import IncomingReferrals from "./Pages/HealthCenters/IncomingReferrals";
 
 // ── Public ────────────────────────────────────────────────────────────────────
-// import PublicHome from "./Pages/Public/Home";
-// import NotFound   from "./Pages/Public/NotFound";
+import Landing from "./Pages/Public/Landing";
 
 const PATIENT_PATHS = [
-  "/home",
-  "/emergency-alert",
-  "/map",
-  "/reminders",
-  "/safe-recovery",
-  "/profile",
+  "/home", "/emergency-alert", "/map", "/reminders", "/safe-recovery", "/profile",
 ];
 
 function AppShell() {
@@ -61,45 +51,41 @@ function AppShell() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#f5f5f5" }}>
-     
       <Routes>
+        {/* ── Public ── */}
         <Route path="/" element={<Landing />} />
         <Route path="/mascot-test" element={<MascotTestPage />} />
+        <Route path="/simulator" element={<PhoneSimulator />} />
 
-        {/* ── Patient (Users) ── */}
-        <Route path="/home" element={<Home />} />
-        <Route path="/ai-assistant"    element={<AIAssistant />} />
-        <Route path="/emergency-alert" element={<EmergencyAlert />} />
-        <Route path="/map"             element={<MapPage />} />
-        <Route path="/reminders"       element={<ReminderSystem />} />
-        <Route path="/safe-recovery"   element={<SafeRecoveryHub />} />
-        <Route path="/profile"        element={<Profile />} />
+        
+        {/* ── Auth ── */}
+        <Route path="/auth/patient"  element={<PatientAuth />} />
+        <Route path="/auth/chw"      element={<CHWAuth />} />
+        <Route path="/auth/facility" element={<FacilityAuth />} />
 
-        {/* ── Admin ── */}
-        {/* <Route path="/admin"                   element={<AdminDashboard />} /> */}
-        {/* <Route path="/admin/facilities"        element={<FacilityMgmt />} /> */}
-        {/* <Route path="/admin/insights"          element={<InsightReports />} /> */}
-        {/* <Route path="/admin/manage-chw"        element={<ManageCHW />} /> */}
-        {/* <Route path="/admin/manage-hc"         element={<ManageHC />} /> */}
-        {/* <Route path="/admin/referral-failures" element={<ReferralFailureMap />} /> */}
-        {/* <Route path="/admin/risk-areas"        element={<RiskAreaMap />} /> */}
+        {/* ── Patient (protected) ── */}
+        <Route path="/home"           element={<PatientRoute><Home /></PatientRoute>} />
+        <Route path="/ai-assistant"   element={<PatientRoute><AIAssistant /></PatientRoute>} />
+        <Route path="/emergency-alert"element={<PatientRoute><EmergencyAlert /></PatientRoute>} />
+        <Route path="/map"            element={<PatientRoute><MapPage /></PatientRoute>} />
+        <Route path="/reminders"      element={<PatientRoute><ReminderSystem /></PatientRoute>} />
+        <Route path="/safe-recovery"  element={<PatientRoute><SafeRecoveryHub /></PatientRoute>} />
+        <Route path="/profile"        element={<PatientRoute><Profile /></PatientRoute>} />
 
-        {/* ── CHW ── */}
-        <Route path="/chw"           element={<CHWDashboard />} />
-        <Route path="/chw/cases"     element={<AssignedCases />} />
-        <Route path="/chw/cases/:id" element={<CaseDetail />} />
-        <Route path="/chw/profile"   element={<CHWProfile />} />
-        <Route path="/chw/patients"   element={<CHWPatients />} />
-        <Route path="/chw/schedule"   element={<CHWSchedule />} />
+        {/* ── CHW (protected) ── */}
+        <Route path="/chw"            element={<CHWRoute><CHWDashboard /></CHWRoute>} />
+        <Route path="/chw/cases"      element={<CHWRoute><AssignedCases /></CHWRoute>} />
+        <Route path="/chw/cases/:id"  element={<CHWRoute><CaseDetail /></CHWRoute>} />
+        <Route path="/chw/profile"    element={<CHWRoute><CHWProfile /></CHWRoute>} />
+        <Route path="/chw/patients"   element={<CHWRoute><CHWPatients /></CHWRoute>} />
+        <Route path="/chw/schedule"   element={<CHWRoute><CHWSchedule /></CHWRoute>} />
 
-        {/* ── Health Centres ── */}
-        <Route path="/facility"              element={<FacilityDashboard />} />
-        <Route path="/facility/alerts"       element={<IncomingAlerts />} />
-        <Route path="/facility/profile"    element={<FacilityProfile />} />
-        <Route path="/facility/capabilities" element={<UpdateCapabilities />} />
-
-        {/* ── 404 ── */}
-        {/* <Route path="*" element={<NotFound />} /> */}
+        {/* ── Health Centres (protected) ── */}
+        <Route path="/facility"              element={<FacilityRoute><FacilityDashboard /></FacilityRoute>} />
+        <Route path="/facility/alerts"       element={<FacilityRoute><IncomingAlerts /></FacilityRoute>} />
+        <Route path="/facility/profile"      element={<FacilityRoute><FacilityProfile /></FacilityRoute>} />
+        <Route path="/facility/capabilities" element={<FacilityRoute><UpdateCapabilities /></FacilityRoute>} />
+        <Route path="/facility/referrals"    element={<FacilityRoute><IncomingReferrals /></FacilityRoute>} />
       </Routes>
 
       {showBottomNav && <BottomNav />}
@@ -110,7 +96,13 @@ function AppShell() {
 export default function App() {
   return (
     <Router>
-      <AppShell />
+      <UserAuthProvider>
+        <CHWAuthProvider>
+          <FacilityAuthProvider>
+            <AppShell />
+          </FacilityAuthProvider>
+        </CHWAuthProvider>
+      </UserAuthProvider>
     </Router>
   );
 }

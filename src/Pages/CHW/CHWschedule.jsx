@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Calendar, Clock, MapPin, Phone, User,
@@ -6,107 +6,11 @@ import {
   ChevronRight, Home, Navigation, Bell, AlertCircle,
   Video, MessageCircle, Star, Users, Heart,
   Sun, Moon, Cloud, Droplets, Activity, Send,
-  Trash2, Edit2, X
+  Trash2, Edit2, X, Loader,
 } from "lucide-react";
 import NavCHW from "../../Components/NavCHW";
-
-/* ─── Dummy Data ─── */
-const dummyPatients = [
-  { id: 1, name: "Sarah Mwangi", phone: "+254711000001", location: "Parklands, Nairobi" },
-  { id: 2, name: "Amara Ochieng", phone: "+254711000002", location: "Kibera, Nairobi" },
-  { id: 3, name: "Fatuma Hassan", phone: "+254711000003", location: "Eastleigh, Nairobi" },
-  { id: 4, name: "Wanjiru Kimani", phone: "+254711000004", location: "Westlands, Nairobi" },
-  { id: 5, name: "Blessing Okonkwo", phone: "+254711000005", location: "Kasarani, Nairobi" },
-  { id: 6, name: "Grace Muthoni", phone: "+254711000006", location: "Westlands, Nairobi" }
-];
-
-const dummySchedule = [
-  {
-    id: 1,
-    patientId: 1,
-    patientName: "Sarah Mwangi",
-    type: "Home visit",
-    date: "2026-05-25",
-    time: "10:00 AM",
-    duration: 60,
-    location: "Parklands, Nairobi",
-    phone: "+254711000001",
-    status: "confirmed",
-    patientConfirmed: true,
-    notes: "First home visit. Bring counselling materials.",
-    priority: "high",
-    createdAt: "2026-05-20",
-    reminderSent: true
-  },
-  {
-    id: 2,
-    patientId: 2,
-    patientName: "Amara Ochieng",
-    type: "Follow-up call",
-    date: "2026-05-25",
-    time: "2:00 PM",
-    duration: 30,
-    location: "Phone call",
-    phone: "+254711000002",
-    status: "pending",
-    patientConfirmed: false,
-    notes: "Check on emotional state and medication adherence.",
-    priority: "medium",
-    createdAt: "2026-05-21",
-    reminderSent: false
-  },
-  {
-    id: 3,
-    patientId: 3,
-    patientName: "Fatuma Hassan",
-    type: "Wellness check",
-    date: "2026-05-26",
-    time: "11:30 AM",
-    duration: 45,
-    location: "Eastleigh, Nairobi",
-    phone: "+254711000003",
-    status: "confirmed",
-    patientConfirmed: true,
-    notes: "First week post-loss assessment.",
-    priority: "high",
-    createdAt: "2026-05-19",
-    reminderSent: true
-  },
-  {
-    id: 4,
-    patientId: 4,
-    patientName: "Wanjiru Kimani",
-    type: "Check-in call",
-    date: "2026-05-27",
-    time: "9:00 AM",
-    duration: 20,
-    location: "Phone call",
-    phone: "+254711000004",
-    status: "pending",
-    patientConfirmed: false,
-    notes: "Monthly follow-up for resolved case.",
-    priority: "low",
-    createdAt: "2026-05-22",
-    reminderSent: false
-  },
-  {
-    id: 5,
-    patientId: 5,
-    patientName: "Blessing Okonkwo",
-    type: "Hospital follow-up",
-    date: "2026-05-23",
-    time: "3:00 PM",
-    duration: 60,
-    location: "Kenyatta National Hospital",
-    phone: "+254711000005",
-    status: "completed",
-    patientConfirmed: true,
-    notes: "Check post-escalation status.",
-    priority: "high",
-    createdAt: "2026-05-18",
-    reminderSent: true
-  }
-];
+import { getCHWSchedule } from "../../API/chw";
+import { getCHWPatients } from "../../API/chw";
 
 const taskTypes = [
   { value: "all", label: "All tasks", icon: Calendar },
@@ -114,20 +18,20 @@ const taskTypes = [
   { value: "Follow-up call", label: "Follow-up calls", icon: Phone },
   { value: "Check-in call", label: "Check-in calls", icon: MessageCircle },
   { value: "Wellness check", label: "Wellness checks", icon: Heart },
-  { value: "Hospital follow-up", label: "Hospital follow-ups", icon: Activity }
+  { value: "Hospital follow-up", label: "Hospital follow-ups", icon: Activity },
 ];
 
 const statusConfig = {
   pending: { color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200", label: "Pending confirmation" },
   confirmed: { color: "text-green-600", bg: "bg-green-50", border: "border-green-200", label: "Confirmed" },
   completed: { color: "text-gray-500", bg: "bg-gray-50", border: "border-gray-200", label: "Completed" },
-  cancelled: { color: "text-red-500", bg: "bg-red-50", border: "border-red-200", label: "Cancelled" }
+  cancelled: { color: "text-red-500", bg: "bg-red-50", border: "border-red-200", label: "Cancelled" },
 };
 
 const priorityConfig = {
   high: { color: "text-red-600", bg: "bg-red-50", dot: "bg-red-500" },
   medium: { color: "text-amber-600", bg: "bg-amber-50", dot: "bg-amber-500" },
-  low: { color: "text-green-600", bg: "bg-green-50", dot: "bg-green-500" }
+  low: { color: "text-green-600", bg: "bg-green-50", dot: "bg-green-500" },
 };
 
 function getWeekDays(currentDate) {
@@ -155,7 +59,7 @@ function SectionLabel({ children }) {
   );
 }
 
-function Toast({ message, visible, onClose }) {
+function Toast({ message, visible }) {
   if (!visible) return null;
   return (
     <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white rounded-full px-5 py-2.5 text-xs font-medium font-['Manrope'] z-[9999] whitespace-nowrap shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
@@ -170,7 +74,9 @@ export default function CHWSchedule() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTaskType, setSelectedTaskType] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  const [schedule, setSchedule] = useState(dummySchedule);
+  const [schedule, setSchedule] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -185,8 +91,26 @@ export default function CHWSchedule() {
     duration: 30,
     notes: "",
     priority: "medium",
-    location: ""
+    location: "",
   });
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [scheduleRes, patientsRes] = await Promise.all([
+          getCHWSchedule(),
+          getCHWPatients(),
+        ]);
+        setSchedule(scheduleRes.data.data || []);
+        setPatients(patientsRes.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch schedule data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const weekDays = getWeekDays(currentDate);
   const selectedDateKey = formatDateKey(selectedDate);
@@ -227,16 +151,6 @@ export default function CHWSchedule() {
     setSelectedDate(today);
   };
 
-  const handleTaskStatusUpdate = (taskId, newStatus) => {
-    setSchedule(prev => prev.map(task =>
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ));
-    if (newStatus === "completed") {
-      showToast(`Appointment marked as completed`);
-    }
-    setShowTaskModal(false);
-  };
-
   const handleStartTask = (task) => {
     if (task.type === "Home visit" || task.type === "Wellness check" || task.type === "Hospital follow-up") {
       window.open(`https://maps.google.com/?q=${encodeURIComponent(task.location)}`, "_blank");
@@ -245,75 +159,18 @@ export default function CHWSchedule() {
     }
   };
 
-  const handleCreateAppointment = () => {
-    if (!newAppointment.patientId || !newAppointment.date || !newAppointment.time) {
-      showToast("Please fill in all required fields");
-      return;
-    }
-
-    const selectedPatient = dummyPatients.find(p => p.id === parseInt(newAppointment.patientId));
-    
-    const newId = Math.max(...schedule.map(t => t.id), 0) + 1;
-    
-    const appointment = {
-      id: newId,
-      patientId: parseInt(newAppointment.patientId),
-      patientName: selectedPatient.name,
-      type: newAppointment.type,
-      date: newAppointment.date,
-      time: newAppointment.time,
-      duration: newAppointment.duration,
-      location: newAppointment.type === "Phone call" ? "Phone call" : selectedPatient.location,
-      phone: selectedPatient.phone,
-      status: "pending",
-      patientConfirmed: false,
-      notes: newAppointment.notes,
-      priority: newAppointment.priority,
-      createdAt: new Date().toISOString().split('T')[0],
-      reminderSent: false
-    };
-
-    setSchedule(prev => [...prev, appointment]);
-    
-    // Simulate sending notification to patient
-    console.log(`📱 NOTIFICATION SENT TO ${selectedPatient.name}:`);
-    console.log(`   You have a new appointment scheduled:`);
-    console.log(`   ${newAppointment.type} on ${newAppointment.date} at ${newAppointment.time}`);
-    console.log(`   Location: ${appointment.location}`);
-    console.log(`   Notes: ${newAppointment.notes || "None"}`);
-    
-    showToast(`Appointment scheduled! Patient ${selectedPatient.name} has been notified.`);
-    
-    // Reset form
-    setNewAppointment({
-      patientId: "",
-      patientName: "",
-      type: "Home visit",
-      date: "",
-      time: "",
-      duration: 30,
-      notes: "",
-      priority: "medium",
-      location: ""
-    });
-    setShowCreateModal(false);
-  };
-
   const handlePatientSelect = (patientId) => {
-    const patient = dummyPatients.find(p => p.id === parseInt(patientId));
+    const patient = patients.find(p => (p.id || p._id) === patientId);
     setNewAppointment(prev => ({
       ...prev,
       patientId,
-      patientName: patient.name,
-      location: patient.location
+      patientName: patient?.firstName ? `${patient.firstName} ${patient.lastName}` : patient?.name || "",
+      location: patient?.location || "",
     }));
   };
 
   const handleResendReminder = (task) => {
     showToast(`Reminder sent to ${task.patientName}`);
-    setSchedule(prev => prev.map(t =>
-      t.id === task.id ? { ...t, reminderSent: true } : t
-    ));
   };
 
   const getTaskIcon = (type) => {
@@ -332,6 +189,17 @@ export default function CHWSchedule() {
     return date.toDateString() === today.toDateString();
   };
 
+  if (loading) {
+    return (
+      <>
+        <NavCHW />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Loader size={24} className="animate-spin text-gray-400" />
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
       <NavCHW />
@@ -339,12 +207,11 @@ export default function CHWSchedule() {
       <div className="min-h-screen bg-gray-50 font-['Manrope'] pb-28">
         <div className="md:ml-64">
           
-          {/* Header */}
           <div className="sticky top-0 z-40 bg-white border-b border-gray-100 px-4 md:px-6 py-4">
             <div className="max-w-6xl mx-auto">
               <div className="flex items-center justify-between">
                 <button 
-                  onClick={() => navigate("/chw/dashboard")}
+                  onClick={() => navigate("/chw")}
                   className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition"
                 >
                   <ArrowLeft size={20} className="text-gray-600" />
@@ -369,12 +236,13 @@ export default function CHWSchedule() {
               <div className="space-y-2">
                 {upcomingTasks.map(task => {
                   const TaskIcon = getTaskIcon(task.type);
-                  const priorityStyles = priorityConfig[task.priority];
+                  const priorityStyles = priorityConfig[task.priority] || priorityConfig.medium;
                   const taskDate = new Date(task.date);
                   const isTodayTask = taskDate.toDateString() === new Date().toDateString();
+                  const taskId = task.id || task._id;
                   
                   return (
-                    <div key={task.id} className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition">
+                    <div key={taskId} className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm hover:shadow-md transition">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
                           <TaskIcon size={14} className="text-gray-600" />
@@ -399,10 +267,7 @@ export default function CHWSchedule() {
                           </div>
                         </div>
                         <button
-                          onClick={() => {
-                            setSelectedTask(task);
-                            setShowTaskModal(true);
-                          }}
+                          onClick={() => { setSelectedTask(task); setShowTaskModal(true); }}
                           className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-xs font-medium"
                         >
                           View
@@ -415,7 +280,6 @@ export default function CHWSchedule() {
                   <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
                     <CheckCircle2 size={32} className="text-green-500 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">No upcoming tasks</p>
-                    <p className="text-xs text-gray-400 mt-1">Click "Schedule" to create a new appointment</p>
                   </div>
                 )}
               </div>
@@ -425,31 +289,21 @@ export default function CHWSchedule() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => navigateWeek(-1)}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition"
-                  >
+                  <button onClick={() => navigateWeek(-1)} className="p-2 rounded-lg hover:bg-gray-100 transition">
                     <ChevronLeft size={18} className="text-gray-600" />
                   </button>
                   <h2 className="text-base font-bold text-gray-900">
                     {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </h2>
-                  <button
-                    onClick={() => navigateWeek(1)}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition"
-                  >
+                  <button onClick={() => navigateWeek(1)} className="p-2 rounded-lg hover:bg-gray-100 transition">
                     <ChevronRight size={18} className="text-gray-600" />
                   </button>
                 </div>
-                <button
-                  onClick={goToToday}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition"
-                >
+                <button onClick={goToToday} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition">
                   Today
                 </button>
               </div>
 
-              {/* Week Days Grid */}
               <div className="grid grid-cols-7 gap-2">
                 {weekDays.map((day, idx) => {
                   const dateKey = formatDateKey(day);
@@ -465,27 +319,17 @@ export default function CHWSchedule() {
                       key={idx}
                       onClick={() => setSelectedDate(day)}
                       className={`text-center p-3 rounded-xl transition-all ${
-                        isSelected
-                          ? "bg-gray-900 text-white"
-                          : isCurrentDay
-                          ? "bg-gray-100 text-gray-900"
-                          : "hover:bg-gray-100"
+                        isSelected ? "bg-gray-900 text-white" : isCurrentDay ? "bg-gray-100 text-gray-900" : "hover:bg-gray-100"
                       }`}
                     >
-                      <p className={`text-[11px] font-medium ${
-                        isSelected ? "text-gray-400" : "text-gray-500"
-                      }`}>
+                      <p className={`text-[11px] font-medium ${isSelected ? "text-gray-400" : "text-gray-500"}`}>
                         {day.toLocaleDateString('en-US', { weekday: 'short' })}
                       </p>
-                      <p className={`text-lg font-bold mt-1 ${
-                        isSelected ? "text-white" : "text-gray-900"
-                      }`}>
+                      <p className={`text-lg font-bold mt-1 ${isSelected ? "text-white" : "text-gray-900"}`}>
                         {day.getDate()}
                       </p>
                       {dayTasksCount > 0 && (
-                        <div className={`text-[10px] font-semibold mt-1 ${
-                          isSelected ? "text-green-400" : "text-green-500"
-                        }`}>
+                        <div className={`text-[10px] font-semibold mt-1 ${isSelected ? "text-green-400" : "text-green-500"}`}>
                           {dayTasksCount} task{dayTasksCount !== 1 ? "s" : ""}
                         </div>
                       )}
@@ -501,15 +345,11 @@ export default function CHWSchedule() {
                 <SectionLabel>
                   {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
                 </SectionLabel>
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="p-1.5 rounded-lg hover:bg-gray-100 transition"
-                >
+                <button onClick={() => setShowFilters(!showFilters)} className="p-1.5 rounded-lg hover:bg-gray-100 transition">
                   <Filter size={14} className="text-gray-400" />
                 </button>
               </div>
 
-              {/* Task Type Filters */}
               {showFilters && (
                 <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
                   {taskTypes.map(type => {
@@ -519,9 +359,7 @@ export default function CHWSchedule() {
                         key={type.value}
                         onClick={() => setSelectedTaskType(type.value)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
-                          selectedTaskType === type.value
-                            ? "bg-gray-900 text-white"
-                            : "bg-white text-gray-600 border border-gray-200"
+                          selectedTaskType === type.value ? "bg-gray-900 text-white" : "bg-white text-gray-600 border border-gray-200"
                         }`}
                       >
                         <Icon size={12} />
@@ -532,28 +370,22 @@ export default function CHWSchedule() {
                 </div>
               )}
 
-              {/* Tasks List */}
               {filteredTasks.length === 0 ? (
                 <div className="bg-white rounded-xl border border-gray-100 p-8 text-center">
                   <Calendar size={40} className="text-gray-300 mx-auto mb-3" />
                   <p className="text-sm text-gray-500 font-medium">No tasks scheduled for this day</p>
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="mt-3 text-xs text-green-600 font-medium"
-                  >
-                    + Schedule an appointment
-                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {filteredTasks.map(task => {
                     const TaskIcon = getTaskIcon(task.type);
-                    const statusStyles = statusConfig[task.status];
-                    const priorityStyles = priorityConfig[task.priority];
+                    const statusStyles = statusConfig[task.status] || statusConfig.pending;
+                    const priorityStyles = priorityConfig[task.priority] || priorityConfig.medium;
                     const isOverdue = new Date(task.date) < new Date() && task.status === "pending";
+                    const taskId = task.id || task._id;
                     
                     return (
-                      <div key={task.id} className={`bg-white rounded-xl border shadow-sm transition-all hover:shadow-md ${
+                      <div key={taskId} className={`bg-white rounded-xl border shadow-sm transition-all hover:shadow-md ${
                         isOverdue ? "border-l-4 border-l-red-500" : "border-gray-100"
                       }`}>
                         <div className="p-4">
@@ -588,10 +420,7 @@ export default function CHWSchedule() {
                               <div className="flex items-center gap-2">
                                 <Bell size={12} className="text-amber-500" />
                                 <span className="text-xs text-amber-600">Awaiting patient confirmation</span>
-                                <button
-                                  onClick={() => handleResendReminder(task)}
-                                  className="ml-auto text-[10px] text-green-600 font-medium"
-                                >
+                                <button onClick={() => handleResendReminder(task)} className="ml-auto text-[10px] text-green-600 font-medium">
                                   Send reminder
                                 </button>
                               </div>
@@ -607,42 +436,24 @@ export default function CHWSchedule() {
                           <div className="flex gap-2">
                             {task.status === "pending" && (
                               <>
-                                <button
-                                  onClick={() => handleStartTask(task)}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition"
-                                >
+                                <button onClick={() => handleStartTask(task)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition">
                                   <Navigation size={12} />
                                   {task.type === "Home visit" ? "Navigate" : "Call"}
-                                </button>
-                                <button
-                                  onClick={() => handleTaskStatusUpdate(task.id, "confirmed")}
-                                  className="flex-1 py-2 rounded-lg border border-green-500 text-green-600 text-xs font-medium hover:bg-green-50 transition"
-                                >
-                                  Confirm
                                 </button>
                               </>
                             )}
                             {task.status === "confirmed" && (
                               <>
-                                <button
-                                  onClick={() => handleStartTask(task)}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition"
-                                >
+                                <button onClick={() => handleStartTask(task)} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-gray-900 text-white text-xs font-medium hover:bg-gray-800 transition">
                                   <Navigation size={12} />
                                   Start
-                                </button>
-                                <button
-                                  onClick={() => handleTaskStatusUpdate(task.id, "completed")}
-                                  className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-medium hover:bg-gray-50 transition"
-                                >
-                                  Mark Complete
                                 </button>
                               </>
                             )}
                             {task.status === "completed" && (
                               <div className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-gray-50 text-gray-500 text-xs font-medium">
                                 <CheckCircle2 size={12} />
-                                Completed on {new Date(task.date).toLocaleDateString()}
+                                Completed
                               </div>
                             )}
                           </div>
@@ -663,16 +474,12 @@ export default function CHWSchedule() {
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-900">Schedule Appointment</h2>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
-              >
+              <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-full hover:bg-gray-100 transition">
                 <X size={18} className="text-gray-400" />
               </button>
             </div>
 
             <div className="p-5 space-y-4">
-              {/* Patient Selection */}
               <div>
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">Select Patient *</label>
                 <select
@@ -681,13 +488,14 @@ export default function CHWSchedule() {
                   className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
                 >
                   <option value="">Select a patient</option>
-                  {dummyPatients.map(patient => (
-                    <option key={patient.id} value={patient.id}>{patient.name} - {patient.location}</option>
+                  {patients.map(patient => (
+                    <option key={patient.id || patient._id} value={patient.id || patient._id}>
+                      {patient.firstName ? `${patient.firstName} ${patient.lastName}` : patient.name} - {patient.location}
+                    </option>
                   ))}
                 </select>
               </div>
 
-              {/* Appointment Type */}
               <div>
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">Appointment Type *</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -697,9 +505,7 @@ export default function CHWSchedule() {
                       type="button"
                       onClick={() => setNewAppointment(prev => ({ ...prev, type }))}
                       className={`px-3 py-2 rounded-lg text-xs font-medium transition ${
-                        newAppointment.type === type
-                          ? "bg-gray-900 text-white"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        newAppointment.type === type ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
                       {type}
@@ -708,37 +514,24 @@ export default function CHWSchedule() {
                 </div>
               </div>
 
-              {/* Date & Time */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-700 mb-1 block">Date *</label>
-                  <input
-                    type="date"
-                    value={newAppointment.date}
-                    onChange={(e) => setNewAppointment(prev => ({ ...prev, date: e.target.value }))}
+                  <input type="date" value={newAppointment.date} onChange={(e) => setNewAppointment(prev => ({ ...prev, date: e.target.value }))}
                     className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
-                    min={new Date().toISOString().split('T')[0]}
-                  />
+                    min={new Date().toISOString().split('T')[0]} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-700 mb-1 block">Time *</label>
-                  <input
-                    type="time"
-                    value={newAppointment.time}
-                    onChange={(e) => setNewAppointment(prev => ({ ...prev, time: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
-                  />
+                  <input type="time" value={newAppointment.time} onChange={(e) => setNewAppointment(prev => ({ ...prev, time: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400" />
                 </div>
               </div>
 
-              {/* Duration */}
               <div>
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">Duration (minutes)</label>
-                <select
-                  value={newAppointment.duration}
-                  onChange={(e) => setNewAppointment(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400"
-                >
+                <select value={newAppointment.duration} onChange={(e) => setNewAppointment(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400">
                   <option value={15}>15 minutes</option>
                   <option value={30}>30 minutes</option>
                   <option value={45}>45 minutes</option>
@@ -747,59 +540,38 @@ export default function CHWSchedule() {
                 </select>
               </div>
 
-              {/* Priority */}
               <div>
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">Priority</label>
                 <div className="flex gap-2">
                   {["low", "medium", "high"].map(priority => (
-                    <button
-                      key={priority}
-                      type="button"
-                      onClick={() => setNewAppointment(prev => ({ ...prev, priority }))}
+                    <button key={priority} type="button" onClick={() => setNewAppointment(prev => ({ ...prev, priority }))}
                       className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition ${
                         newAppointment.priority === priority
                           ? priority === "high" ? "bg-red-500 text-white" : priority === "medium" ? "bg-amber-500 text-white" : "bg-green-500 text-white"
                           : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
+                      }`}>
                       {priority}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Notes */}
               <div>
                 <label className="text-xs font-semibold text-gray-700 mb-1 block">Notes (for patient)</label>
-                <textarea
-                  value={newAppointment.notes}
-                  onChange={(e) => setNewAppointment(prev => ({ ...prev, notes: e.target.value }))}
-                  rows={3}
-                  placeholder="E.g., Bring medical records, fasting required, etc."
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400 resize-none"
-                />
+                <textarea value={newAppointment.notes} onChange={(e) => setNewAppointment(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3} placeholder="E.g., Bring medical records, fasting required, etc."
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-gray-400 resize-none" />
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium"
-                >
+                <button onClick={() => setShowCreateModal(false)} className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium">
                   Cancel
                 </button>
-                <button
-                  onClick={handleCreateAppointment}
-                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-medium flex items-center justify-center gap-2"
-                >
+                <button className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-medium flex items-center justify-center gap-2">
                   <Send size={14} />
                   Schedule & Notify
                 </button>
               </div>
-
-              <p className="text-center text-[10px] text-gray-400 pt-2">
-                Patient will receive a notification about this appointment
-              </p>
             </div>
           </div>
         </div>
@@ -812,17 +584,11 @@ export default function CHWSchedule() {
             <div className="sticky top-0 bg-white border-b border-gray-100 p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
-                  {(() => {
-                    const Icon = getTaskIcon(selectedTask.type);
-                    return <Icon size={14} className="text-gray-600" />;
-                  })()}
+                  {(() => { const Icon = getTaskIcon(selectedTask.type); return <Icon size={14} className="text-gray-600" />; })()}
                 </div>
                 <h2 className="text-lg font-bold text-gray-900">{selectedTask.type}</h2>
               </div>
-              <button
-                onClick={() => setShowTaskModal(false)}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
-              >
+              <button onClick={() => setShowTaskModal(false)} className="p-2 rounded-full hover:bg-gray-100 transition">
                 <X size={18} className="text-gray-400" />
               </button>
             </div>
@@ -834,70 +600,27 @@ export default function CHWSchedule() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Date & Time</p>
-                  <p className="text-sm font-medium text-gray-900">{selectedTask.date} at {selectedTask.time}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Duration</p>
-                  <p className="text-sm font-medium text-gray-900">{selectedTask.duration} minutes</p>
-                </div>
+                <div><p className="text-xs text-gray-400 mb-1">Date & Time</p><p className="text-sm font-medium text-gray-900">{selectedTask.date} at {selectedTask.time}</p></div>
+                <div><p className="text-xs text-gray-400 mb-1">Duration</p><p className="text-sm font-medium text-gray-900">{selectedTask.duration} minutes</p></div>
               </div>
 
-              <div>
-                <p className="text-xs text-gray-400 mb-1">Location</p>
-                <p className="text-sm text-gray-900">{selectedTask.location}</p>
-              </div>
-
+              <div><p className="text-xs text-gray-400 mb-1">Location</p><p className="text-sm text-gray-900">{selectedTask.location}</p></div>
               <div>
                 <p className="text-xs text-gray-400 mb-1">Contact</p>
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-900">{selectedTask.phone}</p>
-                  <button
-                    onClick={() => window.open(`tel:${selectedTask.phone}`)}
-                    className="px-3 py-1 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium"
-                  >
-                    Call
-                  </button>
+                  <button onClick={() => window.open(`tel:${selectedTask.phone}`)} className="px-3 py-1 rounded-lg bg-gray-100 text-gray-600 text-xs font-medium">Call</button>
                 </div>
               </div>
 
               {selectedTask.notes && (
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">Notes</p>
-                  <div className="bg-gray-50 rounded-xl p-3">
-                    <p className="text-sm text-gray-600">{selectedTask.notes}</p>
-                  </div>
-                </div>
+                <div><p className="text-xs text-gray-400 mb-1">Notes</p><div className="bg-gray-50 rounded-xl p-3"><p className="text-sm text-gray-600">{selectedTask.notes}</p></div></div>
               )}
 
-              {/* Patient Confirmation Status */}
-              <div className="bg-amber-50 rounded-xl p-3">
-                <div className="flex items-center gap-2">
-                  <Bell size={14} className="text-amber-600" />
-                  <p className="text-xs text-amber-700">
-                    {selectedTask.patientConfirmed 
-                      ? "✓ Patient has confirmed this appointment" 
-                      : "⏳ Awaiting patient confirmation"}
-                  </p>
-                </div>
-              </div>
-
               <div className="flex gap-3 pt-3">
-                <button
-                  onClick={() => handleStartTask(selectedTask)}
-                  className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold"
-                >
+                <button onClick={() => handleStartTask(selectedTask)} className="flex-1 py-3 rounded-xl bg-gray-900 text-white text-sm font-semibold">
                   {selectedTask.type === "Home visit" ? "Start Navigation" : "Call Patient"}
                 </button>
-                {selectedTask.status !== "completed" && (
-                  <button
-                    onClick={() => handleTaskStatusUpdate(selectedTask.id, "completed")}
-                    className="flex-1 py-3 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold"
-                  >
-                    Mark Complete
-                  </button>
-                )}
               </div>
             </div>
           </div>

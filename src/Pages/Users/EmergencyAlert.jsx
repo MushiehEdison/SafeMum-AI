@@ -1,42 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Bot, Droplets, Zap, Thermometer, AlertCircle,
   HelpCircle, CheckCircle2, MapPin, Phone, Send, Loader,
   Heart, X, AlertTriangle, Building2, User, ChevronRight,
 } from 'lucide-react';
-
-/* ─── Dummy data ─── */
-const dummyUser = {
-  name: 'Sarah',
-  primaryHospital: {
-    id: 1,
-    name: 'Kenyatta National Hospital',
-    phone: '+254200000001',
-    address: 'Hospital Rd, Nairobi',
-    distance: '3.2 km',
-  },
-  primaryPhysician: 'Dr. James Oloo',
-  primaryCHW: {
-    id: 1,
-    name: 'Grace Otieno',
-    speciality: 'Midwife',
-    phone: '+254700000002',
-    area: 'Westlands',
-  },
-};
-
-const dummyLocation = {
-  area: 'Parklands, Nairobi',
-  lat: -1.2614,
-  lng: 36.8022,
-};
-
-const nearestFacilities = [
-  { id: 2, name: 'Aga Khan University Hospital', phone: '+254366200000', distance: '4.1 km', hasPostLossCare: true },
-  { id: 3, name: 'MP Shah Hospital', phone: '+254203742000', distance: '5.3 km', hasPostLossCare: true },
-  { id: 4, name: 'Nairobi West Hospital', phone: '+254722205700', distance: '6.8 km', hasPostLossCare: false },
-];
+import { UserAuthContext } from '../../Context/UserAuthContext';
+import { sendEmergencyAlert } from '../../API/alerts';
+import { getNearbyFacilities } from '../../API/facilities';
+import { getProfile } from '../../API/patient';
 
 const SYMPTOMS = [
   { icon: Droplets, label: 'Heavy bleeding that will not stop', severity: 'high', description: 'Soaking through more than 1 pad per hour' },
@@ -48,6 +20,7 @@ const SYMPTOMS = [
 
 export default function EmergencyAlert() {
   const navigate = useNavigate();
+  const { user } = useContext(UserAuthContext);
 
   const [step, setStep] = useState(1);
   const [selectedSymptom, setSelectedSymptom] = useState(null);
@@ -57,6 +30,28 @@ export default function EmergencyAlert() {
   const [selectedExtraFacility, setSelectedExtraFacility] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [nearbyFacilities, setNearbyFacilities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [userCoords, setUserCoords] = useState(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [profileRes, facilitiesRes] = await Promise.all([
+          getProfile(),
+          getNearbyFacilities(),
+        ]);
+        setUserProfile(profileRes.data.data || profileRes.data);
+        setNearbyFacilities(facilitiesRes.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch emergency data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
 
   const stepTitles = {
     1: 'What\'s happening?',
@@ -64,6 +59,15 @@ export default function EmergencyAlert() {
     3: 'Confirm',
     4: 'Help en route',
   };
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setUserCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        (err) => console.warn('Location denied:', err),
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
+  }, []);
 
   function goBack() {
     if (step === 1) navigate('/');
@@ -81,19 +85,41 @@ export default function EmergencyAlert() {
     return !!selectedRecipients.find(r => r.id === id);
   }
 
-  function handleSend() {
+  async function handleSend() {
     setIsSending(true);
-    setTimeout(() => { setIsSending(false); setStep(4); }, 1500);
+    try {
+      await sendEmergencyAlert({
+        symptom: selectedSymptom === 'Something else feels very wrong' ? otherSymptomText : selectedSymptom,
+        recipients: selectedRecipients.map(r => ({ id: r.id, type: r.type, name: r.name })),
+        location: {
+          latitude:  userCoords?.latitude  || null,
+          longitude: userCoords?.longitude || null,
+          area:      userProfile?.location || '',
+        },
+      });
+      setStep(4);
+    } catch (err) {
+      console.error('Failed to send alert:', err);
+    } finally {
+      setIsSending(false);
+    }
   }
 
   const symptomDisplay = selectedSymptom === 'Something else feels very wrong' && otherSymptomText
     ? otherSymptomText
     : selectedSymptom;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-red-50 to-white flex items-center justify-center">
+        <Loader size={24} className="animate-spin text-red-400" />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="min-h-screen bg-gradient-to-b from-red-50 to-white">
-        {/* Responsive container - centers on desktop, full width on mobile */}
         <div className="max-w-2xl mx-auto px-4 md:px-6">
           
           {/* Header */}
@@ -145,25 +171,22 @@ export default function EmergencyAlert() {
             </div>
           </div>
 
-          {/* Main Content - with extra bottom padding for mobile nav */}
           <div className="pb-32 md:pb-12">
             
             {/* STEP 1 - Symptoms */}
             {step === 1 && (
               <div className="space-y-6">
-                {/* AI Message */}
                 <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
                   <div className="flex gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
                       <Bot size={20} className="text-white" />
                     </div>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      <span className="font-semibold text-gray-900">{dummyUser.name},</span> I'm here with you. Tell me what you're experiencing so I can get you the right help.
+                      <span className="font-semibold text-gray-900">{user?.name || userProfile?.name},</span> I'm here with you. Tell me what you're experiencing so I can get you the right help.
                     </p>
                   </div>
                 </div>
 
-                {/* Symptoms Grid */}
                 <div className="space-y-3">
                   {SYMPTOMS.map(({ icon: Icon, label, description }) => {
                     const active = selectedSymptom === label;
@@ -227,139 +250,145 @@ export default function EmergencyAlert() {
 
                 <div className="space-y-3">
                   {/* Primary Hospital */}
-                  <div
-                    onClick={() => toggleRecipient({
-                      id: dummyUser.primaryHospital.id,
-                      name: dummyUser.primaryHospital.name,
-                      phone: dummyUser.primaryHospital.phone,
-                      role: 'Primary Hospital',
-                      distance: dummyUser.primaryHospital.distance,
-                      type: 'hospital',
-                    })}
-                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                      isSelected(dummyUser.primaryHospital.id)
-                        ? 'border-red-500 bg-red-50/50'
-                        : 'border-gray-100 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                        <Building2 size={20} className="text-green-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">Primary Hospital</p>
-                        <p className="font-semibold text-gray-900 mt-0.5">{dummyUser.primaryHospital.name}</p>
-                        <p className="text-xs text-gray-400 mt-1">{dummyUser.primaryPhysician} · {dummyUser.primaryHospital.distance}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Phone size={11} className="text-gray-300" />
-                          <span className="text-xs text-gray-400">{dummyUser.primaryHospital.phone}</span>
+                  {userProfile?.primaryHospital && (
+                    <div
+                      onClick={() => toggleRecipient({
+                        id: userProfile.primaryHospital.id,
+                        name: userProfile.primaryHospital.name,
+                        phone: userProfile.primaryHospital.phone,
+                        role: 'Primary Hospital',
+                        distance: userProfile.primaryHospital.distance,
+                        type: 'hospital',
+                      })}
+                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        isSelected(userProfile.primaryHospital.id)
+                          ? 'border-red-500 bg-red-50/50'
+                          : 'border-gray-100 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                          <Building2 size={20} className="text-green-600" />
                         </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">Primary Hospital</p>
+                          <p className="font-semibold text-gray-900 mt-0.5">{userProfile.primaryHospital.name}</p>
+                          <p className="text-xs text-gray-400 mt-1">{userProfile.primaryPhysician} · {userProfile.primaryHospital.distance}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Phone size={11} className="text-gray-300" />
+                            <span className="text-xs text-gray-400">{userProfile.primaryHospital.phone}</span>
+                          </div>
+                        </div>
+                        {isSelected(userProfile.primaryHospital.id) && (
+                          <CheckCircle2 size={20} className="text-red-500" />
+                        )}
                       </div>
-                      {isSelected(dummyUser.primaryHospital.id) && (
-                        <CheckCircle2 size={20} className="text-red-500" />
-                      )}
                     </div>
-                  </div>
+                  )}
 
                   {/* CHW */}
-                  <div
-                    onClick={() => toggleRecipient({
-                      id: dummyUser.primaryCHW.id,
-                      name: dummyUser.primaryCHW.name,
-                      phone: dummyUser.primaryCHW.phone,
-                      role: 'Community Health Worker',
-                      type: 'chw',
-                    })}
-                    className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
-                      isSelected(dummyUser.primaryCHW.id)
-                        ? 'border-red-500 bg-red-50/50'
-                        : 'border-gray-100 bg-white'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                        <User size={20} className="text-purple-600" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Your CHW</p>
-                        <p className="font-semibold text-gray-900 mt-0.5">{dummyUser.primaryCHW.name}</p>
-                        <p className="text-xs text-gray-400 mt-1">{dummyUser.primaryCHW.speciality} · {dummyUser.primaryCHW.area}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <Phone size={11} className="text-gray-300" />
-                          <span className="text-xs text-gray-400">{dummyUser.primaryCHW.phone}</span>
+                  {userProfile?.primaryCHW && (
+                    <div
+                      onClick={() => toggleRecipient({
+                        id: userProfile.primaryCHW.id,
+                        name: userProfile.primaryCHW.name,
+                        phone: userProfile.primaryCHW.phone,
+                        role: 'Community Health Worker',
+                        type: 'chw',
+                      })}
+                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
+                        isSelected(userProfile.primaryCHW.id)
+                          ? 'border-red-500 bg-red-50/50'
+                          : 'border-gray-100 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                          <User size={20} className="text-purple-600" />
                         </div>
+                        <div className="flex-1">
+                          <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Your CHW</p>
+                          <p className="font-semibold text-gray-900 mt-0.5">{userProfile.primaryCHW.name}</p>
+                          <p className="text-xs text-gray-400 mt-1">{userProfile.primaryCHW.speciality} · {userProfile.primaryCHW.area}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Phone size={11} className="text-gray-300" />
+                            <span className="text-xs text-gray-400">{userProfile.primaryCHW.phone}</span>
+                          </div>
+                        </div>
+                        {isSelected(userProfile.primaryCHW.id) && (
+                          <CheckCircle2 size={20} className="text-red-500" />
+                        )}
                       </div>
-                      {isSelected(dummyUser.primaryCHW.id) && (
-                        <CheckCircle2 size={20} className="text-red-500" />
-                      )}
                     </div>
-                  </div>
+                  )}
 
                   {/* Additional Facilities */}
-                  <div className={`rounded-xl border-2 border-dashed ${extraFacilityExpanded ? 'border-red-300 bg-red-50/30' : 'border-gray-200 bg-white'}`}>
-                    <div
-                      onClick={() => setExtraFacilityExpanded(!extraFacilityExpanded)}
-                      className="flex items-center justify-between p-4 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                          <MapPin size={20} className="text-gray-500" />
+                  {nearbyFacilities.length > 0 && (
+                    <div className={`rounded-xl border-2 border-dashed ${extraFacilityExpanded ? 'border-red-300 bg-red-50/30' : 'border-gray-200 bg-white'}`}>
+                      <div
+                        onClick={() => setExtraFacilityExpanded(!extraFacilityExpanded)}
+                        className="flex items-center justify-between p-4 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                            <MapPin size={20} className="text-gray-500" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">Nearest facility</p>
+                            {selectedExtraFacility && (
+                              <p className="text-xs text-green-600 mt-0.5">{selectedExtraFacility.name} selected</p>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-semibold text-gray-900">Other facility</p>
-                          {selectedExtraFacility && (
-                            <p className="text-xs text-green-600 mt-0.5">{selectedExtraFacility.name} selected</p>
-                          )}
-                        </div>
+                        <ChevronRight size={18} className={`text-gray-400 transition-transform ${extraFacilityExpanded ? 'rotate-90' : ''}`} />
                       </div>
-                      <ChevronRight size={18} className={`text-gray-400 transition-transform ${extraFacilityExpanded ? 'rotate-90' : ''}`} />
-                    </div>
 
-                    {extraFacilityExpanded && (
-                      <div className="border-t border-gray-100 p-3 space-y-2">
-                        {nearestFacilities.map(f => {
-                          const isChosen = selectedExtraFacility?.id === f.id;
-                          return (
-                            <div
-                              key={f.id}
-                              onClick={() => {
-                                if (isChosen) {
-                                  setSelectedExtraFacility(null);
-                                  setSelectedRecipients(prev => prev.filter(r => r.id !== f.id));
-                                } else {
-                                  setSelectedExtraFacility(f);
-                                  setSelectedRecipients(prev => {
-                                    const filtered = prev.filter(r => !nearestFacilities.find(nf => nf.id === r.id));
-                                    return [...filtered, { id: f.id, name: f.name, phone: f.phone, role: 'Hospital', distance: f.distance, type: 'hospital' }];
-                                  });
-                                }
-                              }}
-                              className={`p-3 rounded-xl cursor-pointer transition-all ${
-                                isChosen ? 'bg-red-100 border border-red-200' : 'bg-gray-50'
-                              }`}
-                            >
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900">{f.name}</p>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs text-gray-400">{f.distance}</span>
-                                    {f.hasPostLossCare && (
-                                      <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Post-loss care</span>
-                                    )}
+                      {extraFacilityExpanded && (
+                        <div className="border-t border-gray-100 p-3 space-y-2">
+                          {nearbyFacilities.map(f => {
+                            const isChosen = selectedExtraFacility?.id === f.id;
+                            return (
+                              <div
+                                key={f.id}
+                                onClick={() => {
+                                  if (isChosen) {
+                                    setSelectedExtraFacility(null);
+                                    setSelectedRecipients(prev => prev.filter(r => r.id !== f.id));
+                                  } else {
+                                    setSelectedExtraFacility(f);
+                                    setSelectedRecipients(prev => {
+                                      const filtered = prev.filter(r => !nearbyFacilities.find(nf => nf.id === r.id));
+                                      return [...filtered, { id: f.id, name: f.name, phone: f.phone, role: 'Hospital', distance: f.distance, type: 'hospital' }];
+                                    });
+                                  }
+                                }}
+                                className={`p-3 rounded-xl cursor-pointer transition-all ${
+                                  isChosen ? 'bg-red-100 border border-red-200' : 'bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-900">{f.name}</p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      <span className="text-xs text-gray-400">{f.distance || f.dist}</span>
+                                      {f.hasPostLossCare && (
+                                        <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Post-loss care</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                    isChosen ? 'border-red-500 bg-red-500' : 'border-gray-300'
+                                  }`}>
+                                    {isChosen && <CheckCircle2 size={12} className="text-white" />}
                                   </div>
                                 </div>
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                  isChosen ? 'border-red-500 bg-red-500' : 'border-gray-300'
-                                }`}>
-                                  {isChosen && <CheckCircle2 size={12} className="text-white" />}
-                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <button
@@ -385,9 +414,9 @@ export default function EmergencyAlert() {
                     <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">Emergency Alert</p>
                   </div>
                   <div className="space-y-2 text-xs font-mono text-green-400 leading-relaxed">
-                    <p>Patient: {dummyUser.name} (post-loss, day 21)</p>
+                    <p>Patient: {user?.name || userProfile?.name} (post-loss)</p>
                     <p>Situation: {symptomDisplay || 'Medical emergency'}</p>
-                    <p>Location: {dummyLocation.area}</p>
+                    <p>Location: {userProfile?.location?.area || 'Current location'}</p>
                     <p>Time: {new Date().toLocaleTimeString()}</p>
                   </div>
                 </div>

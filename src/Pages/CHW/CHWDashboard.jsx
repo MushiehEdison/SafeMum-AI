@@ -1,64 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bell, AlertTriangle, TrendingUp, TrendingDown, MapPin,
   Navigation, ChevronRight, ArrowUpRight, Clock, CheckCircle2,
-  User, Heart, Activity, Calendar, Phone, MessageCircle
+  User, Heart, Activity, Calendar, Phone, MessageCircle, Loader,
 } from "lucide-react";
 import NavCHW from "../../Components/NavCHW";
-
-/* ── Dummy data ── */
-const dummyCHW = {
-  name: "Grace Otieno",
-  speciality: "Midwife",
-  coverageArea: "Westlands, Nairobi",
-  isAvailable: true
-};
-
-const dummyStats = {
-  activeCases: 4,
-  resolvedThisWeek: 3,
-  escalatedThisMonth: 1,
-  contactedToday: 2,
-  trends: {
-    activeCases: { direction: "up", percent: 20 },
-    resolvedThisWeek: { direction: "up", percent: 33 },
-    escalatedThisMonth: { direction: "down", percent: 15 },
-    contactedToday: { direction: "up", percent: 10 }
-  }
-};
-
-const dummyUrgentCases = [
-  {
-    id: 1,
-    patientFirstName: "Sarah",
-    flagReason: "3 consecutive very low mood check-ins",
-    daysSinceAssigned: 1,
-    riskLevel: "High",
-    lastContact: "2 days ago"
-  },
-  {
-    id: 2,
-    patientFirstName: "Amara",
-    flagReason: "Missed follow-up appointment",
-    daysSinceAssigned: 3,
-    riskLevel: "Moderate",
-    lastContact: "4 days ago"
-  }
-];
-
-const dummyRecentActivity = [
-  { id: 1, action: "Case updated — Fatuma marked as Visited", time: "Today at 3:00 PM", type: "update" },
-  { id: 2, action: "Case updated — Amara marked as Contacted", time: "Yesterday at 2:00 PM", type: "contact" },
-  { id: 3, action: "New case assigned — Sarah", time: "Yesterday at 11:00 AM", type: "assign" },
-  { id: 4, action: "Case resolved — Wanjiru", time: "May 18 at 4:30 PM", type: "resolve" },
-  { id: 5, action: "Case escalated to hospital — Blessing", time: "May 17 at 9:00 AM", type: "escalate" }
-];
-
-const dummySchedule = [
-  { id: 1, patient: "Sarah", time: "10:00 AM", type: "Home visit", address: "Westlands, Nairobi" },
-  { id: 2, patient: "Amara", time: "2:00 PM", type: "Follow-up call", address: "Kibera" }
-];
+import { CHWAuthContext } from "../../Context/CHWAuthContext";
+import { getCHWDashboard } from "../../API/chw";
 
 function SectionLabel({ children }) {
   return (
@@ -79,10 +28,25 @@ function Toast({ message, visible }) {
 
 export default function CHWDashboard() {
   const navigate = useNavigate();
-  const [isAvailable, setIsAvailable] = useState(dummyCHW.isAvailable);
+  const { chw, updateCHW } = useContext(CHWAuthContext);
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isAvailable, setIsAvailable] = useState(chw?.isAvailable ?? true);
   const [toast, setToast] = useState({ visible: false, message: "" });
-  const [urgentCases, setUrgentCases] = useState(dummyUrgentCases);
-  const [activity, setActivity] = useState(dummyRecentActivity);
+
+  useEffect(() => {
+    async function fetchDashboard() {
+      try {
+        const res = await getCHWDashboard();
+        setDashboardData(res.data.data || res.data);
+      } catch (err) {
+        console.error('Failed to fetch dashboard:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDashboard();
+  }, []);
 
   const showToast = (msg) => {
     setToast({ visible: true, message: msg });
@@ -98,11 +62,28 @@ export default function CHWDashboard() {
     navigate(`/chw/cases/${caseId}`);
   };
 
+  if (loading) {
+    return (
+      <>
+        <NavCHW />
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Loader size={24} className="animate-spin text-gray-400" />
+        </div>
+      </>
+    );
+  }
+
+  const stats = dashboardData?.stats || {};
+  const urgentCases = dashboardData?.urgentCases || [];
+  const recentActivity = dashboardData?.recentActivity || [];
+  const schedule = dashboardData?.schedule || [];
+  const chwName = chw?.name || dashboardData?.chw?.name || "Grace";
+
   const statCards = [
-    { label: "Active cases", value: dummyStats.activeCases, key: "activeCases", highlight: dummyStats.activeCases > 3 },
-    { label: "Resolved this week", value: dummyStats.resolvedThisWeek, key: "resolvedThisWeek" },
-    { label: "Escalated this month", value: dummyStats.escalatedThisMonth, key: "escalatedThisMonth" },
-    { label: "Contacted today", value: dummyStats.contactedToday, key: "contactedToday" }
+    { label: "Active cases", value: stats.activeCases ?? 0, key: "activeCases", highlight: (stats.activeCases ?? 0) > 3 },
+    { label: "Resolved this week", value: stats.resolvedThisWeek ?? 0, key: "resolvedThisWeek" },
+    { label: "Escalated this month", value: stats.escalatedThisMonth ?? 0, key: "escalatedThisMonth" },
+    { label: "Contacted today", value: stats.contactedToday ?? 0, key: "contactedToday" },
   ];
 
   const getActivityIcon = (type) => {
@@ -131,9 +112,11 @@ export default function CHWDashboard() {
                   {new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}
                 </p>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-                  Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, {dummyCHW.name.split(" ")[0]}
+                  Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, {chwName.split(" ")[0]}
                 </h1>
-                <p className="text-xs text-gray-400 mt-1">{dummyCHW.speciality} · {dummyCHW.coverageArea}</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {chw?.speciality || dashboardData?.chw?.speciality} · {chw?.coverageArea || dashboardData?.chw?.coverageArea}
+                </p>
               </div>
               
               <div className="flex items-center gap-3">
@@ -180,7 +163,7 @@ export default function CHWDashboard() {
               <SectionLabel>Overview</SectionLabel>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {statCards.map(({ label, value, key }) => {
-                  const trend = dummyStats.trends[key];
+                  const trend = stats.trends?.[key];
                   const isUp = trend?.direction === "up";
                   return (
                     <div key={key} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
@@ -216,27 +199,34 @@ export default function CHWDashboard() {
                   View all <ChevronRight size={12} />
                 </button>
               </div>
-              <div className="space-y-2">
-                {dummySchedule.map(item => (
-                  <div key={item.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                          <Calendar size={18} className="text-purple-600" />
+              {schedule.length === 0 ? (
+                <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
+                  <Calendar size={24} className="text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">No visits scheduled for today</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {schedule.map(item => (
+                    <div key={item.id || item._id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+                            <Calendar size={18} className="text-purple-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{item.patient}</p>
+                            <p className="text-xs text-gray-500">{item.type} · {item.address}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900">{item.patient}</p>
-                          <p className="text-xs text-gray-500">{item.type} · {item.address}</p>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-gray-900">{item.time}</p>
+                          <button className="text-xs text-green-600 font-medium mt-1">Start visit</button>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">{item.time}</p>
-                        <button className="text-xs text-green-600 font-medium mt-1">Start visit</button>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Needs Attention */}
@@ -259,7 +249,7 @@ export default function CHWDashboard() {
                 <div className="space-y-3">
                   {urgentCases.map(c => (
                     <div 
-                      key={c.id} 
+                      key={c.id || c._id} 
                       className={`bg-white rounded-xl border border-gray-100 p-4 shadow-sm transition-all ${
                         c.riskLevel === "High" ? "border-l-4 border-l-red-500" : "border-l-4 border-l-gray-400"
                       }`}
@@ -292,7 +282,7 @@ export default function CHWDashboard() {
                           </span>
                         </div>
                         <button 
-                          onClick={() => handleViewCase(c.id)}
+                          onClick={() => handleViewCase(c.id || c._id)}
                           className="px-3 py-1.5 rounded-lg border border-gray-900 bg-gray-900 text-white text-xs font-semibold hover:bg-gray-800 transition"
                         >
                           View case
@@ -307,25 +297,32 @@ export default function CHWDashboard() {
             {/* Recent Activity Timeline */}
             <div>
               <SectionLabel>Recent activity</SectionLabel>
-              <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-                {activity.map((item, idx) => (
-                  <div key={item.id} className="flex gap-3 pb-4 last:pb-0">
-                    <div className="flex flex-col items-center">
-                      <div className="w-2 h-2 rounded-full bg-gray-300 mt-1.5" />
-                      {idx < activity.length - 1 && (
-                        <div className="w-px flex-1 bg-gray-100 mt-1 min-h-[24px]" />
-                      )}
-                    </div>
-                    <div className="flex-1 flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        {getActivityIcon(item.type)}
-                        <p className="text-sm text-gray-700">{item.action}</p>
+              {recentActivity.length === 0 ? (
+                <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
+                  <Clock size={24} className="text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-400">No recent activity</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                  {recentActivity.map((item, idx) => (
+                    <div key={item.id || item._id || idx} className="flex gap-3 pb-4 last:pb-0">
+                      <div className="flex flex-col items-center">
+                        <div className="w-2 h-2 rounded-full bg-gray-300 mt-1.5" />
+                        {idx < recentActivity.length - 1 && (
+                          <div className="w-px flex-1 bg-gray-100 mt-1 min-h-[24px]" />
+                        )}
                       </div>
-                      <span className="text-xs text-gray-400 ml-4">{item.time}</span>
+                      <div className="flex-1 flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          {getActivityIcon(item.type)}
+                          <p className="text-sm text-gray-700">{item.action}</p>
+                        </div>
+                        <span className="text-xs text-gray-400 ml-4">{item.time}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Actions */}

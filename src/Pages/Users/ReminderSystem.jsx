@@ -1,28 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useContext } from "react";
 import {
-  Plus, CheckCircle2, Bell, AlertTriangle, ChevronRight,
+  Plus, CheckCircle2, Bell, AlertTriangle, ChevronRight, Loader,
 } from "lucide-react";
 import Mascot from "../../Components/Mascot/Mascot";
 import ReminderCard from "../../Components/Reminder/Remindercard";
 import AIReminderSuggestion from "../../Components/Reminder/Airemindersuggestion";
 import AddReminderModal from "../../Components/Reminder/Addremindermodal";
+import { UserAuthContext } from "../../Context/UserAuthContext";
+import { getReminders, createReminder, completeReminder, updateReminder } from "../../API/reminders";
 
 /* ─────────────────────────────────
    DATA
 ───────────────────────────────── */
-const dummyReminders = [
-  { id:1, type:'Follow-up Appointment', datetime:'May 22, 2026 at 10:00 AM', note:'Post-loss follow-up at Kenyatta National Hospital', aiMessage:'Sarah, your follow-up appointment at Kenyatta National Hospital is tomorrow at 10am. This visit helps confirm your body has fully recovered from your loss in February. Please do not skip it.', missedCount:0, completed:false, overdue:false },
-  { id:2, type:'Medication', datetime:'May 21, 2026 at 8:00 AM', note:'Iron supplement', aiMessage:'Taking your iron supplement today helps your body rebuild after your loss. It is a small thing that makes a real difference.', missedCount:0, completed:false, overdue:true },
-  { id:3, type:'Emotional Check-in', datetime:'May 23, 2026 at 6:00 PM', note:null, aiMessage:'You set this check-in for yourself. A few minutes to sit with how you are feeling is always worth it.', missedCount:0, completed:false, overdue:false },
-  { id:4, type:'Follow-up Appointment', datetime:'May 18, 2026 at 9:00 AM', note:'Missed twice now', aiMessage:'This appointment has been missed. Your recovery matters — please try to reschedule as soon as possible.', missedCount:2, completed:false, overdue:true },
-  { id:5, type:'Danger Signs Education', datetime:'May 25, 2026 at 7:00 PM', note:null, aiMessage:'Knowing the warning signs of incomplete recovery could be life-saving. This reminder is set to keep you informed.', missedCount:0, completed:false, overdue:false },
-];
-
-const dummySuggestion = {
-  message: "It has been 3 weeks since your loss. Most doctors recommend a follow-up check at this point. Would you like me to add a reminder for that?",
-  reminderData: { type:'Follow-up Appointment', datetime:'May 28, 2026 at 10:00 AM', note:'AI suggested follow-up — 3 weeks post-loss', aiMessage:'This follow-up was suggested based on your recovery timeline. Three weeks post-loss is an important checkpoint. Please do not miss it.', missedCount:0, completed:false, overdue:false },
-};
-
 const SNOOZE_OPTIONS = [
   { label:'In 1 hour',        value:'1h'  },
   { label:'Tomorrow morning', value:'tmr' },
@@ -38,7 +27,7 @@ const GROUP_LABELS = {
 
 /* ─── Sarah's contextual messages per situation ─── */
 const SARAH_STATES = {
-  allClear:   { mood:"happy",       msg:"You are all caught up. Well done, Sarah."              },
+  allClear:   { mood:"happy",       msg:"You are all caught up. Well done."              },
   hasOverdue: { mood:"concerned",   msg:"You have overdue items. Let us get through them together." },
   justDone:   { mood:"celebrating", msg:"You did it. One step at a time."                       },
   default:    { mood:"idle",        msg:"I am here to help you stay on track."                  },
@@ -91,9 +80,8 @@ function TypedText({ text }) {
 
 /* ─────────────────────────────────
    SARAH HEADER STRIP
-   Persistent at the top — reacts to page state
 ───────────────────────────────── */
-function SarahHeader({ mood, message, isVisible }) {
+function SarahHeader({ mood, message, isVisible, userName }) {
   return (
     <div style={{
       flexShrink: 0,
@@ -105,12 +93,9 @@ function SarahHeader({ mood, message, isVisible }) {
       gap: '0',
       minHeight: '88px',
     }}>
-      {/* Mascot — feet flush to divider */}
       <div style={{ flexShrink:0, marginBottom:'-2px' }}>
         <Mascot mood={mood} message="" position="left" size={76} />
       </div>
-
-      {/* Message bubble */}
       <div style={{
         flex: 1,
         paddingBottom: '16px',
@@ -126,8 +111,7 @@ function SarahHeader({ mood, message, isVisible }) {
           fontWeight: 600,
           color: '#111',
           letterSpacing: '-.01em',
-        }}>Sarah</span>
-
+        }}>{userName}</span>
         {isVisible && message && (
           <div style={{
             background: '#fff',
@@ -153,7 +137,6 @@ function SarahHeader({ mood, message, isVisible }) {
 
 /* ─────────────────────────────────
    SARAH INLINE STRIP
-   Sits inside a section — reacts to that group
 ───────────────────────────────── */
 function SarahInline({ mood, message, visible, dark = false }) {
   if (!visible || !message) return null;
@@ -191,18 +174,35 @@ function SarahInline({ mood, message, visible, dark = false }) {
    MAIN COMPONENT
 ───────────────────────────────── */
 export default function ReminderSystem({ compact = false }) {
-  const [reminders,    setReminders]    = useState(dummyReminders);
-  const [suggestion,   setSuggestion]   = useState(dummySuggestion);
+  const { user } = useContext(UserAuthContext);
+  const [reminders,    setReminders]    = useState([]);
+  const [suggestion,   setSuggestion]   = useState(null);
   const [showModal,    setShowModal]    = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [snoozeOpenId, setSnoozeOpenId] = useState(null);
   const [toast,        setToast]        = useState({ visible:false, message:'' });
+  const [loading, setLoading] = useState(true);
 
   /* ── Sarah state ── */
   const [sarahMood,    setSarahMood]    = useState("idle");
   const [sarahMsg,     setSarahMsg]     = useState("");
   const [sarahVisible, setSarahVisible] = useState(false);
   const celebrateTimer = useRef(null);
+
+  // Fetch reminders on mount
+  useEffect(() => {
+    async function fetchReminders() {
+      try {
+        const res = await getReminders();
+        setReminders(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch reminders:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchReminders();
+  }, []);
 
   /* ── Derived counts ── */
   const active       = reminders.filter(r => !r.completed);
@@ -228,34 +228,37 @@ export default function ReminderSystem({ compact = false }) {
       }
     }, 600);
     return () => clearTimeout(t);
-  }, []); // eslint-disable-line
+  }, [active.length, done.length, overdueItems.length, suggestion]);
 
   function showToast(msg) {
     setToast({ visible:true, message:msg });
     setTimeout(() => setToast({ visible:false, message:'' }), 2000);
   }
 
-  function handleComplete(id) {
-    setReminders(rs => rs.map(r => r.id === id ? { ...r, completed:true } : r));
-    // Sarah celebrates
-    if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
-    setSarahMood("celebrating");
-    setSarahMsg(SARAH_STATES.justDone.msg);
-    celebrateTimer.current = setTimeout(() => {
-      // Re-evaluate after celebrate
-      const stillActive   = reminders.filter(r => !r.completed && r.id !== id);
-      const stillOverdue  = stillActive.filter(r => r.overdue);
-      if (stillActive.length === 0) {
-        setSarahMood("happy");
-        setSarahMsg(SARAH_STATES.allClear.msg);
-      } else if (stillOverdue.length > 0) {
-        setSarahMood("concerned");
-        setSarahMsg(SARAH_STATES.hasOverdue.msg);
-      } else {
-        setSarahMood("idle");
-        setSarahMsg(SARAH_STATES.default.msg);
-      }
-    }, 3500);
+  async function handleComplete(id) {
+    try {
+      await completeReminder(id);
+      setReminders(rs => rs.map(r => r.id === id ? { ...r, completed:true } : r));
+      if (celebrateTimer.current) clearTimeout(celebrateTimer.current);
+      setSarahMood("celebrating");
+      setSarahMsg(SARAH_STATES.justDone.msg);
+      celebrateTimer.current = setTimeout(() => {
+        const stillActive   = reminders.filter(r => !r.completed && r.id !== id);
+        const stillOverdue  = stillActive.filter(r => r.overdue);
+        if (stillActive.length === 0) {
+          setSarahMood("happy");
+          setSarahMsg(SARAH_STATES.allClear.msg);
+        } else if (stillOverdue.length > 0) {
+          setSarahMood("concerned");
+          setSarahMsg(SARAH_STATES.hasOverdue.msg);
+        } else {
+          setSarahMood("idle");
+          setSarahMsg(SARAH_STATES.default.msg);
+        }
+      }, 3500);
+    } catch (err) {
+      console.error('Failed to complete reminder:', err);
+    }
   }
 
   function handleDismiss(id) {
@@ -263,8 +266,14 @@ export default function ReminderSystem({ compact = false }) {
     showToast('Reminder dismissed.');
   }
 
-  function handleSnooze(id, option) {
-    setReminders(rs => rs.map(r => r.id === id ? { ...r, datetime:snoozeDatetime(option), overdue:false } : r));
+  async function handleSnooze(id, option) {
+    const newDatetime = snoozeDatetime(option);
+    try {
+      await updateReminder(id, { datetime: newDatetime, overdue: false });
+      setReminders(rs => rs.map(r => r.id === id ? { ...r, datetime: newDatetime, overdue: false } : r));
+    } catch (err) {
+      console.error('Failed to snooze reminder:', err);
+    }
     setSnoozeOpenId(null);
     showToast('Reminder snoozed.');
     setSarahMood("idle");
@@ -273,7 +282,7 @@ export default function ReminderSystem({ compact = false }) {
   }
 
   function handleAcceptSuggestion(reminderData) {
-    setReminders(rs => [...rs, { ...reminderData, id:Date.now() }]);
+    setReminders(rs => [...rs, { ...reminderData, id: Date.now() }]);
     setSuggestion(null);
     showToast('Reminder added.');
     setSarahMood("happy");
@@ -284,15 +293,20 @@ export default function ReminderSystem({ compact = false }) {
     }, 3500);
   }
 
-  function handleAddReminder(reminder) {
-    setReminders(rs => [...rs, reminder]);
-    showToast('Reminder added.');
-    setSarahMood("happy");
-    setSarahMsg("New reminder saved. I have got you.");
-    setTimeout(() => {
-      setSarahMood("idle");
-      setSarahMsg(SARAH_STATES.default.msg);
-    }, 3000);
+  async function handleAddReminder(reminder) {
+    try {
+      const res = await createReminder(reminder);
+      setReminders(rs => [...rs, res.data.data]);
+      showToast('Reminder added.');
+      setSarahMood("happy");
+      setSarahMsg("New reminder saved. I have got you.");
+      setTimeout(() => {
+        setSarahMood("idle");
+        setSarahMsg(SARAH_STATES.default.msg);
+      }, 3000);
+    } catch (err) {
+      console.error('Failed to create reminder:', err);
+    }
   }
 
   /* ── Hover reactions ── */
@@ -305,7 +319,6 @@ export default function ReminderSystem({ compact = false }) {
     }
   }
   function handleReminderLeave() {
-    // Return to contextual default after a beat
     setTimeout(() => {
       if (overdueItems.length > 0) {
         setSarahMood("concerned");
@@ -317,8 +330,17 @@ export default function ReminderSystem({ compact = false }) {
     }, 1500);
   }
 
+  const userName = user?.name || "Sarah";
+
   /* ─── COMPACT VIEW (home page embed) ─── */
   if (compact) {
+    if (loading) {
+      return (
+        <div style={{ fontFamily:"'Manrope', sans-serif", textAlign:'center', padding:'20px' }}>
+          <Loader size={18} className="animate-spin" color="#aaa" />
+        </div>
+      );
+    }
     const upcoming = reminders.filter(r => !r.completed).slice(0,3);
     return (
       <>
@@ -335,7 +357,7 @@ export default function ReminderSystem({ compact = false }) {
           ) : (
             <div style={{ display:'flex', flexDirection:'column', gap:'10px', marginBottom:'14px' }}>
               {upcoming.map(r => (
-                <ReminderCard key={r.id} reminder={r} compact onComplete={() => handleComplete(r.id)} />
+                <ReminderCard key={r.id || r._id} reminder={r} compact onComplete={() => handleComplete(r.id || r._id)} />
               ))}
             </div>
           )}
@@ -350,6 +372,14 @@ export default function ReminderSystem({ compact = false }) {
   }
 
   /* ─── FULL VIEW ─── */
+  if (loading) {
+    return (
+      <div style={{ background:'#f4f3f0', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <Loader size={24} className="animate-spin" color="#aaa" />
+      </div>
+    );
+  }
+
   const filtered = activeFilter === 'completed' ? done
                  : activeFilter === 'upcoming'  ? active
                  : reminders;
@@ -401,14 +431,13 @@ export default function ReminderSystem({ compact = false }) {
         flexDirection: 'column',
       }}>
 
-        {/* ── SARAH HEADER — always visible ── */}
         <SarahHeader
           mood={sarahMood}
           message={sarahMsg}
           isVisible={sarahVisible}
+          userName={userName}
         />
 
-        {/* ── PAGE TITLE ROW ── */}
         <div style={{
           padding: 'clamp(24px,4vw,40px) clamp(20px,5vw,52px) clamp(16px,3vw,24px)',
           borderBottom: '1px solid #e5e3de',
@@ -434,10 +463,8 @@ export default function ReminderSystem({ compact = false }) {
           </button>
         </div>
 
-        {/* ── BODY ── */}
         <div style={{ maxWidth:'720px', margin:'0 auto', padding:'clamp(20px,4vw,40px) clamp(16px,4vw,32px) 0', display:'flex', flexDirection:'column', gap:'12px', width:'100%' }}>
 
-          {/* AI Suggestion — Sarah reacts when it's visible */}
           {suggestion && (
             <div
               onMouseEnter={() => { setSarahMood("idle"); setSarahMsg(SARAH_STATES.suggestion.msg); }}
@@ -450,7 +477,6 @@ export default function ReminderSystem({ compact = false }) {
             </div>
           )}
 
-          {/* Filter pills */}
           <div style={{ display:'flex', gap:'8px', flexWrap:'wrap' }}>
             {['all','upcoming','completed'].map(f => (
               <button key={f} style={filterPillStyle(activeFilter === f)} onClick={() => setActiveFilter(f)}>
@@ -459,36 +485,33 @@ export default function ReminderSystem({ compact = false }) {
             ))}
           </div>
 
-          {/* Overdue group — Sarah appears inline above overdue cards */}
           {activeFilter !== 'completed' && overdue.length > 0 && (
             <div>
-              {/* Sarah inline — only for overdue group */}
               <SarahInline
                 mood="concerned"
                 message={`You have ${overdue.length} overdue item${overdue.length > 1 ? 's' : ''}. Let us work through them together.`}
                 visible={sarahVisible}
               />
-
               <div style={sectionLabelStyle(GROUP_LABELS.overdue.color)}>
                 <AlertTriangle size={12} />
                 {GROUP_LABELS.overdue.label}
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                 {overdue.map(r => (
-                  <div key={r.id} style={{ position:'relative' }}
+                  <div key={r.id || r._id} style={{ position:'relative' }}
                     onMouseEnter={() => handleReminderHover(r)}
                     onMouseLeave={handleReminderLeave}
                   >
                     <ReminderCard
                       reminder={r}
-                      onComplete={() => handleComplete(r.id)}
-                      onDismiss={()  => handleDismiss(r.id)}
-                      onSnooze={()   => setSnoozeOpenId(snoozeOpenId === r.id ? null : r.id)}
+                      onComplete={() => handleComplete(r.id || r._id)}
+                      onDismiss={()  => handleDismiss(r.id || r._id)}
+                      onSnooze={()   => setSnoozeOpenId(snoozeOpenId === (r.id || r._id) ? null : (r.id || r._id))}
                     />
-                    {snoozeOpenId === r.id && (
+                    {snoozeOpenId === (r.id || r._id) && (
                       <div style={{ position:'absolute', bottom:'48px', right:'0', background:'#fff', border:'1px solid #e5e7eb', borderRadius:'10px', boxShadow:'0 4px 16px rgba(0,0,0,0.1)', overflow:'hidden', zIndex:100, minWidth:'170px' }}>
                         {SNOOZE_OPTIONS.map(opt => (
-                          <button key={opt.value} onClick={() => handleSnooze(r.id, opt.value)}
+                          <button key={opt.value} onClick={() => handleSnooze(r.id || r._id, opt.value)}
                             style={{ display:'block', width:'100%', padding:'10px 14px', border:'none', background:'transparent', textAlign:'left', fontSize:'13px', color:'#111', cursor:'pointer', fontFamily:"'Manrope', sans-serif", borderBottom:'1px solid #f4f3f0' }}
                             onMouseEnter={e=>e.currentTarget.style.background='#f8f7f4'}
                             onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
@@ -503,7 +526,6 @@ export default function ReminderSystem({ compact = false }) {
             </div>
           )}
 
-          {/* Follow-up, Medication, Other groups */}
           {activeFilter !== 'completed' && [
             { key:'followup',   items:followup   },
             { key:'medication', items:medication },
@@ -515,20 +537,20 @@ export default function ReminderSystem({ compact = false }) {
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:'10px' }}>
                 {group.items.map(r => (
-                  <div key={r.id} style={{ position:'relative' }}
+                  <div key={r.id || r._id} style={{ position:'relative' }}
                     onMouseEnter={() => handleReminderHover(r)}
                     onMouseLeave={handleReminderLeave}
                   >
                     <ReminderCard
                       reminder={r}
-                      onComplete={() => handleComplete(r.id)}
-                      onDismiss={()  => handleDismiss(r.id)}
-                      onSnooze={()   => setSnoozeOpenId(snoozeOpenId === r.id ? null : r.id)}
+                      onComplete={() => handleComplete(r.id || r._id)}
+                      onDismiss={()  => handleDismiss(r.id || r._id)}
+                      onSnooze={()   => setSnoozeOpenId(snoozeOpenId === (r.id || r._id) ? null : (r.id || r._id))}
                     />
-                    {snoozeOpenId === r.id && (
+                    {snoozeOpenId === (r.id || r._id) && (
                       <div style={{ position:'absolute', bottom:'48px', right:'0', background:'#fff', border:'1px solid #e5e7eb', borderRadius:'10px', boxShadow:'0 4px 16px rgba(0,0,0,0.1)', overflow:'hidden', zIndex:100, minWidth:'170px' }}>
                         {SNOOZE_OPTIONS.map(opt => (
-                          <button key={opt.value} onClick={() => handleSnooze(r.id, opt.value)}
+                          <button key={opt.value} onClick={() => handleSnooze(r.id || r._id, opt.value)}
                             style={{ display:'block', width:'100%', padding:'10px 14px', border:'none', background:'transparent', textAlign:'left', fontSize:'13px', color:'#111', cursor:'pointer', fontFamily:"'Manrope', sans-serif", borderBottom:'1px solid #f4f3f0' }}
                             onMouseEnter={e=>e.currentTarget.style.background='#f8f7f4'}
                             onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
@@ -543,10 +565,8 @@ export default function ReminderSystem({ compact = false }) {
             </div>
           ))}
 
-          {/* Completed — Sarah gives a nod */}
           {(activeFilter === 'completed' || activeFilter === 'all') && done.length > 0 && (
             <div>
-              {/* Sarah inline for completed section */}
               {activeFilter === 'completed' && (
                 <SarahInline
                   mood="happy"
@@ -560,7 +580,7 @@ export default function ReminderSystem({ compact = false }) {
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:'10px', opacity:0.5 }}>
                 {done.map(r => (
-                  <div key={r.id} style={{ borderRadius:'12px', border:'1px solid #e5e7eb', background:'#fff', padding:'16px', boxShadow:'0 1px 3px rgba(0,0,0,0.06)' }}>
+                  <div key={r.id || r._id} style={{ borderRadius:'12px', border:'1px solid #e5e7eb', background:'#fff', padding:'16px', boxShadow:'0 1px 3px rgba(0,0,0,0.06)' }}>
                     <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'6px' }}>
                       <CheckCircle2 size={15} color="#16a34a" />
                       <span style={{ fontSize:'12px', fontWeight:600, color:'#16a34a' }}>Completed</span>
@@ -573,7 +593,6 @@ export default function ReminderSystem({ compact = false }) {
             </div>
           )}
 
-          {/* Empty state */}
           {active.length === 0 && done.length === 0 && (
             <div style={{ textAlign:'center', padding:'40px 0', color:'#6b7280' }}>
               <Bell size={28} strokeWidth={1.5} style={{ marginBottom:'12px', opacity:0.4 }} />
