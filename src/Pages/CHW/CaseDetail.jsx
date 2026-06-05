@@ -4,10 +4,10 @@ import {
   ArrowLeft, MapPin, Calendar, Bot, Phone, AlertTriangle,
   LayoutDashboard, FolderOpen, User, ChevronDown, FileUp,
   CheckCircle2, Clock, Heart, MessageCircle, Upload,
-  TrendingUp, TrendingDown, Star, Activity, Loader,
+  TrendingUp, TrendingDown, Star, Activity, Loader, Navigation,
 } from "lucide-react";
 import NavCHW from "../../Components/NavCHW";
-import { getCHWCaseById, updateCHWCase } from "../../API/chw";
+import { getCHWCaseById, updateCHWCase, respondToCheckin } from "../../API/chw";
 import { getNearbyFacilities } from "../../API/facilities";
 
 const TABS = ["Overview", "Check-ins", "Reminders", "Actions", "History"];
@@ -28,7 +28,7 @@ const moodConfig = {
 
 function SectionLabel({ children }) {
   return (
-    <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-300 mb-3 font-['Manrope']">
+    <p className="text-[10px] font-bold tracking-[0.18em] uppercase text-gray-400 mb-3 font-['Manrope']">
       {children}
     </p>
   );
@@ -37,11 +37,79 @@ function SectionLabel({ children }) {
 function Toast({ message, visible }) {
   if (!visible) return null;
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white rounded-full px-5 py-2.5 text-xs font-medium font-['Manrope'] z-[9999] whitespace-nowrap shadow-lg animate-in fade-in slide-in-from-bottom-2 duration-200">
+    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white rounded-full px-5 py-2.5 text-xs font-medium font-['Manrope'] z-[9999] whitespace-nowrap shadow-lg">
       {message}
     </div>
   );
 }
+
+function CHWCheckinResponse({ caseId, checkinData }) {
+  const [note, setNote] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(!!checkinData?.chwNote);
+  const [savedNote, setSavedNote] = useState(checkinData?.chwNote || "");
+
+  async function handleSend() {
+    if (!note.trim()) return;
+    setSending(true);
+    try {
+      await respondToCheckin(caseId, note.trim());
+      setSavedNote(note.trim());
+      setNote("");
+      setSent(true);
+    } catch (err) {
+      console.error("Failed to send response:", err);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (sent) {
+    return (
+      <div className="bg-green-50 border border-green-100 rounded-xl p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <CheckCircle2 size={14} className="text-green-600" />
+          <span className="text-xs font-semibold text-green-700">Response sent</span>
+        </div>
+        <p className="text-sm text-green-800 leading-relaxed">{savedNote}</p>
+        <button
+          onClick={() => setSent(false)}
+          className="text-xs text-green-600 font-medium mt-2 hover:text-green-700"
+        >
+          Edit response
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+      <h3 className="text-sm font-bold text-gray-900 mb-1">Respond to latest check-in</h3>
+      <p className="text-xs text-gray-500 mb-3">
+        The patient will see your note in her check-in tab.
+      </p>
+      <textarea
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="e.g. I noticed your mood has been low this week. I'm here if you need to talk — you can reach me on..."
+        rows={3}
+        className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none mb-3 font-['Manrope']"
+      />
+      <button
+        onClick={handleSend}
+        disabled={!note.trim() || sending}
+        className={`w-full py-2.5 rounded-xl text-sm font-semibold transition ${
+          note.trim() && !sending
+            ? "bg-gray-900 text-white hover:bg-gray-800"
+            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+        }`}
+      >
+        {sending ? "Sending..." : "Send response"}
+      </button>
+    </div>
+  );
+}
+
 
 export default function CaseDetail() {
   const navigate = useNavigate();
@@ -127,6 +195,24 @@ export default function CaseDetail() {
     }
   };
 
+  // ── Build a meaningful assignment reason ──────────────────────────────
+function getAssignmentReason() {
+    const reason = caseData.aiReason || caseData.flagReason || "";
+    if (reason.includes("0 consecutive low mood") || reason.includes("Needs follow-up")) {
+      const lossType = caseData.lossType || "";
+      const daysSince = caseData.daysSinceLoss;
+      const riskLevel = caseData.riskLevel || "Moderate";
+      
+      // Check if this is a pregnancy case or a loss case
+      if (lossType.toLowerCase().includes("pregnancy") && !lossType.toLowerCase().includes("loss")) {
+        return `This patient was assigned to you based on her ${riskLevel.toLowerCase()} risk level and proximity to your coverage area. She is currently pregnant (${lossType}). Reach out within 24 hours for an initial assessment.`;
+      }
+      
+      return `This patient was assigned to you based on her ${riskLevel.toLowerCase()} risk level and proximity to your coverage area. She is ${daysSince ? daysSince + " days" : "recently"} post-loss (${lossType}). Reach out within 24 hours for an initial assessment.`;
+    }
+    return reason;
+}
+
   if (loading) {
     return (
       <>
@@ -143,7 +229,7 @@ export default function CaseDetail() {
       <>
         <NavCHW />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <p className="text-gray-500">Case not found</p>
+          <p className="text-sm text-gray-500 font-['Manrope']">Case not found</p>
         </div>
       </>
     );
@@ -151,6 +237,14 @@ export default function CaseDetail() {
 
   const statusStyles = statusConfig[caseData.status] || statusConfig.New;
   const getMoodStyles = (color) => moodConfig[color] || moodConfig.gray;
+  const hasMedicalHistory = caseData.medicalHistory && (
+    caseData.medicalHistory.age ||
+    caseData.medicalHistory.bloodType ||
+    caseData.medicalHistory.allergies ||
+    caseData.medicalHistory.chronicConditions ||
+    caseData.medicalHistory.medications ||
+    caseData.medicalHistory.medicalHistory
+  );
 
   return (
     <>
@@ -177,11 +271,19 @@ export default function CaseDetail() {
               
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{caseData.patientFirstName}</h2>
-                <div className="flex flex-wrap items-center gap-3 mt-2">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
                   <div className="flex items-center gap-1.5">
                     <MapPin size={12} className="text-gray-400" />
                     <span className="text-xs text-gray-500">{caseData.location}</span>
                   </div>
+                  {caseData.patientLatitude && caseData.patientLongitude && (
+                    <div className="flex items-center gap-1.5">
+                      <Navigation size={10} className="text-gray-400" />
+                      <span className="text-xs text-gray-400 font-mono">
+                        {caseData.patientLatitude.toFixed(4)}, {caseData.patientLongitude.toFixed(4)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <Calendar size={12} className="text-gray-400" />
                     <span className="text-xs text-gray-500">{caseData.daysSinceLoss} days post-loss</span>
@@ -219,13 +321,14 @@ export default function CaseDetail() {
             {/* OVERVIEW TAB */}
             {activeTab === "Overview" && (
               <div className="space-y-6">
+                {/* Patient summary card */}
                 <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-4">
                     <div>
-                      <p className="text-xs text-gray-400 mb-1">Patient</p>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Patient</p>
                       <p className="text-sm font-bold text-gray-900">{caseData.patientFirstName}</p>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       <Clock size={12} className="text-gray-400" />
                       <span className="text-xs text-gray-400">Assigned {caseData.assignedDate}</span>
                     </div>
@@ -239,9 +342,18 @@ export default function CaseDetail() {
                       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Location</p>
                       <p className="text-sm text-gray-900 mt-1">{caseData.location}</p>
                     </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Phone</p>
+                      <p className="text-sm text-gray-900 mt-1">{caseData.phone || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Days since loss</p>
+                      <p className="text-sm text-gray-900 mt-1">{caseData.daysSinceLoss}</p>
+                    </div>
                   </div>
                 </div>
 
+                {/* Why assigned */}
                 <div>
                   <SectionLabel>Why this case was assigned</SectionLabel>
                   <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
@@ -250,19 +362,77 @@ export default function CaseDetail() {
                         <Bot size={16} className="text-white" />
                       </div>
                       <p className="text-sm text-gray-600 leading-relaxed flex-1">
-                        {caseData.aiReason}
+                        {getAssignmentReason()}
                       </p>
                     </div>
                   </div>
                 </div>
 
+                {/* Medical History — NEW */}
+                {hasMedicalHistory && (
+                  <div>
+                    <SectionLabel>Medical history</SectionLabel>
+                    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {caseData.medicalHistory.age && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Age</p>
+                            <p className="text-sm text-gray-900 mt-0.5">{caseData.medicalHistory.age} years</p>
+                          </div>
+                        )}
+                        {caseData.medicalHistory.bloodType && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Blood type</p>
+                            <p className="text-sm text-gray-900 mt-0.5">{caseData.medicalHistory.bloodType}</p>
+                          </div>
+                        )}
+                        {caseData.medicalHistory.genotype && (
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Genotype</p>
+                            <p className="text-sm text-gray-900 mt-0.5">{caseData.medicalHistory.genotype}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      {caseData.medicalHistory.allergies && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Allergies</p>
+                          <p className="text-sm text-gray-900 leading-relaxed">{caseData.medicalHistory.allergies}</p>
+                        </div>
+                      )}
+
+                      {caseData.medicalHistory.chronicConditions && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Chronic conditions</p>
+                          <p className="text-sm text-gray-900 leading-relaxed">{caseData.medicalHistory.chronicConditions}</p>
+                        </div>
+                      )}
+
+                      {caseData.medicalHistory.medications && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Current medications</p>
+                          <p className="text-sm text-gray-900 leading-relaxed">{caseData.medicalHistory.medications}</p>
+                        </div>
+                      )}
+
+                      {caseData.medicalHistory.medicalHistory && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Past medical history</p>
+                          <p className="text-sm text-gray-900 leading-relaxed">{caseData.medicalHistory.medicalHistory}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Documents */}
                 <div>
                   <SectionLabel>Patient documents</SectionLabel>
                   <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
                     <p className="text-sm text-gray-500 mb-4">
                       Upload referral letters, discharge summaries, or lab results for this patient.
                     </p>
-                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-gray-300 transition">
+                    <div className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-gray-300 transition">
                       <Upload size={24} className="text-gray-400 mx-auto mb-2" />
                       <p className="text-sm text-gray-500 font-medium">Tap to upload a file</p>
                       <p className="text-xs text-gray-400 mt-1">PDF, JPG, PNG supported</p>
@@ -274,11 +444,11 @@ export default function CaseDetail() {
 
             {/* CHECK-INS TAB */}
             {activeTab === "Check-ins" && (
-              <div>
+              <div className="space-y-5">
                 <SectionLabel>Recent emotional check-ins</SectionLabel>
                 <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
                   {(caseData.checkinHistory || []).length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-4">No check-in history yet</p>
+                    <p className="text-sm text-gray-400 text-center py-6">No check-in history yet</p>
                   ) : (
                     <div className="space-y-4">
                       {(caseData.checkinHistory || []).map((c, idx) => {
@@ -299,7 +469,24 @@ export default function CaseDetail() {
                                 </span>
                               </div>
                               {c.note && (
-                                <p className="text-sm text-gray-600 italic mt-1">{c.note}</p>
+                                <p className="text-sm text-gray-600 italic mt-1 leading-relaxed">{c.note}</p>
+                              )}
+                              
+                              {c.chwNote && (
+                                <div className="mt-3 bg-green-50 border border-green-100 rounded-xl p-3">
+                                  <div className="flex items-center gap-2 mb-1.5">
+                                    <div className="w-5 h-5 rounded-full bg-green-600 flex items-center justify-center">
+                                      <Heart size={10} className="text-white" />
+                                    </div>
+                                    <span className="text-[11px] font-semibold text-green-700">Your response</span>
+                                    {c.chwRespondedAt && (
+                                      <span className="text-[10px] text-green-500 ml-auto">
+                                        {new Date(c.chwRespondedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-green-800 leading-relaxed">{c.chwNote}</p>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -308,6 +495,10 @@ export default function CaseDetail() {
                     </div>
                   )}
                 </div>
+
+                {caseData.status !== "Resolved" && caseData.status !== "Escalated" && (caseData.checkinHistory || []).length > 0 && (
+                  <CHWCheckinResponse caseId={id} checkinData={caseData.checkinHistory[0]} />
+                )}
               </div>
             )}
 
@@ -368,7 +559,7 @@ export default function CaseDetail() {
                   <select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-gray-400 mb-3"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 focus:outline-none focus:border-gray-400 mb-3 font-['Manrope']"
                   >
                     {["New", "Contacted", "Visited", "Escalated", "Resolved"].map(s => (
                       <option key={s} value={s}>{s}</option>
@@ -379,7 +570,7 @@ export default function CaseDetail() {
                     onChange={(e) => setStatusNotes(e.target.value)}
                     placeholder="Add notes about what happened — what you found, what you did, any concerns."
                     rows={3}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-900 placeholder:text-gray-300 focus:outline-none focus:border-gray-400 resize-none mb-3"
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-gray-400 resize-none mb-3 font-['Manrope']"
                   />
                   <button
                     onClick={handleSaveUpdate}
@@ -469,7 +660,7 @@ export default function CaseDetail() {
                             <p className="text-sm font-semibold text-gray-900">{h.action}</p>
                             <p className="text-xs text-gray-400 mt-1">{h.date}</p>
                             {h.notes && (
-                              <p className="text-sm text-gray-500 italic mt-2">{h.notes}</p>
+                              <p className="text-sm text-gray-500 italic mt-2 leading-relaxed">{h.notes}</p>
                             )}
                           </div>
                         </div>
@@ -487,4 +678,4 @@ export default function CaseDetail() {
       <Toast message={toast.message} visible={toast.visible} />
     </>
   );
-}
+}  

@@ -15,7 +15,7 @@ import SymptomChecklist from "../../Components/SymptomChecklist";
 import { UserAuthContext } from "../../Context/UserAuthContext";
 import { getReminders, createReminder, completeReminder, deleteReminder, updateReminder } from "../../API/reminders";
 import { getPregnancyTip, getProfile } from "../../API/patient";
-import { getCheckinHistory, submitCheckin } from "../../API/recovery";
+import { getCheckinHistory, submitCheckin, getRecoveryProgress } from "../../API/recovery";
 import { getNearbyFacilities, getFacility } from "../../API/facilities";
 
 /* ─────────────────────────────────
@@ -23,6 +23,15 @@ import { getNearbyFacilities, getFacility } from "../../API/facilities";
 ───────────────────────────────── */
 const DAYS   = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+// Prompt 4: TIP_STYLE_MAP constant
+const TIP_STYLE_MAP = {
+  post_loss:    { bg: "#fce7f3", accent: "#be185d", Icon: SmilePlus },
+  nutrition:    { bg: "#dcfce7", accent: "#15803d", Icon: Leaf },
+  physical:     { bg: "#fefce8", accent: "#a16207", Icon: Footprints },
+  emotional:    { bg: "#ede9fe", accent: "#5b21b6", Icon: Moon },
+  danger_signs: { bg: "#fee2e2", accent: "#b91c1c", Icon: Siren },
+};
 
 const TIPS = [
   { label: "Hydration",    Icon: Droplets,   bg: "#e8f4fd", accent: "#1a6fa8", tip: "Drink at least 8 glasses of water today to support tissue healing." },
@@ -33,6 +42,14 @@ const TIPS = [
   { label: "Danger Signs", Icon: Siren,      bg: "#fee2e2", accent: "#b91c1c", tip: "Heavy bleeding, fever, or severe pain — don't wait. Seek help immediately." },
   { label: "Connection",   Icon: Users,      bg: "#e0f2fe", accent: "#0369a1", tip: "Talking to someone who understands can ease the weight you're carrying." },
 ];
+
+// Prompt 1: Status card title mapping
+const STATUS_TITLE_MAP = {
+  early_acute: "Taking It One Day at a Time",
+  processing: "Finding Your Footing",
+  rebuilding: "Steady & Rebuilding",
+  stabilised: "You Have Come Far",
+};
 
 const AI_MESSAGES = [
   { text: "How are you feeling right now?", type: "checkin" },
@@ -423,6 +440,7 @@ function SymptomChecklistCard({ onOpen }) {
     </div>
   );
 }
+
 /* ─────────────────────────────────
    HOME
 ───────────────────────────────── */
@@ -435,12 +453,17 @@ export default function Home() {
   
   // Real data states
   const [tip, setTip] = useState(null);
+  const [tipStyle, setTipStyle] = useState(null); // Prompt 4: derived tip style
   const [stats, setStats] = useState([]);
   const [facilities, setFacilities] = useState([]);
   const [nextAppointment, setNextAppointment] = useState(null);
   const [loadingTip, setLoadingTip] = useState(true);
   const [loadingStats, setLoadingStats] = useState(true);
   const [loadingFacilities, setLoadingFacilities] = useState(true);
+  
+  // Prompt 1: Recovery progress state
+  const [recoveryProgress, setRecoveryProgress] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(true);
   
   const dateStr  = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`;
   const hour     = now.getHours();
@@ -469,24 +492,124 @@ export default function Home() {
   const savedMoodRef      = useRef("idle");
   const savedZoneRef      = useRef("hero");
 
-  /* ── Fetch real data on mount ── */
+  /* ── Show mascot in a zone ── */
+  const show = useCallback((zone, mood, message) => {
+    setMascotZone(zone);
+    setMascotMood(mood);
+    setMascotMessage(message);
+    setMascotVisible(true);
+    setBubbleOpacity(1);
+  }, []);
+
+  // Helper: Update mascot based on risk + emotional (Prompt 3)
+  const updateMascotFromStats = useCallback((riskLevel, emotionalValue) => {
+    let mood = "idle";
+    let message = "How are you feeling today?";
+    
+    if (riskLevel === "High") {
+      mood = "concerned";
+      message = "Your latest results need attention. Please do not ignore how you are feeling.";
+    } else if (riskLevel === "Moderate") {
+      mood = "concerned";
+      message = "Keep a close eye on how your body is responding today.";
+    } else if (riskLevel === "Low" && emotionalValue === "Good") {
+      mood = "happy";
+      message = "You are doing well. Keep checking in.";
+    } else {
+      mood = "idle";
+      message = "How are you feeling today?";
+    }
+    
+    if (entranceDoneRef.current) {
+      show("hero", mood, message);
+    }
+  }, [show]);
+
+  // Prompt 5: Re-fetch stats after checklist completion
+  const handleChecklistComplete = useCallback(async (riskResult) => {
+    try {
+      const statsRes = await getCheckinHistory();
+      const historyData = statsRes.data.data;
+      if (historyData && historyData.stats) {
+        // Apply color mapping (Prompt 2 logic)
+        const riskColor = 
+          historyData.stats.riskLevel === "Low" ? "#22c55e" :
+          historyData.stats.riskLevel === "Moderate" ? "#f59e0b" :
+          historyData.stats.riskLevel === "High" ? "#ef4444" : "#22c55e";
+        
+        const physicalColor = 
+          historyData.stats.physical === "Stable" ? "#22c55e" :
+          historyData.stats.physical === "Monitored" ? "#f59e0b" :
+          historyData.stats.physical === "At Risk" ? "#ef4444" : "#22c55e";
+        
+        setStats([
+          { label: "Physical",   value: historyData.stats.physical || "Stable",    color: physicalColor },
+          { label: "Emotional",  value: historyData.stats.emotional || "Monitored", color: "#a78bfa" },
+          { label: "Follow-up",  value: historyData.stats.followUp || "Tomorrow",  color: "#94a3b8" },
+          { label: "Risk Level", value: historyData.stats.riskLevel || "Low",       color: riskColor },
+        ]);
+        
+        // Update mascot (Prompt 3 & 5)
+        if (historyData.stats.riskLevel === "High") {
+          show("status", "concerned", "Your symptoms have been noted. Please consider seeking care today.");
+        } else {
+          updateMascotFromStats(historyData.stats.riskLevel, historyData.stats.emotional);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to refresh stats after checklist:', err);
+    }
+  }, [show, updateMascotFromStats]);
+
+  /* ── Fetch real data on mount (updated for Prompt 1, 2, 3, 4) ── */
   useEffect(() => {
     async function fetchHomeData() {
       try {
-        // Fetch pregnancy tip
+        // Prompt 1: Fetch recovery progress
+        const recoveryRes = await getRecoveryProgress();
+        setRecoveryProgress(recoveryRes.data.data);
+        setLoadingProgress(false);
+        
+        // Prompt 4: Fetch pregnancy tip and derive style from category
         const tipRes = await getPregnancyTip();
-        setTip(tipRes.data.data);
+        const tipData = tipRes.data.data;
+        // Bug 3 fix: Normalize tip text field
+        if (tipData) {
+          setTip({ ...tipData, tip: tipData.content || tipData.tip });
+        } else {
+          setTip(null);
+        }
+        
+        // Derive tip style from category or fallback
+        if (tipData && tipData.category) {
+          const derivedStyle = TIP_STYLE_MAP[tipData.category] || TIP_STYLE_MAP.post_loss;
+          setTipStyle(derivedStyle);
+        } else {
+          // Fallback to day-based tip style
+          const fallbackTip = TIPS[now.getDay()];
+          setTipStyle({ bg: fallbackTip.bg, accent: fallbackTip.accent, Icon: fallbackTip.Icon });
+        }
         setLoadingTip(false);
 
-        // Fetch check-in history for stats
+        // Prompt 2 & 3: Fetch check-in history for stats with color mapping
         const statsRes = await getCheckinHistory();
         const historyData = statsRes.data.data;
         if (historyData && historyData.stats) {
+          const riskColor = 
+            historyData.stats.riskLevel === "Low" ? "#22c55e" :
+            historyData.stats.riskLevel === "Moderate" ? "#f59e0b" :
+            historyData.stats.riskLevel === "High" ? "#ef4444" : "#22c55e";
+          
+          const physicalColor = 
+            historyData.stats.physical === "Stable" ? "#22c55e" :
+            historyData.stats.physical === "Monitored" ? "#f59e0b" :
+            historyData.stats.physical === "At Risk" ? "#ef4444" : "#22c55e";
+          
           setStats([
-            { label: "Physical",   value: historyData.stats.physical || "Stable",    color: "#22c55e" },
+            { label: "Physical",   value: historyData.stats.physical || "Stable",    color: physicalColor },
             { label: "Emotional",  value: historyData.stats.emotional || "Monitored", color: "#a78bfa" },
             { label: "Follow-up",  value: historyData.stats.followUp || "Tomorrow",  color: "#94a3b8" },
-            { label: "Risk Level", value: historyData.stats.riskLevel || "Low",       color: "#22c55e" },
+            { label: "Risk Level", value: historyData.stats.riskLevel || "Low",       color: riskColor },
           ]);
         }
         setLoadingStats(false);
@@ -496,7 +619,7 @@ export default function Home() {
         setFacilities(facilitiesRes.data.data || []);
         setLoadingFacilities(false);
 
-        // Set next appointment from reminders if available
+        
         const remindersRes = await getReminders();
         const appointments = remindersRes.data.data?.filter(r => r.type === 'Follow-up Appointment' && !r.completed) || [];
         if (appointments.length > 0) {
@@ -507,19 +630,11 @@ export default function Home() {
         setLoadingTip(false);
         setLoadingStats(false);
         setLoadingFacilities(false);
+        setLoadingProgress(false);
       }
     }
     fetchHomeData();
-  }, []);
-
-  /* ── Show mascot in a zone ── */
-  const show = useCallback((zone, mood, message) => {
-    setMascotZone(zone);
-    setMascotMood(mood);
-    setMascotMessage(message);
-    setMascotVisible(true);
-    setBubbleOpacity(1);
-  }, []);
+  }, []); // Bug 2 fix: removed [now] - empty dependency array
 
   /* ── Idle rotation ── */
   const startIdleRotation = useCallback(() => {
@@ -542,7 +657,7 @@ export default function Home() {
     idleTimerRef.current = setTimeout(startIdleRotation, 8000);
   }, [startIdleRotation]);
 
-  /* ── Entrance sequence ── */
+  /* ── Entrance sequence (updated for Prompt 3) ── */
   useEffect(() => {
     const greeting = getTimeGreeting();
     const userName = user?.name || "Sarah";
@@ -556,6 +671,33 @@ export default function Home() {
     const t2 = setTimeout(() => {
       show("hero", "idle", msg2);
       entranceDoneRef.current = true;
+      
+      // Prompt 3: After entrance completes and stats are loaded, update mascot based on risk
+      if (stats.length > 0) {
+        const riskStat = stats.find(s => s.label === "Risk Level");
+        const emotionalStat = stats.find(s => s.label === "Emotional");
+        if (riskStat && emotionalStat) {
+          const riskLevel = riskStat.value;
+          const emotionalValue = emotionalStat.value;
+          
+          let mood = "idle";
+          let message = "How are you feeling today?";
+          
+          if (riskLevel === "High") {
+            mood = "concerned";
+            message = "Your latest results need attention. Please do not ignore how you are feeling.";
+          } else if (riskLevel === "Moderate") {
+            mood = "concerned";
+            message = "Keep a close eye on how your body is responding today.";
+          } else if (riskLevel === "Low" && emotionalValue === "Good") {
+            mood = "happy";
+            message = "You are doing well. Keep checking in.";
+          }
+          
+          show("hero", mood, message);
+        }
+      }
+      
       idleTimerRef.current = setTimeout(startIdleRotation, 8000);
     }, 800 + delay1);
 
@@ -564,7 +706,7 @@ export default function Home() {
       if (idleTimerRef.current)    clearTimeout(idleTimerRef.current);
       if (idleRotationRef.current) clearInterval(idleRotationRef.current);
     };
-  }, [user]);
+  }, [user, stats, show, startIdleRotation]);
 
   /* ── Attention pulse every 30s ── */
   useEffect(() => {
@@ -650,10 +792,29 @@ export default function Home() {
   /* ── Mascot size per zone ── */
   const sizeForZone = { hero:90, status:80, reminders:80, emergency:76, hub:76 };
 
-  // Fallback tip if API hasn't loaded yet
+
   const fallbackTip = TIPS[now.getDay()];
   const displayTip = tip || fallbackTip;
-  const TipIcon = displayTip.Icon;
+  const displayTipStyle = tipStyle || { bg: fallbackTip.bg, accent: fallbackTip.accent, Icon: fallbackTip.Icon };
+  const TipIcon = displayTipStyle.Icon;
+
+
+
+const statusTitle = recoveryProgress?.phase
+  ? (STATUS_TITLE_MAP[recoveryProgress.phase] || "Steady & Recovering")
+  : "Steady & Recovering";
+
+const statusSubtitle = recoveryProgress?.phase === "early_acute"
+  ? "You're taking important first steps. Be gentle with yourself."
+  : recoveryProgress?.phase === "processing"
+  ? "Each day brings new strength. Keep going."
+  : recoveryProgress?.phase === "rebuilding"
+  ? "You're making solid progress. Keep monitoring your symptoms daily."
+  : "You have come so far. Keep honoring your journey.";
+
+const statusChipText = recoveryProgress?.phase === "early_acute" ? "Early Recovery" : "Stable";
+  // Prompt 1: Get live dot color based on phase
+  const liveDotColor = recoveryProgress?.phase_label === "early_acute" ? "#f59e0b" : "#4ade80";
 
   return (
     <>
@@ -671,8 +832,8 @@ export default function Home() {
         .hm-name { font-style:italic; font-weight:400; }
         .hm-hero-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
         .hm-week-pill { display:inline-flex; align-items:center; gap:7px; background:#111; color:#fff; font-size:11px; font-weight:500; letter-spacing:.06em; padding:7px 14px; border-radius:40px; white-space:nowrap; }
-        .hm-live { width:6px; height:6px; border-radius:50%; background:#4ade80; box-shadow:0 0 0 3px rgba(74,222,128,.25); animation:pulse 2s infinite; }
-        @keyframes pulse { 0%,100%{box-shadow:0 0 0 3px rgba(74,222,128,.25);}50%{box-shadow:0 0 0 5px rgba(74,222,128,.1);} }
+        .hm-live { width:6px; height:6px; border-radius:50%; background:${liveDotColor}; box-shadow:0 0 0 3px ${liveDotColor === "#f59e0b" ? "rgba(245,158,11,.25)" : "rgba(74,222,128,.25)"}; animation:pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{box-shadow:0 0 0 3px ${liveDotColor === "#f59e0b" ? "rgba(245,158,11,.25)" : "rgba(74,222,128,.25)"};}50%{box-shadow:0 0 0 5px ${liveDotColor === "#f59e0b" ? "rgba(245,158,11,.1)" : "rgba(74,222,128,.1)"};} }
         .hm-sub { font-size:13px; color:#999; font-weight:300; }
 
         /* MASCOT HERO AREA */
@@ -798,7 +959,11 @@ export default function Home() {
               </h1>
             </div>
             <div className="hm-hero-right">
-              <span className="hm-week-pill"><span className="hm-live" /> Week 2 · Active Recovery</span>
+              {/* Prompt 1: Replace hardcoded pill with dynamic recovery progress */}
+              <span className="hm-week-pill">
+                <span className="hm-live" />
+                {loadingProgress ? "Loading..." : (recoveryProgress?.phase_label || "Week 2 · Active Recovery")}
+              </span>
               <p className="hm-sub">Here's how your recovery is going today.</p>
             </div>
           </div>
@@ -822,11 +987,14 @@ export default function Home() {
             <p className="hm-lbl">Recovery Overview</p>
             <div className="hm-status">
               <div className="hm-status-top">
-                <span className="hm-chip"><span className="hm-chip-dot" /> Stable</span>
-                <span className="hm-wk">Week 2 of 6</span>
+                {/* Prompt 1: Dynamic chip text */}
+                <span className="hm-chip"><span className="hm-chip-dot" /> {statusChipText}</span>
+                {/* Prompt 1: Dynamic week label */}
+                <span className="hm-wk">{loadingProgress ? "Week 2 of 6" : recoveryProgress?.phase_label || "Week 2 of 6"}</span>
               </div>
-              <p className="hm-status-title">Steady &amp; Recovering</p>
-              <p className="hm-status-sub">You're making solid progress. Keep monitoring your symptoms daily.</p>
+              {/* Prompt 1: Dynamic title based on phase */}
+              <p className="hm-status-title">{statusTitle}</p>
+              <p className="hm-status-sub">{statusSubtitle}</p>
               <div className="hm-stats">
                 {loadingStats ? (
                   <p style={{ color: '#666', fontSize: '13px', gridColumn: '1/-1' }}>Loading stats...</p>
@@ -834,6 +1002,7 @@ export default function Home() {
                   stats.map(s => (
                     <div className="hm-stat" key={s.label}>
                       <p className="hm-stat-l">{s.label}</p>
+                      {/* Prompt 2: Colors already applied to stat objects */}
                       <p className="hm-stat-v" style={{ color: s.color }}>{s.value}</p>
                     </div>
                   ))
@@ -856,57 +1025,28 @@ export default function Home() {
 
           {/* ═══ TIP & APPOINTMENT COLUMN ═══ */}
           <div>
-            {/* Today's Health Tip */}
+            {/* Today's Health Tip - Prompt 4: Using derived tip style from API category */}
             <div className="mb-4">
               <p className="hm-lbl">Today's Health Tip</p>
-              <div className="hm-tip" style={{ background: displayTip.bg }}>
-                <div className="hm-tip-wm" style={{ color: displayTip.accent }}>"</div>
+              <div className="hm-tip" style={{ background: displayTipStyle.bg }}>
+                <div className="hm-tip-wm" style={{ color: displayTipStyle.accent }}>"</div>
                 <div className="hm-tip-head">
-                  <div className="hm-tip-ico" style={{ background: displayTip.accent + "20" }}>
+                  <div className="hm-tip-ico" style={{ background: displayTipStyle.accent + "20" }}>
                     {loadingTip ? (
-                      <Droplets size={16} color={displayTip.accent} strokeWidth={1.8} />
+                      <Droplets size={16} color={displayTipStyle.accent} strokeWidth={1.8} />
                     ) : (
-                      <TipIcon size={16} color={displayTip.accent} strokeWidth={1.8} />
+                      <TipIcon size={16} color={displayTipStyle.accent} strokeWidth={1.8} />
                     )}
                   </div>
-                  <span className="hm-tip-badge" style={{ color: displayTip.accent }}>{displayTip.label}</span>
-                  <span className="hm-tip-day" style={{ color: displayTip.accent }}>{DAYS[now.getDay()]}</span>
+                  <span className="hm-tip-badge" style={{ color: displayTipStyle.accent }}>{displayTip.label || "Wellness Tip"}</span>
+                  <span className="hm-tip-day" style={{ color: displayTipStyle.accent }}>{DAYS[now.getDay()]}</span>
                 </div>
-                <p className="hm-tip-text" style={{ color: displayTip.accent }}>"{displayTip.tip}"</p>
+                <p className="hm-tip-text" style={{ color: displayTipStyle.accent }}>"{displayTip.tip}"</p>
               </div>
             </div>
 
-            {/* Next Appointment */}
-            <div className="mb-4">
-              <p className="hm-lbl">Next Appointment</p>
-              {nextAppointment ? (
-                <div className="hm-appt" onClick={() => navigate("/reminders")}>
-                  <div className="hm-appt-cal">
-                    <span className="hm-appt-n">{new Date(nextAppointment.datetime).getDate()}</span>
-                    <span className="hm-appt-m">{MONTHS[new Date(nextAppointment.datetime).getMonth()].slice(0,3)}</span>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p className="hm-appt-t">{nextAppointment.type}</p>
-                    <p className="hm-appt-d">{nextAppointment.note || 'Appointment scheduled'} · {nextAppointment.datetime}</p>
-                  </div>
-                  <ChevronRight size={16} color="#ccc" />
-                </div>
-              ) : (
-                <div className="hm-appt" onClick={() => navigate("/reminders")} style={{ opacity: 0.6 }}>
-                  <div className="hm-appt-cal">
-                    <span className="hm-appt-n">--</span>
-                    <span className="hm-appt-m">---</span>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <p className="hm-appt-t">No upcoming appointments</p>
-                    <p className="hm-appt-d">Tap to schedule one</p>
-                  </div>
-                  <ChevronRight size={16} color="#ccc" />
-                </div>
-              )}
-            </div>
-
-            {/* Symptom Checklist Card - NEW */}
+            
+            {/* Symptom Checklist Card */}
             <div>
               <p className="hm-lbl">How are you feeling?</p>
               <SymptomChecklistCard onOpen={() => setShowSymptomChecklist(true)} />
@@ -1006,7 +1146,6 @@ export default function Home() {
                             <p className="hm-fac-name" style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{f.name}</p>
                             <p className="hm-fac-meta">{f.dist || f.distance} · {f.type}</p>
                           </div>
-                          <span className={`hm-fac-open ${f.open ? "hm-open-yes" : "hm-open-no"}`}>{f.open ? "Open" : "Closed"}</span>
                         </div>
                       ))
                     )}
@@ -1056,11 +1195,12 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Symptom Checklist Modal */}
+      {/* Symptom Checklist Modal - Prompt 5: Pass onChecklistComplete callback */}
       {showSymptomChecklist && (
         <SymptomChecklist
           onClose={() => setShowSymptomChecklist(false)}
           onStartChat={handleSymptomChecklistStart}
+          onChecklistComplete={handleChecklistComplete}
         />
       )}
     </>

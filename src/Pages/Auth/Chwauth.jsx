@@ -179,7 +179,7 @@ function LocationPicker({ formData, setFormData }) {
         </div>
       )}
 
-      <p className="text-xs text-gray-400">📍 Click the map or drag the pin to set your exact location</p>
+      <p className="text-xs text-gray-400"> Click the map or drag the pin to set your exact location</p>
       {formData.locationName && (
         <p className="text-xs text-gray-600 font-medium truncate">{formData.locationName}</p>
       )}
@@ -204,7 +204,8 @@ export default function CHWAuth() {
   const [formData, setFormData] = useState({
     name: "", email: "", countryCode: "+237", phone: "",
     password: "", confirmPassword: "",
-    speciality: "Nurse", institution: "", radius: "5km",
+    speciality: "Nurse", qualification: "", yearsExperience: "",
+    institution: "", radius: "5km",
     latitude: null, longitude: null, locationName: "",
   });
 
@@ -239,6 +240,8 @@ export default function CHWAuth() {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         speciality: formData.speciality,
+        qualification: formData.qualification,
+        yearsExperience: formData.yearsExperience,
         institution: formData.institution,
         locationName: formData.locationName,
         latitude: formData.latitude,
@@ -402,6 +405,27 @@ export default function CHWAuth() {
                           ))}
                         </select>
                       </div>
+
+                      <div>
+                        <label className={labelCls}>Highest Qualification</label>
+                        <select value={formData.qualification} onChange={(e) => update("qualification", e.target.value)} className={selectCls}>
+                          <option value="">Select qualification</option>
+                          {["Certificate", "Diploma", "Bachelor's Degree", "Master's Degree", "PhD"].map((q) => (
+                            <option key={q}>{q}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className={labelCls}>Years of Experience</label>
+                        <select value={formData.yearsExperience} onChange={(e) => update("yearsExperience", e.target.value)} className={selectCls}>
+                          <option value="">Select experience</option>
+                          {["Less than 1 year", "1-3 years", "4-7 years", "8-15 years", "15+ years"].map((y) => (
+                            <option key={y}>{y}</option>
+                          ))}
+                        </select>
+                      </div>
+
                       <div>
                         <label className={labelCls}>Institution</label>
                         <input type="text" placeholder="Clinic, hospital, or organisation (optional)"
@@ -441,6 +465,9 @@ export default function CHWAuth() {
                         ["Email", formData.email],
                         ["Phone", `${formData.countryCode} ${formData.phone}`],
                         ["Speciality", formData.speciality],
+                        ["Qualification", formData.qualification || "—"],
+                        ["Experience", formData.yearsExperience || "—"],
+                        ["Institution", formData.institution || "—"],
                         ["Coverage area", formData.locationName || "—"],
                         ["Radius", formData.radius],
                       ].map(([k, v]) => (

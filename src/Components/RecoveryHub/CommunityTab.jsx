@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { PenLine, MessageSquare, CornerDownRight, Send, X, Sparkles, ChevronDown, Loader } from "lucide-react";
-import { getCommunityPosts, createCommunityPost } from "../../API/recovery";
+import { getCommunityPosts, createCommunityPost, replyToPost } from "../../API/recovery";
 
 const font = "'Manrope', sans-serif";
 
@@ -38,11 +38,25 @@ export default function CommunityTab() {
     setNewPostText(""); setShowModal(false);
   }
 
-  function handleReply(postId) {
+  async function handleReply(postId) {
     const text = replyInputs[postId]?.trim();
     if (!text) return;
-    setPosts(prev => prev.map(p => p.id === postId || p._id === postId
-      ? { ...p, replies: [...(p.replies || []), { id: Date.now(), content: text, timeAgo: "Just now" }] } : p));
+    try {
+      const res = await replyToPost(postId, text);
+      const newReply = res.data.data;
+      setPosts(prev => prev.map(p =>
+        (p.id === postId || p._id === postId)
+          ? { ...p, replies: [...(p.replies || []), newReply] }
+          : p
+      ));
+    } catch (err) {
+      setPosts(prev => prev.map(p =>
+        (p.id === postId || p._id === postId)
+          ? { ...p, replies: [...(p.replies || []), 
+              { id: Date.now(), content: text, timeAgo: "Just now" }] }
+          : p
+      ));
+    }
     setReplyInputs(prev => ({ ...prev, [postId]: "" }));
     setOpenReply(null);
   }

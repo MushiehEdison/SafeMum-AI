@@ -1,16 +1,28 @@
 import { useState } from "react";
 import CheckInTab from "../../Components/RecoveryHub/Checkintab";
 import CommunityTab from "../../Components/RecoveryHub/CommunityTab";
-import SupportTab from "../../Components/RecoveryHub/SupportTab";
+import ReadLearn from "../../Components/RecoveryHub/ReadLearn";
+import Journal from "../../Components/RecoveryHub/Journal";
+import NutritionGuide from "../../Components/RecoveryHub/NutritionGuide";
+import MentalWellness from "../../Components/RecoveryHub/MentalWellness";
 
 const TABS = [
-  { id: "checkin",   label: "Check-in",  desc: "How are you today?" },
-  { id: "community", label: "Community", desc: "You are not alone"   },
-  { id: "support",   label: "Support",   desc: "We are here"         },
+  { id: "checkin",   label: "Check-in",       desc: "How are you today?"              },
+  { id: "community", label: "Community",       desc: "You are not alone"               },
+  { id: "readlearn", label: "Read & Learn",    desc: "Expand your knowledge"           },
+  { id: "journal",   label: "Journal",         desc: "Private space for your thoughts" },
+  { id: "nutrition", label: "Nutrition Guide", desc: "Nourish your body"               },
+  { id: "wellness",  label: "Mental Wellness", desc: "Tools for your mind"             },
 ];
 
 export default function SafeRecoveryHub() {
   const [activeTab, setActiveTab] = useState("checkin");
+
+  // TODO: replace with real user data from your auth/context
+  const recoveryPhase = "early_acute"; // early_acute | processing | rebuilding | active_pregnancy | postnatal
+  const userName      = "Friend";
+  const daysSinceLoss = 3;
+  const userId        = "user_001";
 
   return (
     <>
@@ -129,9 +141,19 @@ export default function SafeRecoveryHub() {
 
         {/* Page content */}
         <div className="srh-content">
-          {activeTab === "checkin"   && <CheckInTab />}
-          {activeTab === "community" && <CommunityTab />}
-          {activeTab === "support"   && <SupportTab />}
+          {activeTab === "checkin"   && <CheckInTab   recoveryPhase={recoveryPhase} userName={userName} />}
+          {activeTab === "community" && <CommunityTab recoveryPhase={recoveryPhase} userName={userName} />}
+          {activeTab === "readlearn" && <ReadLearn    recoveryPhase={recoveryPhase} userName={userName} />}
+          {activeTab === "journal"   && <Journal      recoveryPhase={recoveryPhase} userName={userName} userId={userId} />}
+          {activeTab === "nutrition" && <NutritionGuide recoveryPhase={recoveryPhase} userName={userName} />}
+          {activeTab === "wellness"  && (
+            <MentalWellness
+              recoveryPhase={recoveryPhase}
+              userName={userName}
+              daysSinceLoss={daysSinceLoss}
+              userId={userId}
+            />
+          )}
         </div>
       </div>
     </>

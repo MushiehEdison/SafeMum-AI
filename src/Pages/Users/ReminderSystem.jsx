@@ -7,7 +7,7 @@ import ReminderCard from "../../Components/Reminder/Remindercard";
 import AIReminderSuggestion from "../../Components/Reminder/Airemindersuggestion";
 import AddReminderModal from "../../Components/Reminder/Addremindermodal";
 import { UserAuthContext } from "../../Context/UserAuthContext";
-import { getReminders, createReminder, completeReminder, updateReminder } from "../../API/reminders";
+import { getReminders, createReminder, completeReminder, updateReminder, getSuggestion } from "../../API/reminders";
 
 /* ─────────────────────────────────
    DATA
@@ -32,7 +32,7 @@ const SARAH_STATES = {
   justDone:   { mood:"celebrating", msg:"You did it. One step at a time."                       },
   default:    { mood:"idle",        msg:"I am here to help you stay on track."                  },
   overdueBanner: { mood:"concerned", msg:"This one has been missed. Your recovery matters — please reschedule." },
-  suggestion: { mood:"idle",        msg:"I noticed something in your timeline. Here is a suggestion." },
+  suggestion: { mood:"idle",        msg:"I noticed something in your history. This suggestion is based on your personal risk profile." },
 };
 
 /* ─── Helpers ─── */
@@ -182,6 +182,7 @@ export default function ReminderSystem({ compact = false }) {
   const [snoozeOpenId, setSnoozeOpenId] = useState(null);
   const [toast,        setToast]        = useState({ visible:false, message:'' });
   const [loading, setLoading] = useState(true);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
 
   /* ── Sarah state ── */
   const [sarahMood,    setSarahMood]    = useState("idle");
@@ -202,6 +203,25 @@ export default function ReminderSystem({ compact = false }) {
       }
     }
     fetchReminders();
+  }, []);
+
+  // Fetch suggestion on mount
+  useEffect(() => {
+    async function fetchSuggestion() {
+      setSuggestionLoading(true);
+      try {
+        const res = await getSuggestion();
+        if (res.data.suggestion !== null) {
+          setSuggestion(res.data.suggestion);
+        }
+      } catch (err) {
+        // Silently fail — never crash the page
+        console.error('Failed to fetch suggestion:', err);
+      } finally {
+        setSuggestionLoading(false);
+      }
+    }
+    fetchSuggestion();
   }, []);
 
   /* ── Derived counts ── */
@@ -467,7 +487,7 @@ export default function ReminderSystem({ compact = false }) {
 
           {suggestion && (
             <div
-              onMouseEnter={() => { setSarahMood("idle"); setSarahMsg(SARAH_STATES.suggestion.msg); }}
+              onMouseEnter={() => { setSarahMood("idle"); setSarahMsg("I noticed something in your history. This suggestion is based on your personal risk profile."); }}
             >
               <AIReminderSuggestion
                 suggestion={suggestion}

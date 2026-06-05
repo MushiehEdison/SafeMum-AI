@@ -193,7 +193,7 @@ function LocationPicker({ formData, setFormData }) {
         </div>
       )}
 
-      <p className="text-xs text-gray-400">📍 Click the map or drag the pin to set your exact location</p>
+      <p className="text-xs text-gray-400">Click the map or drag the pin to set your exact location</p>
       {formData.locationName && (
         <p className="text-xs text-gray-600 font-medium truncate">{formData.locationName}</p>
       )}

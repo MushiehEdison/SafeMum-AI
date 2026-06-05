@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Phone, PhoneOff, PhoneCall, Loader, Mic, MicOff, Delete, Send, Signal, Battery, Wifi } from "lucide-react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "https://web-production-4ddb1.up.railway.app";
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
 
 function generateId(prefix) {
   return prefix + "-" + Math.random().toString(36).substring(2, 10).toUpperCase();

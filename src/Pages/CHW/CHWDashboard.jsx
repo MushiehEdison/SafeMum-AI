@@ -73,11 +73,13 @@ export default function CHWDashboard() {
     );
   }
 
-  const stats = dashboardData?.stats || {};
-  const urgentCases = dashboardData?.urgentCases || [];
-  const recentActivity = dashboardData?.recentActivity || [];
-  const schedule = dashboardData?.schedule || [];
-  const chwName = chw?.name || dashboardData?.chw?.name || "Grace";
+const chwName = chw?.full_name || dashboardData?.chw?.name || "";
+const chwSpeciality = chw?.speciality || dashboardData?.chw?.speciality || "";
+const chwCoverageArea = chw?.coverage_area || dashboardData?.chw?.coverageArea || "";
+const stats = dashboardData?.stats || {};
+const urgentCases = dashboardData?.urgentCases || [];
+const recentActivity = dashboardData?.recentActivity || [];
+const schedule = dashboardData?.schedule || [];
 
   const statCards = [
     { label: "Active cases", value: stats.activeCases ?? 0, key: "activeCases", highlight: (stats.activeCases ?? 0) > 3 },
@@ -115,7 +117,7 @@ export default function CHWDashboard() {
                   Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"}, {chwName.split(" ")[0]}
                 </h1>
                 <p className="text-xs text-gray-400 mt-1">
-                  {chw?.speciality || dashboardData?.chw?.speciality} · {chw?.coverageArea || dashboardData?.chw?.coverageArea}
+                  {chwSpeciality.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())} · {chwCoverageArea}
                 </p>
               </div>
               
@@ -351,11 +353,11 @@ export default function CHWDashboard() {
                   <p className="text-xs font-semibold text-gray-900">Schedule</p>
                 </button>
                 <button 
-                  onClick={() => navigate("/chw/messages")}
+                  onClick={() => navigate("/chw/community")}
                   className="bg-white rounded-xl border border-gray-100 p-4 text-center hover:shadow-md transition"
                 >
                   <MessageCircle size={20} className="text-green-500 mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-gray-900">Messages</p>
+                  <p className="text-xs font-semibold text-gray-900">Community</p>
                 </button>
               </div>
             </div>

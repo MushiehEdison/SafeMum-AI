@@ -1,0 +1,552 @@
+{
+  "phases": [
+    {
+      "phase": "early_acute",
+      "title": "Feeding your body through the hardest days",
+      "intro": "In the first days and weeks after loss, your body is bleeding, your hormones are dropping fast, and you may feel too tired or sad to eat. But small, simple foods will help your womb heal, rebuild your blood, and give you the energy to keep going — one small bite at a time.",
+      "bodyNeeds": ["iron", "protein", "folate"],
+      "sections": [
+        {
+          "title": "What your body needs most right now",
+          "content": "You have lost blood, and your body needs iron to make new blood cells. Without enough iron, you will feel weak, dizzy, and more exhausted than you already are. Protein helps repair the tissues of your womb and supports your hormones as they settle. Folate works together with iron to build healthy blood and supports your emotional recovery by helping your brain function well during grief."
+        },
+        {
+          "title": "Foods that help",
+          "items": [
+            {
+              "food": "Dark leafy greens — amaranth (terere/mchicha), pumpkin leaves, cassava leaves, blackjack",
+              "why": "Packed with iron and folate. These are among the richest sources of iron you can find, often growing in your own garden or sold cheaply at market.",
+              "how": "Wash well, chop finely, and cook in a little oil with onions and tomatoes. Add to stews, eat with ugali, or blend into soup."
+            },
+            {
+              "food": "Beans, lentils, cowpeas (kunde)",
+              "why": "Excellent plant-based iron and protein. Easy to store in bulk and very affordable.",
+              "how": "Soak overnight to soften. Cook with tomatoes, onions, and a little oil. Eat with rice, ugali, or as a soup."
+            },
+            {
+              "food": "Eggs",
+              "why": "Complete protein and rich in iron. Easier to digest than meat when you have no appetite.",
+              "how": "Boiled, fried, or scrambled with greens. Even one egg a day makes a difference."
+            },
+            {
+              "food": "Beef or goat meat — liver especially",
+              "why": "Liver is the most concentrated source of iron available. A small piece once a week is powerful medicine.",
+              "how": "Cut into small pieces, cook in stew with tomatoes and greens. Eat with ugali or rice."
+            },
+            {
+              "food": "Millet or sorghum porridge",
+              "why": "Gentle on the stomach, easy to eat when you feel nauseous, and provides energy and some iron.",
+              "how": "Make into thin or thick porridge. Add a little milk or groundnuts for extra protein."
+            }
+          ]
+        },
+        {
+          "title": "What to limit and why",
+          "items": [
+            {
+              "food": "Alcohol",
+              "why": "Disrupts hormone recovery, deepens low moods, and stops your body from absorbing iron properly."
+            },
+            {
+              "food": "Strong tea or coffee with meals",
+              "why": "Drinking tea immediately after eating blocks iron absorption. Wait at least one hour after eating before drinking tea."
+            },
+            {
+              "food": "Very sugary drinks and sweets",
+              "why": "Give you a short burst of energy followed by a crash, making fatigue worse. They also reduce your appetite for real food."
+            }
+          ]
+        },
+        {
+          "title": "Simple meal ideas",
+          "meals": [
+            "Thin millet porridge with a spoonful of groundnut paste — gentle energy, easy on the stomach",
+            "Boiled eggs with a small handful of cooked greens — protein, iron, and folate together",
+            "Bean stew with ugali and a side of cooked pumpkin leaves — complete meal for blood rebuilding",
+            "Beef liver stew with tomatoes and a small portion of rice — powerful iron dose"
+          ]
+        },
+        {
+          "title": "Signs your nutrition needs attention",
+          "signs": [
+            "Feeling dizzy when you stand up — may indicate low iron or dehydration",
+            "Extreme tiredness that rest does not fix — often low iron or protein",
+            "Pale inside your lower eyelid instead of pink — clear sign of anaemia",
+            "Hair shedding more than usual — linked to protein deficiency after loss"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "processing",
+      "title": "Finding your appetite again",
+      "intro": "Weeks have passed. The bleeding may have stopped, but your body is still healing quietly. Your energy may still be low, and grief may still steal your hunger. This is the time to build back your strength slowly — not with pressure, but with patience.",
+      "bodyNeeds": ["iron", "protein", "B vitamins", "zinc"],
+      "sections": [
+        {
+          "title": "What your body needs most right now",
+          "content": "Your iron stores may still be depleted, even after bleeding stops. Protein continues to support tissue repair and hormone balance. B vitamins — found in whole grains, beans, and eggs — help your nervous system cope with stress and emotional ups and downs. Zinc, from meat, fish, and groundnuts, supports your immune system and helps wounds heal."
+        },
+        {
+          "title": "Foods that help",
+          "items": [
+            {
+              "food": "Small dried fish — omena (dagaa), silver fish",
+              "why": "Eaten whole with bones, provides calcium, iron, and zinc. Very affordable and available across East Africa.",
+              "how": "Clean, fry until crisp, and mix into greens, stew, or eat as a side with ugali."
+            },
+            {
+              "food": "Groundnuts (peanuts) and peanut butter",
+              "why": "Good plant protein, zinc, and healthy fats. Energy-dense, so a little goes a long way.",
+              "how": "Eat as a snack, spread on bread, or add to soups and stews for richness."
+            },
+            {
+              "food": "Fermented milk or yogurt (amasi, mala, lala)",
+              "why": "Easy to digest and provides protein and B vitamins. The fermentation also supports healthy gut bacteria.",
+              "how": "Drink as is, mix with millet porridge, or eat with rice."
+            },
+            {
+              "food": "Sweet potatoes — orange inside",
+              "why": "Rich in vitamin A, which helps your body use iron and supports your immune system. Also gives steady energy.",
+              "how": "Boil, roast, or mash. Eat as a snack or with beans and greens."
+            },
+            {
+              "food": "Moringa leaves powder or fresh leaves",
+              "why": "One of the most nutrient-dense foods available — iron, calcium, vitamin C, and protein all in one plant.",
+              "how": "Add powder to porridge, soup, or stew. Fresh leaves can be cooked like any green vegetable."
+            }
+          ]
+        },
+        {
+          "title": "What to limit and why",
+          "items": [
+            {
+              "food": "Too much white starch (white rice, white bread, plain ugali without greens or protein)",
+              "why": "Fills you up without providing the nutrients your body needs for healing. Always pair with greens or protein."
+            },
+            {
+              "food": "Skipping meals",
+              "why": "Your blood sugar dropping makes mood swings and fatigue worse. Even a small snack helps."
+            }
+          ]
+        },
+        {
+          "title": "Simple meal ideas",
+          "meals": [
+            "Ugali with sukuma wiki and a small handful of fried omena — iron, calcium, and greens",
+            "Sweet potato boiled, served with bean stew — slow-release energy plus iron and protein",
+            "Millet porridge made with fermented milk — gentle on digestion, supports energy and mood",
+            "Groundnut soup with chicken or fish, eaten with rice — protein and healthy fats"
+          ]
+        },
+        {
+          "title": "Signs your nutrition needs attention",
+          "signs": [
+            "Still tired most days, even with enough sleep — iron or protein may still be low",
+            "Frequent colds or infections — possible zinc or vitamin A deficiency",
+            "Mood still very low with no lifting — poor nutrition can make depression harder to recover from"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "rebuilding",
+      "title": "Building back your strength",
+      "intro": "Months have passed. You are finding a new rhythm. Your body has healed in many ways, and now you can focus on building strength, restoring energy, and preparing your body for whatever comes next — whether that is another pregnancy or simply feeling like yourself again.",
+      "bodyNeeds": ["iron", "protein", "calcium", "vitamin D", "omega-3"],
+      "sections": [
+        {
+          "title": "What your body needs most now",
+          "content": "Your iron levels should be back to normal by now, but many women remain low without realising it. Protein continues to support repair and energy. Calcium and vitamin D are important for bone health — pregnancy and loss both draw on your calcium stores. Omega-3 fats, found in fish and certain seeds, support brain health and mood stability."
+        },
+        {
+          "title": "Foods that help",
+          "items": [
+            {
+              "food": "Fish — tilapia, Nile perch, mackerel",
+              "why": "Rich in omega-3 fats, which help reduce inflammation and support emotional wellbeing. Also provides protein and vitamin D.",
+              "how": "Grill, fry, or cook in stew. Eat the small bones of softer fish for calcium."
+            },
+            {
+              "food": "Pumpkin seeds (ugu) and sunflower seeds",
+              "why": "Excellent plant-based zinc, iron, and healthy fats. Easy to add to meals as a crunchy topping.",
+              "how": "Roast and eat as a snack, grind into powder and add to porridge, or sprinkle over salads."
+            },
+            {
+              "food": "Sesame seeds (simsim)",
+              "why": "Very high in calcium, iron, and healthy fats. Traditionally used to support women after childbirth.",
+              "how": "Grind into paste (sesame butter), sprinkle over food, or mix into porridge."
+            },
+            {
+              "food": "Avocado",
+              "why": "Packed with healthy fats, vitamin E, and folate. Supports hormone balance and skin healing.",
+              "how": "Eat as is, mash onto bread, or add to salads. Available in many markets across the region."
+            },
+            {
+              "food": "Organ meats — liver, kidney, heart",
+              "why": "Concentrated source of iron, zinc, B vitamins, and vitamin A. Small amounts are very powerful.",
+              "how": "Cook in stew with onions and tomatoes. Even two tablespoons a week is helpful."
+            }
+          ]
+        },
+        {
+          "title": "What to limit and why",
+          "items": [
+            {
+              "food": "Processed snacks bought in packets",
+              "why": "High in salt, sugar, and unhealthy fats. Low in actual nutrition. Save them for treats, not meals."
+            }
+          ]
+        },
+        {
+          "title": "Simple meal ideas",
+          "meals": [
+            "Grilled fish with roasted sweet potatoes and a side of avocado — omega-3, vitamin A, healthy fats",
+            "Beans and greens stir-fry with ground sesame seeds sprinkled on top — iron, calcium, protein",
+            "Liver stew with ugali and a handful of fresh greens — powerful nutrient boost once a week",
+            "Pumpkin seed and banana smoothie if you have a blender — zinc, potassium, and energy"
+          ]
+        },
+        {
+          "title": "Signs your nutrition needs attention",
+          "signs": [
+            "Bones feel weak, or you have had a fracture easily — possible calcium or vitamin D deficiency",
+            "Your mood is still low even though life has settled — omega-3 and B vitamins may help"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "active_pregnancy",
+      "title": "Eating for two — wisely",
+      "intro": "You are pregnant again. The fear may still be there, but so is hope. Eating well now is not about eating double — it is about eating foods that give your baby what they need to grow strong, while also keeping your own body healthy and supported.",
+      "bodyNeeds": ["folate", "iron", "calcium", "protein", "iodine"],
+      "sections": [
+        {
+          "title": "What your body needs most now",
+          "content": "Folate is critical in early pregnancy to prevent neural tube defects. Iron needs increase because your blood volume is expanding. Calcium builds your baby's bones and teeth — if you do not eat enough, your baby will take calcium from your own bones. Protein is the building material for every part of your baby's body. Iodine supports your baby's brain development."
+        },
+        {
+          "title": "Foods that help",
+          "items": [
+            {
+              "food": "Dark leafy greens (already listed) — folate and iron",
+              "why": "Pumpkin leaves, amaranth, cassava leaves, and spinach are all excellent sources of both folate and iron.",
+              "how": "Cooked as a vegetable side with every main meal."
+            },
+            {
+              "food": "Iodised salt",
+              "why": "Iodine prevents serious brain development problems. Most table salt in East Africa is iodised.",
+              "how": "Use in cooking. Do not overdo salt, but do not avoid it entirely."
+            },
+            {
+              "food": "Sour foods — tamarind, lemon, lime, fermented milk",
+              "why": "Vitamin C helps your body absorb iron from plant foods. Adding a sour element to a meal boosts iron uptake.",
+              "how": "Add lemon juice to greens, drink tamarind juice, or eat fermented milk with meals."
+            },
+            {
+              "food": "Bone broth (if available)",
+              "why": "Slow-cooked bones release calcium, magnesium, and collagen — all good for your baby's bones and your own.",
+              "how": "Use as a base for soups and stews. Simmer bones for several hours with a little vinegar to pull out minerals."
+            },
+            {
+              "food": "Avocado (as above)",
+              "why": "Healthy fats help your baby's brain develop. Also provides folate and vitamin E.",
+              "how": "Eat regularly throughout pregnancy."
+            }
+          ]
+        },
+        {
+          "title": "Foods to be careful with",
+          "items": [
+            {
+              "food": "Raw or undercooked meat, fish, eggs",
+              "why": "Risk of food poisoning, which can be dangerous in pregnancy. Always cook thoroughly."
+            },
+            {
+              "food": "Unwashed vegetables",
+              "why": "Toxoplasmosis from soil on vegetables can harm your baby. Wash all greens very well before cooking."
+            },
+            {
+              "food": "Very large predator fish — shark, kingfish, marlin",
+              "why": "High mercury levels can affect your baby's developing nervous system. Stick to smaller fish like tilapia, omena, sardines."
+            }
+          ]
+        },
+        {
+          "title": "Simple meal ideas",
+          "meals": [
+            "Beans and rice with cooked greens and a squeeze of lemon — complete protein, iron, and vitamin C",
+            "Egg and tomato stew with ugali — protein and folate, easy to digest",
+            "Fish stew made with small tilapia, served with sweet potato — omega-3 and vitamin A",
+            "Fermented milk (mala) with millet porridge — calcium and gentle energy"
+          ]
+        },
+        {
+          "title": "Signs your nutrition needs attention",
+          "signs": [
+            "Extreme fatigue even after resting — possible iron or protein deficiency",
+            "Leg cramps at night — often low calcium or magnesium",
+            "Bleeding gums when brushing — possible vitamin C deficiency"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "postnatal",
+      "title": "Nourishing yourself while nursing your baby",
+      "intro": "You have delivered. Congratulations. Now your body is recovering from birth while also producing milk for your baby. This is one of the most demanding times nutritionally. You need more calories and more water than you did during pregnancy, all while sleeping less and caring for a newborn.",
+      "bodyNeeds": ["protein", "calcium", "iron", "vitamin A", "water"],
+      "sections": [
+        {
+          "title": "What your body needs most now",
+          "content": "Protein needs are higher than in pregnancy because breastmilk is made from protein. Calcium leaves your body through breastmilk; if you do not eat enough, your bones will be affected. Iron replaces blood lost during delivery. Vitamin A passes into your milk and is vital for your baby's eyesight and immune system. And water — you need more water than any other time in your life to produce enough milk."
+        },
+        {
+          "title": "Foods that help",
+          "items": [
+            {
+              "food": "Brown millet porridge (as above) with milk or groundnuts",
+              "why": "Said to increase milk production (galactagogue). Provides B vitamins and steady energy.",
+              "how": "Drink a cup morning and evening."
+            },
+            {
+              "food": "Pawpaw (papaya) — ripe",
+              "why": "Rich in vitamin A, which your baby needs through your milk. Also soft and easy to eat when tired.",
+              "how": "Eat as a snack or breakfast. Unripe pawpaw is not recommended during breastfeeding."
+            },
+            {
+              "food": "Fenugreek seeds (hulba)",
+              "why": "Traditional galactagogue used across many cultures to increase milk supply.",
+              "how": "Soak seeds overnight and eat, or brew as tea. Start with small amounts."
+            },
+            {
+              "food": "Coconut — fresh milk, dried, or oil",
+              "why": "Provides healthy fats for your baby's brain development and energy for you.",
+              "how": "Add coconut milk to soups and stews. Eat fresh coconut as a snack."
+            },
+            {
+              "food": "Leafy greens (as above)",
+              "why": "Continue to provide iron and vitamin A. Your iron stores may still be low after delivery.",
+              "how": "Eat daily, cooked well."
+            }
+          ]
+        },
+        {
+          "title": "Foods to limit",
+          "items": [
+            {
+              "food": "Caffeine — strong tea, coffee, sodas",
+              "why": "Passes into breastmilk and can make your baby fussy and unable to sleep. Also dehydrates you.",
+              "how": "Limit to one cup per day, and drink water afterward."
+            },
+            {
+              "food": "Spicy foods (in excess)",
+              "why": "Does not harm your baby, but some babies are fussier when their mothers eat very spicy meals.",
+              "how": "Notice if your baby seems uncomfortable after certain foods."
+            }
+          ]
+        },
+        {
+          "title": "Simple meal ideas",
+          "meals": [
+            "Millet porridge made with fermented milk, eaten with a ripe banana — energy, calcium, milk supply support",
+            "Fish stew with greens and a side of ugali — protein, iron, and omega-3",
+            "Beans cooked in coconut milk, served with rice — iron and healthy fats",
+            "Pawpaw and groundnut snack — vitamin A and protein together"
+          ]
+        },
+        {
+          "title": "Signs your nutrition needs attention",
+          "signs": [
+            "Your milk supply is low despite feeding often — may need more calories, water, or specific galactagogues",
+            "You feel dizzy or lightheaded — possible dehydration or low iron",
+            "Your hair is falling out in clumps — common after birth but worse if protein or iron is low"
+          ]
+        }
+      ]
+    }
+  ],
+  "foods": [
+    {
+      "name": "Moringa leaves",
+      "localNames": ["Mzungu nazi (Swahili)", "Ewe igbale (Yoruba)", "Moringa (English)", "Marango (Luganda)"],
+      "nutrients": ["iron", "calcium", "vitamin C", "protein", "vitamin A"],
+      "phases": ["early_acute", "processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Moringa is one of the most nutrient-dense plants you can eat — it rebuilds blood, supports bone health, and helps your body recover after loss or birth.",
+      "howToUse": "Fresh leaves are cooked like any green vegetable — boil or fry with onions and tomatoes. Dried leaves can be ground into powder and added to porridge, soup, or stew. One tablespoon of powder a day is enough.",
+      "available": "Moringa grows in many home gardens across East and West Africa. It is also sold fresh or dried in local markets."
+    },
+    {
+      "name": "Small dried fish — omena, dagaa",
+      "localNames": ["Omena (Luo)", "Dagaa (Swahili)", "Kapenta (Zambia/Zimbabwe)", "Nsenene (Uganda — different insect, also nutritious)"],
+      "nutrients": ["calcium", "iron", "zinc", "protein", "iodine"],
+      "phases": ["processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Because you eat the whole fish including bones and organs, you get concentrated calcium for bones and teeth, plus iron and zinc for healing and immunity.",
+      "howToUse": "Clean well, fry until crisp, and mix into cooked greens, add to stew, or eat as a side with ugali. Can also be ground into powder and used as a seasoning.",
+      "available": "Available in most markets across East Africa. Very affordable compared to larger fish."
+    },
+    {
+      "name": "Amaranth leaves — terere, mchicha",
+      "localNames": ["Terere (Kikuyu)", "Mchicha (Swahili)", "Efo tete (Yoruba)", "Likhokho (Luhya)"],
+      "nutrients": ["iron", "folate", "calcium", "vitamin A", "vitamin C"],
+      "phases": ["early_acute", "processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Exceptionally high in iron and folate together — exactly what your body needs to rebuild blood after loss or birth. Also very affordable.",
+      "howToUse": "Wash thoroughly, chop finely, and cook with onions, tomatoes, and a little oil. Serve as a side with ugali, rice, or potatoes.",
+      "available": "Grows as a weed in many home gardens. Also sold cheaply in every local market."
+    },
+    {
+      "name": "Pumpkin leaves (mboga ya malenge)",
+      "localNames": ["Kiswa (Luo)", "Malenge (Swahili)", "Ugu (Igbo)", "Ewe elegede (Yoruba)"],
+      "nutrients": ["iron", "vitamin A", "calcium", "folate"],
+      "phases": ["early_acute", "processing", "active_pregnancy", "postnatal"],
+      "benefit": "Rich in vitamin A, which supports your immune system and helps your body use iron. The combination with pumpkin flesh (which is also nutritious) makes this a powerful food.",
+      "howToUse": "Cook the leaves with onions and tomatoes, similar to other greens. The flesh can be boiled, roasted, or added to stews.",
+      "available": "Pumpkins grow widely. Both leaves and fruit are available in markets when in season."
+    },
+    {
+      "name": "Cowpeas — kunde, niebe",
+      "localNames": ["Kunde (Swahili)", "Niebe (Hausa)", "Ewa (Yoruba — different bean but similar)", "Bo bo (Twi)"],
+      "nutrients": ["protein", "iron", "folate", "fiber"],
+      "phases": ["early_acute", "processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Excellent plant-based protein and iron together. The leaves (kunde greens) are also highly nutritious and often eaten as a vegetable.",
+      "howToUse": "Soak dried beans overnight. Cook with tomatoes, onions, and a little oil. Serve with rice, ugali, or as a soup. The leaves are cooked like any green vegetable.",
+      "available": "Very common across Africa. Dried beans store for months. Fresh leaves available when in season."
+    },
+    {
+      "name": "Eggs",
+      "localNames": ["Mayai (Swahili)", "Esin (Yoruba)", "Nnụnụ (Igbo)", "Mage (Kikuyu)"],
+      "nutrients": ["protein", "vitamin B12", "iron", "zinc", "vitamin A"],
+      "phases": ["early_acute", "processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Complete protein — meaning it contains all the building blocks your body needs to repair tissue. Easy to digest when you have no appetite.",
+      "howToUse": "Boil, fry, scramble, or poach. One or two eggs a day is excellent. Add to soups or mix with greens.",
+      "available": "Available everywhere. Cheaper than meat or fish. Many households keep chickens."
+    },
+    {
+      "name": "Groundnuts — peanuts",
+      "localNames": ["Njugu (Swahili)", "Epa (Yoruba)", "Ahụ́ (Igbo)", "Njugu (Kikuyu)"],
+      "nutrients": ["protein", "zinc", "magnesium", "healthy fats", "vitamin E"],
+      "phases": ["processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Energy-dense and rich in zinc, which supports healing and immunity. A small handful provides steady energy without spiking blood sugar.",
+      "howToUse": "Eat roasted as a snack. Make into groundnut paste (butter). Add to soups and stews for richness. Grind and add to porridge.",
+      "available": "Very common, usually affordable. Sold roasted, raw, or as paste in markets."
+    },
+    {
+      "name": "Millet",
+      "localNames": ["Wimbi (Swahili)", "Mwere (Kikuyu)", "Jero (Hausa)", "Mahangu (Namibia)"],
+      "nutrients": ["iron", "B vitamins", "magnesium", "fiber"],
+      "phases": ["early_acute", "processing", "postnatal"],
+      "benefit": "Traditional postpartum food across Africa — easy to digest, provides steady energy, and is often said to help milk production.",
+      "howToUse": "Make into thin or thick porridge. Mix with milk, groundnuts, or fermented milk. Can also be made into ugali.",
+      "available": "Available in most markets. Stores well as grain or flour."
+    },
+    {
+      "name": "Beef liver",
+      "localNames": ["Maini ya ng'ombe (Swahili)", "Ensu (Luganda)", "Imbazzi (Kikuyu)"],
+      "nutrients": ["iron", "vitamin A", "zinc", "B12", "copper"],
+      "phases": ["early_acute", "processing", "rebuilding", "active_pregnancy"],
+      "benefit": "The most concentrated source of iron and vitamin A available. A small piece once a week can correct anaemia faster than plant foods alone.",
+      "howToUse": "Cut into small pieces, cook in stew with onions and tomatoes. Do not overcook — liver becomes tough. Eat with ugali or rice.",
+      "available": "Available in most butchers. Usually cheaper than muscle meat."
+    },
+    {
+      "name": "Sesame seeds — simsim",
+      "localNames": ["Simsim (Swahili)", "Ridi (Hausa)", "Benne seed (West Africa)"],
+      "nutrients": ["calcium", "iron", "magnesium", "healthy fats", "protein"],
+      "phases": ["processing", "rebuilding", "postnatal"],
+      "benefit": "Exceptionally high in calcium — important for bone health after pregnancy and breastfeeding. Also provides iron and healthy fats.",
+      "howToUse": "Grind into paste (sesame butter), sprinkle over food, mix into porridge, or eat as a snack. Traditionally made into sesame bars with honey or sugar.",
+      "available": "Widely available across Africa. Often sold in markets either raw or roasted."
+    },
+    {
+      "name": "Sweet potato (orange-fleshed)",
+      "localNames": ["Ngwaci (Kikuyu)", "Viazi tamu (Swahili)", "Kumara (Luganda)", "Odunkun (Yoruba)"],
+      "nutrients": ["vitamin A", "vitamin C", "fiber", "potassium"],
+      "phases": ["processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "The orange colour means very high vitamin A — essential for your baby's development during pregnancy and for your own immune system.",
+      "howToUse": "Boil, roast, or mash. Eat as a snack or as a starch with beans and greens.",
+      "available": "Very common. Grows in many home gardens. Available in markets year-round."
+    },
+    {
+      "name": "Fermented milk — amasi, mala, lala",
+      "localNames": ["Mala (Swahili)", "Amasi (Zulu)", "Mursik (Kalenjin)", "Nono (Hausa)"],
+      "nutrients": ["calcium", "protein", "B vitamins", "probiotics"],
+      "phases": ["processing", "rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Easier to digest than fresh milk for many people. The fermentation creates probiotics that support gut health, which affects mood and immunity.",
+      "howToUse": "Drink as is, mix with millet porridge, or use as a base for soups. Can be eaten with rice or ugali.",
+      "available": "Common across East and Southern Africa. Available in markets and increasingly in shops."
+    },
+    {
+      "name": "Blackjack — bidens pilosa",
+      "localNames": ["Mwarangu (Kikuyu)", "Mnyenya (Luo)", "Sere (Buganda)"],
+      "nutrients": ["iron", "vitamin A", "calcium", "zinc"],
+      "phases": ["early_acute", "processing", "active_pregnancy"],
+      "benefit": "Commonly dismissed as a weed, blackjack is actually one of the most iron-rich greens available. It grows everywhere for free.",
+      "howToUse": "Harvest young leaves, wash well, and cook like any green vegetable. Slightly bitter taste — cook with tomatoes and onion to balance.",
+      "available": "Grows as a weed in many home gardens and along roadsides. Free for anyone who knows to pick it."
+    },
+    {
+      "name": "Avocado",
+      "localNames": ["Parachichi (Swahili)", "Piya (Luo)", "Oripela (Yoruba)", "Ovokado (Luganda)"],
+      "nutrients": ["healthy fats", "folate", "vitamin E", "potassium", "vitamin K"],
+      "phases": ["rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Healthy fats are essential for your baby's brain development during pregnancy and breastfeeding. Also supports hormone balance.",
+      "howToUse": "Eat ripe avocado as is, mash onto bread, add to salads, or blend into smoothies. Can be eaten daily.",
+      "available": "Widely available across East Africa. Often grown in home gardens."
+    },
+    {
+      "name": "Pumpkin seeds — ugu",
+      "localNames": ["Ugu (Igbo)", "Elegede (Yoruba)", "Mboga ya malenge (Swahili)"],
+      "nutrients": ["zinc", "magnesium", "iron", "protein", "healthy fats"],
+      "phases": ["rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Very high in zinc, which supports healing, immunity, and healthy cell division during pregnancy. Also a good plant protein source.",
+      "howToUse": "Roast and eat as a snack. Grind into powder and add to porridge or soups. Can be pressed for oil.",
+      "available": "Available when pumpkins are in season. Seeds can be dried and stored."
+    },
+    {
+      "name": "Tilapia (small)",
+      "localNames": ["Ngege (Luo)", "Sato (Luganda)", "Karp (India — not African, but common in trade)"],
+      "nutrients": ["protein", "omega-3", "vitamin D", "selenium"],
+      "phases": ["rebuilding", "active_pregnancy", "postnatal"],
+      "benefit": "Omega-3 fats support your baby's brain development and help protect against postpartum depression. Small tilapia is safer than large predator fish.",
+      "howToUse": "Grill, fry, or cook in stew. Eat whole or filleted. The bones of small fish are soft enough to eat and provide calcium.",
+      "available": "Farmed widely across East Africa. Available fresh or frozen in many markets."
+    },
+    {
+      "name": "Cassava leaves",
+      "localNames": ["Mihogo (Swahili)", "Ege (Igbo)", "Gari (West Africa — the leaves, not the flour)"],
+      "nutrients": ["protein", "iron", "vitamin A", "calcium"],
+      "phases": ["early_acute", "processing", "active_pregnancy"],
+      "benefit": "One of the few plant sources of complete protein when eaten with the right preparation. Very high in iron and calcium.",
+      "howToUse": "Must be cooked thoroughly to remove cyanide. Pound or grind leaves finely, then boil for a long time. Traditionally cooked with groundnuts or palm oil.",
+      "available": "Grows widely. Leaves are available wherever cassava is grown."
+    },
+    {
+      "name": "Fenugreek seeds — hulba",
+      "localNames": ["Hulba (Swahili/Arabic)", "Methi (South Asian — common in East African Indian communities)"],
+      "nutrients": ["iron", "magnesium", "manganese", "fiber"],
+      "phases": ["postnatal"],
+      "benefit": "Traditional galactagogue — many women report increased milk supply after eating fenugreek. Also supports digestion.",
+      "howToUse": "Soak seeds overnight and eat, or brew as tea. Start with one teaspoon of seeds per day and increase slowly.",
+      "available": "Available in spice shops and markets in towns and cities. Not as common in rural markets."
+    },
+    {
+      "name": "Bone broth",
+      "localNames": ["Mchuzi wa mifupa (Swahili)", "Obiero (Luo — general broth)"],
+      "nutrients": ["calcium", "magnesium", "collagen", "gelatin", "phosphorus"],
+      "phases": ["postnatal", "active_pregnancy"],
+      "benefit": "Slow-cooking bones releases minerals that support bone health and joint recovery. The collagen helps tissue healing after birth.",
+      "howToUse": "Simmer bones (beef, goat, chicken) for several hours with a little vinegar to pull out minerals. Use as base for soups and stews.",
+      "available": "Available anywhere meat is sold. Ask your butcher for soup bones, which are usually cheap."
+    },
+    {
+      "name": "Mango — ripe",
+      "localNames": ["Embe (Swahili)", "Mango (Yoruba)", "Mawembe (Kikuyu)"],
+      "nutrients": ["vitamin C", "vitamin A", "folate", "fiber"],
+      "phases": ["active_pregnancy", "postnatal"],
+      "benefit": "Very high in vitamin C, which helps your body absorb iron from plant foods. Eating mango with beans or greens doubles how much iron you absorb.",
+      "howToUse": "Eat ripe mango as a snack or dessert. Can be added to porridge or blended into juice.",
+      "available": "Seasonal but widely available across East and West Africa during mango season. Cheap when in season."
+    }
+  ]
+}

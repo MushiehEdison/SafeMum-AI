@@ -590,10 +590,27 @@ useEffect(() => {
 
 const fetchFacilities = useCallback(async (lat, lng) => {
   try {
-    const res = await getNearbyFacilities(lat, lng);
+    
+    const res = await getNearbyFacilities(lat, lng, {
+      useServiceGap: true,  // ← This enables the KMeans model
+      radius: 50,
+      type: 'all',
+      limit: 100
+    });
     setFacilities(res.data.data || []);
+    
+    if (res.data.service_gap_enabled) {
+      console.log(`[Map] Service gap clustering ACTIVE. High-need counties:`, res.data.high_need_counties);
+    }
   } catch (err) {
     console.error('Failed to fetch facilities:', err);
+    // Fallback to basic distance-only
+    try {
+      const fallbackRes = await getNearbyFacilities(lat, lng, { useServiceGap: false });
+      setFacilities(fallbackRes.data.data || []);
+    } catch (fallbackErr) {
+      console.error('Fallback also failed:', fallbackErr);
+    }
   } finally {
     setLoading(false);
   }

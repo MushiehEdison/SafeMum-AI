@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Send, ArrowRight, MessageCircle, Loader, ChevronDown, ChevronUp, Flame } from "lucide-react";
-import { getCheckinHistory, submitCheckin } from "../../API/recovery";
+import { Send, ArrowRight, MessageCircle, Loader, ChevronDown, ChevronUp, Flame, Heart } from "lucide-react";
+import { getCheckinHistory, submitCheckin, getCheckinQuestions } from "../../API/recovery";
 
 const MOOD_OPTIONS = [
   { label: "I have been really struggling", color: "red"   },
@@ -116,44 +116,52 @@ export default function CheckInTab() {
   useEffect(() => {
     async function fetchAll() {
       try {
-        const [histRes] = await Promise.all([
+        const [histRes, questionsRes] = await Promise.all([
           getCheckinHistory(),
+          getCheckinQuestions(),
         ]);
-        const histData = histRes.data.data || histRes.data || [];
 
+        const histData = histRes.data.data || histRes.data || [];
         setHistory(histData);
 
-        // Check if already checked in today
+        const qData = questionsRes.data.data;
+        const questions = qData.questions || {};
+        setGreeting(questions.greeting || "Welcome back. Let's check in together.");
+        setPhysicalQuestions(
+          (questions.physical_questions || []).map(q => ({
+            id: q.id,
+            question: q.text,
+            type: q.type,
+            options: q.options || null,
+            min_label: q.min_label || null,
+            max_label: q.max_label || null,
+          }))
+        );
+        setEmotionalQuestions(
+          (questions.emotional_questions || []).map(q => ({
+            id: q.id,
+            question: q.text,
+            type: q.type,
+            options: q.options || null,
+            min_label: q.min_label || null,
+            max_label: q.max_label || null,
+          }))
+        );
+        setDailyTip(qData.daily_tip || "");
+        setRecoveryPhase(qData.phase_label || "");
+
         const today = new Date().toISOString().split("T")[0];
         const todayCheckin = Array.isArray(histData)
           ? histData.find(h => (h.date || "").startsWith(today))
           : null;
-
         if (todayCheckin) {
           setAlreadyCheckedIn(true);
-          setConclusion(todayCheckin.conclusion || todayCheckin.note || "");
+          setConclusion(todayCheckin.conclusion || "");
           setSelectedMood(todayCheckin.mood || null);
         }
 
-        // Set mock questions (replace with API call when ready)
-        setGreeting("Welcome back. Let's see how you're doing today.");
-        setPhysicalQuestions([
-          { id: "bleeding", question: "Are you experiencing any bleeding?", type: "choice", options: ["None", "Light spotting", "Moderate", "Heavy — soaking pads"], min_label: null, max_label: null },
-          { id: "pain", question: "Rate your pain level today", type: "scale", options: null, min_label: "No pain", max_label: "Severe pain" },
-          { id: "fever", question: "Do you have a fever?", type: "yesno", options: null, min_label: null, max_label: null },
-          { id: "appetite", question: "How is your appetite?", type: "scale", options: null, min_label: "No appetite", max_label: "Normal" },
-        ]);
-        setEmotionalQuestions([
-          { id: "sleep", question: "How well did you sleep last night?", type: "scale", options: null, min_label: "Not at all", max_label: "Very well" },
-          { id: "mood", question: "How would you describe your mood?", type: "choice", options: ["Hopeful", "Numb", "Sad", "Anxious", "Okay", "Good"], min_label: null, max_label: null },
-          { id: "support", question: "Did you talk to anyone supportive today?", type: "yesno", options: null, min_label: null, max_label: null },
-        ]);
-
-        const streakVal = histRes.data?.streak || histData?.streak || (Array.isArray(histData) ? histData.length : 0);
-        setStreak(streakVal);
-        setRecoveryPhase(histRes.data?.recovery_phase || "Week 2 · Active Recovery");
+        setStreak(histRes.data?.streak || 0);
         setProgressPct(histRes.data?.progress_pct || 33);
-        setDailyTip(histRes.data?.daily_tip || "Stay hydrated and rest when you can.");
       } catch (err) {
         console.error("Failed to fetch check-in data:", err);
       } finally {
@@ -285,6 +293,43 @@ export default function CheckInTab() {
         </div>
       )}
 
+      {/* CHW Note — shown when revisiting the tab (not submitting) */}
+      {!submitted && history.length > 0 && history[0].chw_note && (
+        <div style={{
+          background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 16,
+          padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <div style={{
+              width: 22, height: 22, borderRadius: "50%", background: "#16a34a",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <Heart size={11} color="#fff" />
+            </div>
+            <p style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+              textTransform: "uppercase", color: "#16a34a", fontFamily: "'Manrope', sans-serif",
+            }}>
+              A health worker reviewed your check-in
+            </p>
+          </div>
+          <p style={{
+            fontSize: 14, color: "#15803d", lineHeight: 1.65, fontFamily: "'Manrope', sans-serif",
+          }}>
+            {history[0].chw_note}
+          </p>
+          {history[0].chw_responded_at && (
+            <p style={{
+              fontSize: 11, color: "#86efac", fontFamily: "'Manrope', sans-serif", marginTop: 8,
+            }}>
+              {new Date(history[0].chw_responded_at).toLocaleDateString("en-US", {
+                month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+              })}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Already checked in */}
       {alreadyCheckedIn && !submitted && (
         <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 16, padding: "18px 20px" }}>
@@ -409,7 +454,7 @@ export default function CheckInTab() {
         </div>
       )}
 
-      {/* Submitted: AI response + recovery data */}
+      {/* Submitted: AI response + CHW note + recovery data */}
       {submitted && (
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {/* AI response bubble */}
@@ -433,6 +478,43 @@ export default function CheckInTab() {
               <p style={{ fontSize: 14, color: "#111", lineHeight: 1.65, fontFamily: "'Manrope', sans-serif" }}>
                 {conclusion}
               </p>
+            </div>
+          )}
+
+          {/* CHW Note Card — shown after submitting if health worker responded */}
+          {history.length > 0 && history[0].chw_note && (
+            <div style={{
+              background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 16,
+              padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <div style={{
+                  width: 22, height: 22, borderRadius: "50%", background: "#16a34a",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <Heart size={11} color="#fff" />
+                </div>
+                <p style={{
+                  fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+                  textTransform: "uppercase", color: "#16a34a", fontFamily: "'Manrope', sans-serif",
+                }}>
+                  A health worker reviewed your check-in
+                </p>
+              </div>
+              <p style={{
+                fontSize: 14, color: "#15803d", lineHeight: 1.65, fontFamily: "'Manrope', sans-serif",
+              }}>
+                {history[0].chw_note}
+              </p>
+              {history[0].chw_responded_at && (
+                <p style={{
+                  fontSize: 11, color: "#86efac", fontFamily: "'Manrope', sans-serif", marginTop: 8,
+                }}>
+                  {new Date(history[0].chw_responded_at).toLocaleDateString("en-US", {
+                    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+                  })}
+                </p>
+              )}
             </div>
           )}
 
@@ -494,6 +576,25 @@ export default function CheckInTab() {
                     {item.note && !isExpanded && (
                       <p style={{ fontSize: 13, color: "#6b7280", lineHeight: 1.6, fontFamily: "'Manrope', sans-serif" }}>{item.note}</p>
                     )}
+
+                    {/* CHW note in history timeline */}
+                    {item.chw_note && (
+                      <div style={{
+                        background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10,
+                        padding: "10px 14px", marginTop: 8,
+                      }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                          <Heart size={10} color="#16a34a" />
+                          <p style={{ fontSize: 10, color: "#16a34a", fontFamily: "'Manrope', sans-serif", fontWeight: 600, letterSpacing: "0.06em" }}>
+                            Health worker response
+                          </p>
+                        </div>
+                        <p style={{ fontSize: 13, color: "#15803d", lineHeight: 1.6, fontFamily: "'Manrope', sans-serif" }}>
+                          {item.chw_note}
+                        </p>
+                      </div>
+                    )}
+
                     {item.conclusion && (
                       <button onClick={() => toggleHistoryItem(item.id || item._id || i)}
                         style={{ background: "none", border: "none", cursor: "pointer", padding: 0, display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
@@ -522,28 +623,7 @@ export default function CheckInTab() {
         )}
       </div>
 
-      {/* Talk card */}
-      <div style={{ background: "#fff", border: "1.5px solid #e8e6e1", borderRadius: 20, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 14 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-          <MessageCircle size={16} color="#9ca3af" strokeWidth={1.5} />
-          <p style={{ fontSize: 14, fontWeight: 600, color: "#111", fontFamily: "'Manrope', sans-serif" }}>Need to talk more?</p>
-        </div>
-        <p style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.65, fontFamily: "'Manrope', sans-serif" }}>
-          Start a private conversation with the AI. It is here to listen, not to judge.
-        </p>
-        {talkSent ? (
-          <p style={{ fontSize: 13, color: "#16a34a", fontWeight: 600, fontFamily: "'Manrope', sans-serif" }}>Opening your conversation...</p>
-        ) : (
-          <>
-            <textarea value={talkInput} onChange={e => setTalkInput(e.target.value)} rows={3}
-              placeholder="What's on your mind today?" style={s.textarea}
-            />
-            <button onClick={sendTalk} style={{ ...s.sendBtn, alignSelf: "flex-start" }}>
-              Start conversation <ArrowRight size={13} strokeWidth={2} />
-            </button>
-          </>
-        )}
-      </div>
+     
     </div>
   );
 }

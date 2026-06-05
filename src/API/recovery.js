@@ -9,7 +9,7 @@ export const submitCheckin     = (data) => API.post('/api/recovery/checkin', dat
 export const getCommunityPosts  = ()       => API.get('/api/recovery/community')
 export const createCommunityPost = (data)  => API.post('/api/recovery/community', data)
 // data: { content: str }
-export const replyToPost        = (id, data) => API.post(`/api/recovery/community/${id}/reply`, data)
+export const replyToPost = (id, content) => API.post(`/api/recovery/community/${id}/reply`, { content })
 // data: { content: str }
 
 // ── Support / counsellors ─────────────────────────────────────────────────────
@@ -19,6 +19,6 @@ export const submitSupportRequest    = (data) => API.post('/api/recovery/support
 
 export const submitSymptomCheckin = (data) => API.post('/api/recovery/symptom-checkin', data)
 // data: { symptoms: [str], note?: str }
-
+export const getNgoMatch = () => API.get('/api/recovery/support/ngo-match')
 export const getRecoveryProgress = () => API.get('/api/recovery/progress')
 export const getCheckinQuestions = () => API.get('/api/recovery/checkin/questions')

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Heart, Phone, CheckCircle2, Loader } from "lucide-react";
-import { getCounsellors } from "../../API/recovery";
+import { getCounsellors, submitSupportRequest, getNgoMatch } from "../../API/recovery";
 
 const font = "'Manrope', sans-serif";
 const SUPPORT_TYPES = ["Counselling", "Transport", "Financial Aid"];
@@ -24,25 +24,48 @@ export default function SupportTab() {
   const [supportType, setSupportType]       = useState("");
   const [supportDesc, setSupportDesc]       = useState("");
   const [supportSubmitted, setSubmitted]    = useState(false);
+  const [userVuln, setUserVuln] = useState("medium");
+  const [showUrgent, setShowUrgent] = useState(false);
+  const [orderedTypes, setOrderedTypes] = useState(["Counselling", "Transport", "Financial Aid"]);
+  const [counsellingNote, setCounsellingNote] = useState(null);
 
-  useEffect(() => {
-    async function fetchCounsellors() {
-      try {
-        const res = await getCounsellors();
-        setCounsellors(res.data.data || []);
-      } catch (err) {
-        console.error('Failed to fetch counsellors:', err);
-      } finally {
-        setLoading(false);
-      }
+ useEffect(() => {
+  async function fetchAll() {
+    try {
+      const [counselRes, ngoRes] = await Promise.all([
+        getCounsellors(),
+        getNgoMatch(),
+      ]);
+      setCounsellors(counselRes.data.data || []);
+      setUserVuln(counselRes.data.user_vuln || "medium");
+      setShowUrgent(counselRes.data.show_urgent || false);
+      setOrderedTypes(ngoRes.data.ordered_types || ["Counselling", "Transport", "Financial Aid"]);
+      setCounsellingNote(ngoRes.data.counselling_note || null);
+    } catch (err) {
+      console.error('Failed to fetch support data:', err);
+    } finally {
+      setLoading(false);
     }
-    fetchCounsellors();
-  }, []);
+  }
+  fetchAll();
+}, []);
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!supportType || !supportDesc.trim()) return;
+    try {
+      await submitSupportRequest({
+        type: supportType,
+        description: supportDesc.trim(),
+      });
+    } catch (err) {
+      console.error('Failed to submit:', err);
+    }
     setSubmitted(true);
-    setTimeout(() => { setSubmitted(false); setSupportType(""); setSupportDesc(""); }, 4000);
+    setTimeout(() => {
+      setSubmitted(false);
+      setSupportType("");
+      setSupportDesc("");
+    }, 4000);
   }
 
   const aiMessage = "You have shown real strength recently. If you ever need someone to talk to, these people are always here.";
@@ -63,6 +86,28 @@ export default function SupportTab() {
         <Heart size={16} color="#9ca3af" strokeWidth={1.5} style={{ marginTop: 2, flexShrink: 0 }} />
         <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.7 }}>{aiMessage}</p>
       </div>
+
+      {/* Urgent banner */}
+      {showUrgent && (
+        <div style={{
+          background: "#fef2f2", border: "1.5px solid #fecaca",
+          borderRadius: 16, padding: "16px 18px",
+          display: "flex", gap: 12, alignItems: "flex-start",
+        }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: "50%", background: "#ef4444",
+            flexShrink: 0, marginTop: 5, boxShadow: "0 0 0 3px rgba(239,68,68,.2)",
+          }} />
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#991b1b", fontFamily: font, marginBottom: 4 }}>
+              A counsellor is available for you right now
+            </p>
+            <p style={{ fontSize: 12, color: "#b91c1c", fontFamily: font, fontWeight: 300, lineHeight: 1.6 }}>
+              Based on how you have been feeling, connecting with someone today could really help.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Talk to someone */}
       <div>
@@ -120,13 +165,22 @@ export default function SupportTab() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {counsellingNote && (
+              <p style={{
+                fontSize: 12, color: "#9333ea", fontFamily: font, lineHeight: 1.6,
+                padding: "10px 14px", background: "#faf5ff", borderRadius: 10,
+                border: "1px solid #e9d5ff",
+              }}>
+                {counsellingNote}
+              </p>
+            )}
             <select value={supportType} onChange={e => setSupportType(e.target.value)} style={{
               width: "100%", border: "1.5px solid #e5e7eb", borderRadius: 14,
               padding: "12px 16px", fontSize: 14, color: supportType ? "#111" : "#9ca3af",
               fontFamily: font, background: "#fff", outline: "none", boxSizing: "border-box", appearance: "none",
             }}>
               <option value="" disabled>Select type of support</option>
-              {SUPPORT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              {orderedTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
             <textarea value={supportDesc} onChange={e => setSupportDesc(e.target.value)} rows={3}
               placeholder="Briefly describe what you need"

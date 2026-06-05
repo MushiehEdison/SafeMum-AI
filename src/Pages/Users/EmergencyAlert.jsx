@@ -424,8 +424,8 @@ export default function EmergencyAlert() {
                 <div className="bg-gray-50 rounded-xl p-4">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Alerting</p>
                   <div className="space-y-2">
-                    {selectedRecipients.map(r => (
-                      <div key={r.id} className="flex items-center justify-between py-2">
+                    {selectedRecipients.map((r, idx) => (
+                      <div key={`${r.type}-${r.id}-${idx}`} className="flex items-center justify-between py-2">
                         <div className="flex items-center gap-2">
                           {r.type === 'chw' ? <User size={14} className="text-purple-500" /> : <Building2 size={14} className="text-green-600" />}
                           <span className="text-sm text-gray-700">{r.name}</span>
@@ -477,8 +477,8 @@ export default function EmergencyAlert() {
                 <div className="text-left">
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Responding</p>
                   <div className="space-y-3">
-                    {selectedRecipients.map(r => (
-                      <div key={r.id} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                    {selectedRecipients.map((r, idx) => (
+                      <div key={`${r.type}-${r.id}-${idx}`} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-3">
                             <div className={`w-10 h-10 rounded-xl ${r.type === 'chw' ? 'bg-purple-100' : 'bg-green-100'} flex items-center justify-center`}>

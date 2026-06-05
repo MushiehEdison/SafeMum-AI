@@ -1,10 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import BottomNav from "./Components/BottomNav";
 import MascotTestPage from "./Mascottestpage";
-import { PatientRoute, CHWRoute, FacilityRoute } from "./Components/ProtectedRoute";
+import { PatientRoute, CHWRoute, FacilityRoute, AdminRoute   } from "./Components/ProtectedRoute";
 import { UserAuthProvider } from "./Context/UserAuthContext";
 import { CHWAuthProvider } from "./Context/CHWAuthContext";
 import { FacilityAuthProvider } from "./Context/FacilityAuthContext";
+import { AdminAuthProvider } from "./Context/AdminAuthContext";
 import PhoneSimulator from "./Pages/Public/Simulator";
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
@@ -28,6 +29,9 @@ import CHWDashboard  from "./Pages/CHW/CHWDashboard";
 import CHWProfile    from "./Pages/CHW/CHWProfile";
 import CHWPatients from "./Pages/CHW/CHWpatients";
 import CHWSchedule from "./Pages/CHW/CHWschedule";
+import CHWCommunity from "./Pages/CHW/CHWCommunity";
+
+
 
 // ── Health Centre pages ───────────────────────────────────────────────────────
 import FacilityDashboard  from "./Pages/HealthCenters/FacilityDashboard";
@@ -38,6 +42,15 @@ import IncomingReferrals from "./Pages/HealthCenters/IncomingReferrals";
 
 // ── Public ────────────────────────────────────────────────────────────────────
 import Landing from "./Pages/Public/Landing";
+
+
+
+// ── Public ────────────────────────────────────────────────────────────────────
+import AdminLogin from "./Pages/Auth/Adminauth";
+import InsightsDashboard from "./Pages/Admin/InsightsDashboard";
+
+
+
 
 const PATIENT_PATHS = [
   "/home", "/emergency-alert", "/map", "/reminders", "/safe-recovery", "/profile",
@@ -79,6 +92,7 @@ function AppShell() {
         <Route path="/chw/profile"    element={<CHWRoute><CHWProfile /></CHWRoute>} />
         <Route path="/chw/patients"   element={<CHWRoute><CHWPatients /></CHWRoute>} />
         <Route path="/chw/schedule"   element={<CHWRoute><CHWSchedule /></CHWRoute>} />
+        <Route path="/chw/community"   element={<CHWRoute><CHWCommunity /></CHWRoute>} />
 
         {/* ── Health Centres (protected) ── */}
         <Route path="/facility"              element={<FacilityRoute><FacilityDashboard /></FacilityRoute>} />
@@ -86,6 +100,9 @@ function AppShell() {
         <Route path="/facility/profile"      element={<FacilityRoute><FacilityProfile /></FacilityRoute>} />
         <Route path="/facility/capabilities" element={<FacilityRoute><UpdateCapabilities /></FacilityRoute>} />
         <Route path="/facility/referrals"    element={<FacilityRoute><IncomingReferrals /></FacilityRoute>} />
+      {/* -----Admin ------------------------- */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/insights" element={<AdminRoute><InsightsDashboard /></AdminRoute>} />
       </Routes>
 
       {showBottomNav && <BottomNav />}
@@ -99,7 +116,9 @@ export default function App() {
       <UserAuthProvider>
         <CHWAuthProvider>
           <FacilityAuthProvider>
-            <AppShell />
+            <AdminAuthProvider>
+              <AppShell />
+            </AdminAuthProvider>
           </FacilityAuthProvider>
         </CHWAuthProvider>
       </UserAuthProvider>

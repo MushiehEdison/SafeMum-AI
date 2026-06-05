@@ -1,9 +1,9 @@
 import axios from 'axios'
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://web-production-4ddb1.up.railway.app',
+  baseURL: '/',          // ← use Vite proxy, not direct URL
   timeout: 60000, 
-  withCredentials: true,  // sends the httpOnly cookie automatically
+  withCredentials: true,
 })
 
 export default API

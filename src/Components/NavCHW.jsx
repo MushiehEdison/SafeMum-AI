@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, AlertCircle, Settings2, GitMerge, User2,
+  LayoutDashboard, AlertCircle, Settings2, GitMerge, User2, Users ,
   File
 } from "lucide-react";
 
@@ -8,6 +8,7 @@ const NAV = [
   { id: "dashboard",    label: "Dashboard",    Icon: LayoutDashboard, path: "/chw"                },
   { id: "case",       label: "Cases",       Icon: File,     path: "/chw/cases"         },
   { id: "profile", label: "Profile", Icon: User2,       path: "/chw/profile"   },
+  { id: "community",    label: "Community",    Icon: Users, path: "/chw/community"      },
 ];
 
 export default function NavCHW() {

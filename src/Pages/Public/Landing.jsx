@@ -25,6 +25,8 @@ export default function Landing() {
         .anim-8  { opacity:0; animation: fadeUp 0.7s ease forwards 0.65s; }
         .anim-9  { opacity:0; animation: fadeUp 0.7s ease forwards 0.90s; }
         .anim-10 { opacity:0; animation: fadeUp 0.6s ease forwards 1.00s; }
+        .anim-11 { opacity:0; animation: fadeUp 0.6s ease forwards 1.10s; }
+        .anim-12 { opacity:0; animation: fadeUp 0.6s ease forwards 1.20s; }
 
         .headline-size { font-size: clamp(40px, 5vw, 66px); }
 
@@ -35,7 +37,7 @@ export default function Landing() {
 
       <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-[#f8f6f2] font-sans-dm">
 
-        {/* LEFT */}
+        {/* ── LEFT COLUMN ── */}
         <div className="flex flex-col justify-between px-16 py-16 border-b md:border-b-0 md:border-r border-[#e4e0d8]">
 
           <div className="anim-1 font-mono-dm text-[11px] tracking-[0.18em] uppercase text-[#6b7280]">
@@ -77,6 +79,35 @@ export default function Landing() {
             </div>
           </div>
 
+          {/* USSD & Call Simulator banner */}
+          <div className="anim-11 mb-6">
+            <div className="font-mono-dm text-[10px] tracking-[0.18em] uppercase text-[#6b7280] mb-2">
+              No smartphone? No internet?
+            </div>
+            <p className="text-[12px] font-light text-[#6b7280] leading-[1.6] mb-3 max-w-[340px]">
+              SafeMum works on any basic phone. Try the USSD menu and emergency
+              call line exactly as a woman in a rural area would experience it —
+              no app, no data connection required.
+            </p>
+            <Link
+              to="/simulator"
+              className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-[#fef9c3] border border-[#fde047] text-[#713f12] no-underline hover:bg-[#fef08a]"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-[#fde047] flex items-center justify-center flex-shrink-0 text-[#713f12] text-[16px] font-bold font-mono-dm">
+                  #
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[13px] font-medium leading-tight">USSD &amp; Call Simulator</span>
+                  <span className="text-[11px] font-light opacity-70 leading-tight">
+                    Dial *384# · Works on any phone
+                  </span>
+                </div>
+              </div>
+              <span className="arrow-btn text-[18px] flex-shrink-0">→</span>
+            </Link>
+          </div>
+
           <div className="anim-10">
             <div className="inline-flex items-center gap-2 border border-[#e4e0d8] rounded-full px-4 py-1.5 font-mono-dm text-[11px] text-[#6b7280] tracking-[0.04em]">
               <div className="w-1.5 h-1.5 rounded-full bg-[#16a34a] flex-shrink-0" />
@@ -85,7 +116,7 @@ export default function Landing() {
           </div>
         </div>
 
-        {/* RIGHT */}
+        {/* ── RIGHT COLUMN ── */}
         <div className="flex flex-col justify-between px-14 py-16">
 
           <div className="anim-7 text-right">
@@ -94,6 +125,7 @@ export default function Landing() {
             </div>
           </div>
 
+          {/* Three pillars */}
           <div className="anim-8 flex flex-col justify-center flex-1">
             {[
               {
@@ -135,44 +167,86 @@ export default function Landing() {
             ))}
           </div>
 
+          {/* Role entry buttons */}
           <div className="anim-9">
-            <div className="font-mono-dm text-[10px] tracking-[0.18em] uppercase text-[#6b7280] mb-3.5">
+
+            <div className="font-mono-dm text-[10px] tracking-[0.18em] uppercase text-[#6b7280] mb-1.5">
               Enter as
             </div>
+            <p className="text-[12px] font-light text-[#6b7280] leading-[1.6] mb-3.5 max-w-[360px]">
+              Choose your role to access the tools built for you. Each view is
+              tailored — whether you're seeking care, supporting your community,
+              managing a facility, or evaluating the platform's impact.
+            </p>
+
             <div className="flex flex-col gap-2.5">
 
+              {/* Patient */}
               <Link
                 to="/auth/patient"
                 className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-[#0e0e0e] text-[#f8f6f2] no-underline hover:bg-[#1c1c1c]"
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[14px] font-medium">Patient</span>
-                  <span className="text-[11px] font-light opacity-65">I am seeking care or support</span>
+                  <span className="text-[11px] font-light opacity-65">
+                    Access care, track your recovery, and find emotional support
+                  </span>
                 </div>
                 <span className="arrow-btn text-[18px] flex-shrink-0">→</span>
               </Link>
 
+              {/* CHW */}
               <Link
                 to="/auth/chw"
                 className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-[#dcfce7] text-[#14532d] border border-[#bbf7d0] no-underline hover:bg-[#d1fae5]"
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[14px] font-medium">Community Health Worker</span>
-                  <span className="text-[11px] font-light opacity-65">I support women in my area</span>
+                  <span className="text-[11px] font-light opacity-65">
+                    Register women, send referrals, and follow up on cases in your area
+                  </span>
                 </div>
                 <span className="arrow-btn text-[18px] flex-shrink-0">→</span>
               </Link>
 
+              {/* Facility */}
               <Link
                 to="/auth/facility"
                 className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-transparent text-[#0e0e0e] border border-[#e4e0d8] no-underline hover:bg-[#f1ede6] hover:border-[#ccc]"
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="text-[14px] font-medium">Health Facility</span>
-                  <span className="text-[11px] font-light opacity-65">I manage a clinic or hospital</span>
+                  <span className="text-[11px] font-light opacity-65">
+                    Manage incoming referrals, bed capacity, and patient outcomes
+                  </span>
                 </div>
                 <span className="arrow-btn text-[18px] flex-shrink-0">→</span>
               </Link>
+
+              {/* Admin / Demo — for judges */}
+              <div className="mt-1 pt-3 border-t border-dashed border-[#e4e0d8]">
+                <div className="font-mono-dm text-[10px] tracking-[0.18em] uppercase text-[#6b7280] mb-1.5">
+                  Platform overview
+                </div>
+                <p className="text-[11.5px] font-light text-[#6b7280] leading-[1.6] mb-2.5">
+                  See the full picture — real-time usage metrics, regional heatmaps,
+                  referral success rates, facility load, and AI interaction logs.
+                  Built for health ministries, NGO partners, and hackathon evaluators
+                  who need to understand scale and impact at a glance.
+                </p>
+                <Link
+                  to="/auth/admin"
+                  className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-transparent text-[#6b7280] border border-dashed border-[#d1d5db] no-underline hover:bg-[#f3f4f6] hover:text-[#0e0e0e]"
+                >
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[14px] font-medium">Admin · Demo View</span>
+                    <span className="text-[11px] font-light opacity-65">
+                      Data insights, analytics &amp; platform-wide impact
+                    </span>
+                  </div>
+                  <span className="arrow-btn text-[18px] flex-shrink-0">→</span>
+                </Link>
+              </div>
 
             </div>
           </div>

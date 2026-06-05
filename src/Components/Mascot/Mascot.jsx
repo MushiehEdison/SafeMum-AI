@@ -1,10 +1,22 @@
 // src/Components/Mascot/Mascot.jsx
 import { useEffect, useRef, useState } from "react";
-import { useRive, useStateMachineInput } from "@rive-app/react-canvas";
-import mascotRiv from "../../assets/mascot/mascot2.riv?url";
-import "./Mascot.css";
+import { useRive } from "@rive-app/react-canvas";
 
-/* ─── mood → accent colour ───────────────────────────────────────── */
+// ─── DROP YOUR 4 .RIV FILES HERE ─────────────────────────────────────────
+// Export one .riv per emotion from Rive editor, place in assets/mascot/
+import rivIdle        from "../../assets/mascot/mascot_idle.riv?url";
+import rivHappy       from "../../assets/mascot/mascot_happy.riv?url";
+import rivConcerned   from "../../assets/mascot/mascot_concerned.riv?url";
+import rivCelebrating from "../../assets/mascot/mascot_celebrating.riv?url";
+// ─────────────────────────────────────────────────────────────────────────
+
+const MOOD_RIV = {
+  idle:        rivIdle,
+  happy:       rivHappy,
+  concerned:   rivConcerned,
+  celebrating: rivCelebrating,
+};
+
 const MOOD_COLORS = {
   idle:        "#6b7280",
   happy:       "#16a34a",
@@ -12,48 +24,47 @@ const MOOD_COLORS = {
   celebrating: "#ea580c",
 };
 
-/*
- * tevredenheid scale:  0-2 angry · 3 annoyed · 4 neutral · 5-6 happy · 7 laughing
- * We pick the most expressive value for each SafeMum mood.
- */
-const MOOD_TO_VALUE = {
-  idle:        4,   // neutral
-  concerned:   2,   // troubled / worried
-  happy:       6,   // warm positive
-  celebrating: 7,   // full joy
-};
-
-const STATE_MACHINE_NAME = "State Machine 1";
-const INPUT_NAME         = "tevredenheid";
 const TYPING_INTERVAL_MS = 28;
 
+// ─── Single Rive renderer — one file at a time ───────────────────────────
+function RivPlayer({ src, size }) {
+  const { RiveComponent } = useRive({
+    src,
+    autoplay: true,
+  });
+
+  return (
+    <RiveComponent
+      style={{ width: size, height: size, display: "block" }}
+      aria-label="SafeMum mascot"
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 export default function Mascot({
   mood     = "idle",
   message  = "",
   position = "left",
   size     = 140,
 }) {
-  /* ── Rive + state machine ────────────────────────────────────────── */
-  const { RiveComponent, rive } = useRive({
-    src:           mascotRiv,
-    autoplay:      true,
-    stateMachines: STATE_MACHINE_NAME,
-  });
+  // ── Mood swap with crossfade ──────────────────────────────────────
+  const [activeMood, setActiveMood] = useState(mood);
+  const [visible,    setVisible]    = useState(true);
+  const prevMoodRef = useRef(mood);
 
-  const tevredenheid = useStateMachineInput(
-    rive,
-    STATE_MACHINE_NAME,
-    INPUT_NAME
-  );
-
-  /* ── Drive the emotion number whenever mood changes ─────────────── */
   useEffect(() => {
-    if (!tevredenheid) return;
-    const value = MOOD_TO_VALUE[mood] ?? MOOD_TO_VALUE.idle;
-    tevredenheid.value = value;
-  }, [mood, tevredenheid]);
+    if (mood === prevMoodRef.current) return;
+    setVisible(false);
+    const t = setTimeout(() => {
+      setActiveMood(mood);
+      setVisible(true);
+      prevMoodRef.current = mood;
+    }, 200);
+    return () => clearTimeout(t);
+  }, [mood]);
 
-  /* ── Typewriter ──────────────────────────────────────────────────── */
+  // ── Typewriter ────────────────────────────────────────────────────
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping,      setIsTyping]      = useState(false);
 
@@ -70,49 +81,78 @@ export default function Mascot({
     return () => clearInterval(interval);
   }, [message]);
 
-  /* ── Mood pulse ──────────────────────────────────────────────────── */
-  const wrapperRef  = useRef(null);
-  const prevMoodRef = useRef(mood);
+  // ── Mood pulse ────────────────────────────────────────────────────
+  const wrapperRef = useRef(null);
   useEffect(() => {
-    if (mood !== "idle" && mood !== prevMoodRef.current && wrapperRef.current) {
-      const el = wrapperRef.current;
-      el.classList.add("mascot-pulsing");
-      const timer = setTimeout(() => el.classList.remove("mascot-pulsing"), 600);
-      prevMoodRef.current = mood;
-      return () => clearTimeout(timer);
-    }
-    prevMoodRef.current = mood;
+    if (!wrapperRef.current || mood === "idle") return;
+    const el = wrapperRef.current;
+    el.classList.add("mascot-pulsing");
+    const t = setTimeout(() => el.classList.remove("mascot-pulsing"), 600);
+    return () => clearTimeout(t);
   }, [mood]);
 
-  /* ── Render ──────────────────────────────────────────────────────── */
+  // ── Render ────────────────────────────────────────────────────────
   const accentColor = MOOD_COLORS[mood] ?? MOOD_COLORS.idle;
   const showBubble  = Boolean(message);
+  const rivSrc      = MOOD_RIV[activeMood] ?? MOOD_RIV.idle;
+
+  const rootStyle = {
+    display:       "flex",
+    alignItems:    "flex-end",
+    flexDirection: position === "right" ? "row-reverse" : "row",
+    gap:           "8px",
+  };
+
+  const wrapperStyle = {
+    flexShrink:  0,
+    width:       size,
+    height:      size,
+    opacity:     visible ? 1 : 0,
+    transition:  "opacity 0.2s ease",
+  };
+
   const bubbleStyle = {
-    borderColor:             accentColor,
-    "--bubble-border-color": accentColor,
+    maxWidth:     "240px",
+    background:   "#fff",
+    border:       `1.5px solid ${accentColor}`,
+    borderRadius: position === "right"
+      ? "14px 14px 4px 14px"
+      : "14px 14px 14px 4px",
+    padding:      "10px 14px",
+    fontSize:     "13px",
+    lineHeight:   1.55,
+    color:        "#222",
+    fontFamily:   "'Manrope', sans-serif",
+    fontWeight:   400,
+    boxShadow:    "0 2px 12px rgba(0,0,0,0.06)",
+    marginBottom: "8px",
   };
 
   return (
-    <div className={`mascot-root position-${position}`}>
+    <div style={rootStyle}>
 
-      {showBubble && (
-        <div className="mascot-bubble" style={bubbleStyle} key={message}>
-          {displayedText}
-          {isTyping && <span className="mascot-cursor" aria-hidden="true" />}
-        </div>
-      )}
-
+      {/* Mascot — fades between .riv files on mood change */}
       <div
         ref={wrapperRef}
+        style={wrapperStyle}
         className="mascot-canvas-wrapper"
-        style={{ width: size, height: size }}
       >
-        <RiveComponent
-          className="mascot-canvas"
-          style={{ width: size, height: size }}
-          aria-label="SafeMum mascot"
-        />
+        <RivPlayer src={rivSrc} size={size} />
       </div>
+
+      {/* Speech bubble */}
+      {showBubble && (
+        <div style={bubbleStyle} key={message}>
+          {displayedText}
+          {isTyping && (
+            <span
+              className="mascot-cursor"
+              aria-hidden="true"
+              style={{ opacity: 0.4, marginLeft: "1px" }}
+            >|</span>
+          )}
+        </div>
+      )}
 
     </div>
   );

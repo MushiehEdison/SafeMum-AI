@@ -1,0 +1,578 @@
+[
+  {
+    "week": 1,
+    "theme": "Surviving the first days",
+    "phase": ["early_acute"],
+    "weekIntro": "This week is not about healing — it is about getting through each hour, and that is enough.",
+    "days": [
+      {
+        "day": 1,
+        "title": "You do not have to be okay",
+        "type": "affirmation",
+        "content": "There is no correct way to feel right now. You may feel numb, devastated, strangely calm, or all three at once. None of those responses means anything is wrong with you. Your body and mind are doing exactly what they need to do to protect you in this moment. Today, the only job you have is to exist.",
+        "prompt": "Say out loud or in your head: 'I do not have to be okay today.'",
+        "duration": "2 min"
+      },
+      {
+        "day": 2,
+        "title": "Why your body hurts",
+        "type": "psychoeducation",
+        "content": "Grief is not only emotional — it is physical. When you experience loss, your brain releases stress hormones like cortisol and adrenaline that cause real physical symptoms: chest tightness, fatigue, headaches, loss of appetite, and difficulty sleeping. This is not weakness. Your nervous system is responding to a wound as real as any physical injury. The ache you feel in your body is your mind processing something enormous.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 3,
+        "title": "One slow breath",
+        "type": "breathing",
+        "content": "When your body is in shock, your breathing becomes shallow and fast, which keeps your nervous system in a state of alarm. Slowing your breath sends a direct signal to your brain that you are safe right now, in this moment. You do not need to meditate or clear your mind — just breathe a little slower than feels natural.",
+        "prompt": "Breathe in for 4 counts, hold for 2, breathe out for 6. Do this three times.",
+        "duration": "2 min"
+      },
+      {
+        "day": 4,
+        "title": "Eating when you have no appetite",
+        "type": "action",
+        "content": "Grief suppresses hunger signals, but your body still needs fuel to cope. You do not need to cook or eat a full meal. Even a few bites of something — bread, fruit, a handful of groundnuts — keeps your blood sugar stable enough for your brain to function. Low blood sugar during grief makes everything feel more unbearable than it already is. This is not about nutrition. It is about keeping yourself going.",
+        "prompt": "Eat one small thing in the next hour, whatever is easiest to reach.",
+        "duration": "2 min"
+      },
+      {
+        "day": 5,
+        "title": "Numbness is not coldness",
+        "type": "psychoeducation",
+        "content": "If you feel nothing — no tears, no emotion, just emptiness — that is not a sign you did not love enough or that something is wrong with you. Emotional numbness is a protective response. Your brain has a built-in circuit that dampens overwhelming pain when it becomes too much to process at once. The feeling will return when your system decides it is safe enough to let it. You are not broken. You are protected.",
+        "prompt": null,
+        "duration": "2 min"
+      },
+      {
+        "day": 6,
+        "title": "One thing outside",
+        "type": "action",
+        "content": "Natural light and fresh air have a measurable effect on cortisol levels and mood, even when you do not feel like moving. You do not need to go for a walk or be seen by anyone. Standing at a doorway or window for two minutes counts. The goal is not exercise or fresh air for its own sake — it is to remind your body that the outside world still exists and that you are still part of it.",
+        "prompt": "Step outside or stand at an open window for two minutes. That is all.",
+        "duration": "2 min"
+      },
+      {
+        "day": 7,
+        "title": "You made it through the week",
+        "type": "affirmation",
+        "content": "You got through seven days that were not supposed to happen. That is not a small thing. You did not have to be brave or positive or grateful — you just had to keep existing, and you did. However this week felt — messy, numb, painful, confusing — none of that means you are doing it wrong. There is no right way to do this.",
+        "prompt": "It is okay that this week was hard.",
+        "duration": "2 min"
+      }
+    ]
+  },
+  {
+    "week": 2,
+    "theme": "What grief actually does to you",
+    "phase": ["early_acute"],
+    "weekIntro": "Understanding what is happening inside you will not take the pain away, but it can make it feel less frightening.",
+    "days": [
+      {
+        "day": 1,
+        "title": "Why you cannot concentrate",
+        "type": "psychoeducation",
+        "content": "Grief floods your brain with stress hormones that disrupt the prefrontal cortex — the part responsible for focus, memory, and decision-making. This is why you forget words mid-sentence, lose track of time, or cannot remember what you did an hour ago. It is called grief fog, and it is a documented neurological response. You are not losing your mind. Your brain is using its energy elsewhere right now.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "Letting the wave come",
+        "type": "reflection",
+        "content": "Grief tends to arrive in waves — sometimes without warning. A sound, a smell, a time of day can bring a sudden wave of feeling that seems disproportionate to the moment. Fighting these waves or trying to push the feeling down tends to make them larger. Allowing the feeling to arrive, stay for a few minutes, and pass is more sustainable than constant suppression. You do not have to perform your grief for anyone, and you do not have to hide it either.",
+        "prompt": "When the next wave comes, see if you can observe it without judging it. You do not have to fix it.",
+        "duration": "3 min"
+      },
+      {
+        "day": 3,
+        "title": "Breathing through a wave",
+        "type": "breathing",
+        "content": "When a wave of grief hits suddenly, your body's fight-or-flight response activates — heart rate rises, chest tightens, breathing becomes shallow. You cannot think your way out of this, but you can breathe your way through it. Extended exhales specifically activate the parasympathetic nervous system, the part that calms the body down. The exhale is more powerful than the inhale when you are distressed.",
+        "prompt": "Breathe in for 4 counts, out for 8. Repeat five times. The long exhale is the medicine.",
+        "duration": "2 min"
+      },
+      {
+        "day": 4,
+        "title": "Sleep and grief",
+        "type": "psychoeducation",
+        "content": "Grief disrupts sleep in very specific ways — it can make it hard to fall asleep, cause early waking, or make you sleep much more than usual, especially in early acute grief. This happens because cortisol levels remain elevated in the evening when they should be dropping, and because your brain keeps activating emotional memory circuits during rest. Poor sleep makes grief harder to bear the next day, creating a cycle. Small steps to wind down before sleep — even lying still in a dark room — help more than they might seem.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "Something only for your body",
+        "type": "action",
+        "content": "Grief lives in the body. Giving your body a small moment of care — not for anyone else, just for itself — can gently interrupt the stress response. This does not require anything special or expensive. It is simply an act of noticing that you have a body that is doing its best to carry you through this.",
+        "prompt": "Take two minutes to do one thing for your body: splash cool water on your face, stretch your arms above your head, or rub your own hands gently.",
+        "duration": "2 min"
+      },
+      {
+        "day": 6,
+        "title": "The people around you",
+        "type": "reflection",
+        "content": "The people around you may say the wrong things. They may go quiet, avoid the subject, or offer comfort that does not help. This is not because they do not care — it is because most people are not taught how to sit with someone else's grief. They are trying to fix something that cannot be fixed, or they are afraid of saying the wrong thing. You do not have to manage their discomfort. You are allowed to need more than they know how to give.",
+        "prompt": "Is there one person in your life who simply lets you be how you are, without trying to fix you? Notice them.",
+        "duration": "3 min"
+      },
+      {
+        "day": 7,
+        "title": "It is okay that today was hard",
+        "type": "affirmation",
+        "content": "Two weeks is still very early. The expectation — from yourself or others — that you should be functioning better by now is not based in any reality of how grief works. The brain and body need significant time to begin adjusting after a major loss. Whatever today looked like, however little you managed, it was enough for where you are in this process.",
+        "prompt": "Say it plainly: 'It is okay that today was hard.'",
+        "duration": "2 min"
+      }
+    ]
+  },
+  {
+    "week": 3,
+    "theme": "Beginning to process",
+    "phase": ["processing", "rebuilding"],
+    "weekIntro": "Processing does not mean moving on — it means beginning to make room for what happened inside your life.",
+    "days": [
+      {
+        "day": 1,
+        "title": "What processing actually means",
+        "type": "psychoeducation",
+        "content": "Processing grief does not mean accepting it, getting over it, or feeling better. It means gradually integrating the experience into your life — moving it from the foreground, where it takes up everything, to a place where it is real and present but no longer the only thing. This happens slowly and unevenly. You will have days that feel like going backwards. That is not regression — it is how processing works for every human brain.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "Writing it down",
+        "type": "action",
+        "content": "Writing about a difficult experience — even for a few minutes — has been shown in psychology research to reduce emotional intensity over time. It works because externalising a feeling onto paper engages the logical brain, which helps regulate the emotional brain. You do not need to write well or in full sentences. You do not need to keep it or share it. You can destroy it after if you want.",
+        "prompt": "Write for three minutes about what this week has felt like. Do not edit yourself.",
+        "duration": "3 min"
+      },
+      {
+        "day": 3,
+        "title": "Box breathing for steadiness",
+        "type": "breathing",
+        "content": "As you move into the processing phase, your nervous system is still frequently activated but perhaps less constantly than in the first weeks. Box breathing is a technique used to create a sense of steadiness — not calm necessarily, but groundedness. It works by creating a regular, even rhythm that your nervous system can follow like a metronome.",
+        "prompt": "Breathe in for 4, hold for 4, out for 4, hold for 4. Repeat four times. This is one box.",
+        "duration": "2 min"
+      },
+      {
+        "day": 4,
+        "title": "The difference between sadness and depression",
+        "type": "psychoeducation",
+        "content": "Grief sadness and clinical depression can look similar from the outside, but they are different experiences. Grief sadness tends to come in waves that are connected to thoughts or memories of your loss. Depression tends to be more constant, present even in moments that should feel neutral. Both are real and both deserve care. If you notice that the sadness is not connected to anything specific, that you feel nothing rather than sad, or that daily functioning has become impossible for many weeks, speaking to a health worker is worth considering.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "Saying the name",
+        "type": "reflection",
+        "content": "In many communities, babies who are lost before or at birth are not given names, or their names are not spoken. If you named your baby — or if there is a name or word you use privately — saying it or writing it can be a small act of acknowledgement that the person existed and mattered. You do not have to do this if it does not feel right. But if you have been afraid to, know that saying the name does not make the grief worse. It honours something real.",
+        "prompt": "If there is a name or a word that belongs to your baby, say it or write it today.",
+        "duration": "3 min"
+      },
+      {
+        "day": 6,
+        "title": "Reclaiming a small routine",
+        "type": "action",
+        "content": "Routine is a quiet form of safety for a nervous system in distress. You do not need a full schedule or a productive day. One small consistent action — making tea at the same time, stepping outside at a particular hour, washing your face in the morning — creates a tiny anchor in a day that can feel shapeless. Small rituals communicate to your brain that some things continue, even now.",
+        "prompt": "Choose one small thing you can do at the same time today and tomorrow. It does not need to be meaningful.",
+        "duration": "2 min"
+      },
+      {
+        "day": 7,
+        "title": "You are allowed to have a good moment",
+        "type": "affirmation",
+        "content": "If you laughed at something this week, or felt briefly at peace, or had a few hours where the weight was lighter — that is not a betrayal. It does not mean you have forgotten. It does not mean you are over it. The presence of a good moment alongside grief is not a contradiction. It is a sign that you are a full human being, not only a person who is grieving.",
+        "prompt": "It is okay to have felt okay, even briefly.",
+        "duration": "2 min"
+      }
+    ]
+  },
+  {
+    "week": 4,
+    "theme": "Your identity and your loss",
+    "phase": ["processing", "rebuilding"],
+    "weekIntro": "Loss changes how you see yourself — this week is about looking at that honestly.",
+    "days": [
+      {
+        "day": 1,
+        "title": "Who you were before",
+        "type": "reflection",
+        "content": "A significant loss changes a person. Not necessarily in the dramatic way that stories describe, but in quieter ways — the things that used to matter, your sense of the future, how safe you feel in your own body. It is worth pausing to notice what has shifted, not to mourn it necessarily, but to acknowledge it honestly. You do not have to decide whether the change is good or bad. It just is.",
+        "prompt": "What is one thing about yourself or your life that feels different now compared to before?",
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "The pressure to try again",
+        "type": "psychoeducation",
+        "content": "In many communities, a woman who has lost a pregnancy faces pressure — spoken or unspoken — to try again quickly. This pressure can come from family, from partners, from healthcare providers, and from inside yourself. It is important to know that there is no timeline that is right for everyone. The decision to try again, or not to, or not yet, belongs to you. Grief that has not been processed tends to resurface during a subsequent pregnancy, which is why emotional readiness matters as much as physical readiness.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 3,
+        "title": "Grounding in the present",
+        "type": "breathing",
+        "content": "When the mind moves into regret about the past or anxiety about the future, grounding techniques bring attention back to the physical present. This is not about avoiding grief — it is about giving your nervous system a break from the time-travel that escalates distress. The 5-4-3-2-1 technique uses your senses to anchor you in the now.",
+        "prompt": "Name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, 1 you can taste.",
+        "duration": "3 min"
+      },
+      {
+        "day": 4,
+        "title": "Anger is part of grief",
+        "type": "psychoeducation",
+        "content": "Grief is not only sadness. Anger — at your body, at fate, at healthcare providers, at people who are pregnant or have healthy babies, at the unfairness of it — is a completely normal part of grief. In many cultures, women are taught not to express anger, especially not in grief. But suppressed anger does not disappear. It often shows up as irritability, physical tension, or numbness. Anger in grief is not a character flaw. It is a form of love that has nowhere to go.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "Moving the anger through your body",
+        "type": "action",
+        "content": "Anger, like all emotions, creates physical energy in the body — tension in the jaw, shoulders, chest, and hands. Physical movement is one of the most effective ways to discharge this energy without suppressing it. You do not need a gym or a long workout. Small physical release is enough to shift the physical state that anger creates.",
+        "prompt": "Find a private moment. Tense every muscle in your body as tight as you can for 5 seconds, then release completely. Repeat three times.",
+        "duration": "2 min"
+      },
+      {
+        "day": 6,
+        "title": "Your worth is not your fertility",
+        "type": "affirmation",
+        "content": "In many communities, a woman's value is deeply tied to her ability to carry children. If you have absorbed this message, the loss of a pregnancy can feel like a failure of your fundamental purpose. This is a lie that culture tells women, but it can feel like truth when it has been repeated often enough. Your worth existed before this pregnancy, and it exists now. What happened does not measure you.",
+        "prompt": "Your worth is not measured by what your body was or was not able to do.",
+        "duration": "2 min"
+      },
+      {
+        "day": 7,
+        "title": "What you have learned about yourself",
+        "type": "reflection",
+        "content": "Getting through the weeks since your loss has required things from you that you may not have known you had — endurance, the ability to keep going without answers, the capacity to carry something heavy. This is not the same as calling it a blessing or saying it happened for a reason. It is simply noticing that you have been through something significant and you are still here.",
+        "prompt": "What is one thing you have discovered about yourself since this happened?",
+        "duration": "3 min"
+      }
+    ]
+  },
+  {
+    "week": 5,
+    "theme": "Rebuilding a life that includes this",
+    "phase": ["rebuilding", "stabilised"],
+    "weekIntro": "Rebuilding does not mean going back to who you were — it means building something that has room for everything you have experienced.",
+    "days": [
+      {
+        "day": 1,
+        "title": "Integration, not closure",
+        "type": "psychoeducation",
+        "content": "The idea of closure — that grief ends and you move on — is not supported by how grief actually works. What research shows instead is integration: the loss becomes part of your story rather than the whole of it. You do not stop carrying it. You get larger around it. Many women describe not feeling better but feeling more able to hold their grief alongside other parts of life. That is what integration looks and feels like.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "Returning to something you used to enjoy",
+        "type": "action",
+        "content": "Grief narrows life. It is common to stop doing things that used to bring pleasure, partly because nothing feels the same and partly because enjoyment can feel inappropriate. Returning to something you enjoyed — not because it will fix anything, but as a small reclamation — is part of how the brain begins to remember that a full life is still possible. It does not have to feel good yet. Showing up is enough.",
+        "prompt": "Do one thing in the next two days that you used to enjoy, even if you do not feel like it and even if it does not feel the same.",
+        "duration": "2 min"
+      },
+      {
+        "day": 3,
+        "title": "Breathing for rest",
+        "type": "breathing",
+        "content": "As life begins to stabilise, the nervous system needs practice coming down from the chronic low-level alertness that sustained grief creates. A breathing practice focused on rest rather than crisis can help retrain the baseline. This works best done lying down or sitting quietly, without distractions.",
+        "prompt": "Breathe in for 4 counts, hold for 7, breathe out slowly for 8. This is called 4-7-8 breathing. Do four rounds.",
+        "duration": "3 min"
+      },
+      {
+        "day": 4,
+        "title": "Relationships that changed",
+        "type": "reflection",
+        "content": "Grief often reveals which relationships can hold weight and which ones cannot. Some people will have surprised you with their presence. Others will have disappointed you with their absence or their words. Grief changes what you need from people and can make old relationship patterns feel unsustainable. You are allowed to need different things now than you did before. You are also allowed to feel grief about relationships that could not meet you in yours.",
+        "prompt": "Has any relationship in your life shifted since your loss — either closer or further? What does that tell you about what you need?",
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "Commemorating in your own way",
+        "type": "action",
+        "content": "Many cultures have rituals for loss, but they are not always available to women who have experienced pregnancy loss, especially early loss. Creating a small personal act of remembrance — even one that no one else sees — can help anchor the significance of what happened. This does not have to be religious or formal. It just has to feel true to you.",
+        "prompt": "Create a small private act of remembrance today: light a candle, plant something, write a letter, keep an object. Choose what feels right.",
+        "duration": "5 min"
+      },
+      {
+        "day": 6,
+        "title": "The future is not closed",
+        "type": "affirmation",
+        "content": "It may be hard to imagine a future that is not defined by this loss. That difficulty is not a prediction — it is a symptom of where you are right now. The research on post-traumatic growth is consistent: most people who experience severe loss eventually find that their future contains things they could not have imagined at the worst point. That is not a promise and it is not a guarantee. But the future being unclear is not the same as the future being closed.",
+        "prompt": "The future is not decided yet.",
+        "duration": "2 min"
+      },
+      {
+        "day": 7,
+        "title": "Carrying it gently",
+        "type": "reflection",
+        "content": "You will carry this for a long time — perhaps always. But how you carry it can change. The weight does not have to be constant and crushing. Many women describe a point at which the grief shifts from something that happens to them to something they hold — actively, gently, as part of who they are. You are not there yet, and you may not be for a while. But it is where you are going.",
+        "prompt": "What would it feel like to carry this gently, rather than being crushed by it?",
+        "duration": "3 min"
+      }
+    ]
+  },
+  {
+    "week": 6,
+    "theme": "Looking forward without forgetting",
+    "phase": ["rebuilding", "stabilised"],
+    "weekIntro": "Looking forward is not leaving behind — it is learning to hold both at once.",
+    "days": [
+      {
+        "day": 1,
+        "title": "What stability actually feels like",
+        "type": "psychoeducation",
+        "content": "Stabilised grief does not feel like happiness. It tends to feel quieter — fewer waves, more space between them, a greater ability to function day to day. You may still cry suddenly. You may still have hard days around anniversaries, due dates, or when you see pregnant women or babies. This is not regression. It is how grief exists in a stabilised state — present, but not overwhelming. Stability is not the same as healed.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "Noticing what is good",
+        "type": "reflection",
+        "content": "Noticing good things — small ones, not grand ones — is not toxic positivity. It is a deliberate practice that helps the brain build back its capacity for positive emotion, which grief suppresses. This is not about being grateful for your loss or pretending things are fine. It is about training your attention to register good things alongside the hard ones, because both are true at the same time.",
+        "prompt": "Name three small things that were okay today. They do not have to be significant.",
+        "duration": "2 min"
+      },
+      {
+        "day": 3,
+        "title": "Breathing as a daily practice",
+        "type": "breathing",
+        "content": "At this stage, intentional breathing is less about crisis management and more about maintenance. A regular breathing practice — even two minutes a day — keeps your nervous system in better baseline condition, which makes difficult moments easier to move through. It does not need to be formal or long. The consistency matters more than the duration.",
+        "prompt": "Spend two minutes breathing slowly and deliberately. In for 4, out for 6. Let it become something you do every day.",
+        "duration": "2 min"
+      },
+      {
+        "day": 4,
+        "title": "Thinking about the future",
+        "type": "reflection",
+        "content": "For many women, imagining the future after pregnancy loss is tangled with fear — fear of trying again, fear of hoping, fear of more loss. That fear is not irrational. It is a learned response to real experience. But fear of the future and the actual future are not the same thing. You are allowed to want things again. You are allowed to plan, hope, and imagine. Wanting something does not guarantee you will lose it.",
+        "prompt": "What is one thing you hope for in the next year? You do not have to believe it is possible. Just name it.",
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "Writing a letter to yourself",
+        "type": "action",
+        "content": "Writing a letter from your current self to your earlier self — the person who was in the worst days of this — is a way of acknowledging how far you have come without minimising how hard it was. You do not have to be kind or wise in the letter. You can just be honest about what you know now that you did not know then.",
+        "prompt": "Write a short letter to yourself at the beginning of this grief. What do you want her to know?",
+        "duration": "5 min"
+      },
+      {
+        "day": 6,
+        "title": "You are not who you were",
+        "type": "affirmation",
+        "content": "You are a different person than you were before this happened. Some of what changed is loss, and it is appropriate to grieve that. But some of it is also depth — a knowledge of your own capacity, a clarity about what matters, a tenderness toward suffering that people who have not experienced this do not have. You did not ask for any of it. But it is yours now.",
+        "prompt": "It is okay to be a different person than I was before.",
+        "duration": "2 min"
+      },
+      {
+        "day": 7,
+        "title": "The ongoing nature of this",
+        "type": "reflection",
+        "content": "This program ends, but your relationship with this loss does not. There will be hard days ahead — anniversaries, moments that catch you off guard, times when the grief feels fresh again. That is not failure. That is what it means to have loved something. The tools you have practised here are yours to return to whenever you need them. You do not have to earn permission to grieve. You do not have to justify it to anyone.",
+        "prompt": "What is one thing from these six weeks that you want to carry with you?",
+        "duration": "3 min"
+      }
+    ]
+  },
+  {
+    "week": 7,
+    "theme": "Pregnancy after loss — your body and your fear",
+    "phase": ["active_pregnancy"],
+    "weekIntro": "Being pregnant again after a loss is one of the most emotionally complex experiences a woman can have — this week holds space for all of it.",
+    "days": [
+      {
+        "day": 1,
+        "title": "Pregnant again — what this feels like",
+        "type": "reflection",
+        "content": "Being pregnant after a loss is not simply joyful. For many women it is a constant negotiation between hope and terror — wanting this pregnancy desperately while being afraid to want it too much in case it is taken away again. Both things are true at the same time. You are allowed to feel both. You are not jinxing anything by hoping, and you are not being negative by being afraid.",
+        "prompt": "Where do you sit today — closer to hope, closer to fear, or somewhere between?",
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "Why anxiety in pregnancy after loss is normal",
+        "type": "psychoeducation",
+        "content": "Research consistently shows that women who have experienced pregnancy loss have significantly higher anxiety during subsequent pregnancies than women who have not. This is not a disorder. It is a rational learned response — your nervous system learned that pregnancy can end in loss, so it stays on alert to protect you. The anxiety feels like fear, but it is also your mind trying to prepare and protect. You are not being irrational. You are being human.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 3,
+        "title": "Breathing for a anxious moment",
+        "type": "breathing",
+        "content": "When anxiety spikes during pregnancy — before a scan, after a symptom changes, during a quiet period with no movement — your body goes into fight-or-flight. This is physically hard on you and does not help the baby. You cannot think your way out of a panic response, but you can breathe your way through it. The goal is not to stop being afraid — it is to get through the moment.",
+        "prompt": "Place one hand on your belly. Breathe in slowly for 4 counts, feeling your belly rise. Breathe out for 6. Repeat five times.",
+        "duration": "2 min"
+      },
+      {
+        "day": 4,
+        "title": "Milestones and the bargaining mind",
+        "type": "psychoeducation",
+        "content": "Many women set mental milestones during pregnancy after loss — 'I just have to get to 12 weeks', 'If I get past the point where I lost the last one, then I can relax'. This is the bargaining mind trying to manage fear by creating safety checkpoints. The difficult truth is that the anxiety rarely stops at the milestone. It often moves to the next one. Recognising this pattern is not about giving up hope — it is about not postponing your ability to be present in this pregnancy until it feels safe, because that moment may not fully arrive.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "Talking to this baby",
+        "type": "action",
+        "content": "Many women in pregnancy after loss hold back from bonding with the current pregnancy as a way of protecting themselves from further grief. This is completely understandable. But your baby is already receiving signals from you — your cortisol levels, your touch, your voice. Talking to or acknowledging this baby — even privately, even tentatively — is not reckless. It is an act of presence that matters, for both of you.",
+        "prompt": "Say one sentence to this baby today. It can be anything. It can be 'I am scared but I am here.'",
+        "duration": "2 min"
+      },
+      {
+        "day": 6,
+        "title": "What your body is doing right",
+        "type": "affirmation",
+        "content": "Your body is sustaining a life right now. This is an enormous biological undertaking that your body is doing alongside carrying grief, managing anxiety, and getting through the day. You may not be able to trust your body fully after a previous loss — that distrust is earned and understandable. But your body is also doing something remarkable, and that is worth acknowledging even if you cannot feel grateful for it yet.",
+        "prompt": "My body is doing something remarkable right now, even when it is hard to believe.",
+        "duration": "2 min"
+      },
+      {
+        "day": 7,
+        "title": "Letting yourself want this",
+        "type": "reflection",
+        "content": "Somewhere inside you, you want this pregnancy to result in a baby you bring home. Allowing yourself to know that — to say it, even privately — is not arrogance or tempting fate. It is honesty. You are allowed to want this. You are allowed to hope. Having hoped before and lost does not mean hoping again is foolish. It means you are someone who keeps loving despite the risk of loss. That is not weakness.",
+        "prompt": "Finish this sentence honestly: 'What I most want from this pregnancy is...'",
+        "duration": "3 min"
+      }
+    ]
+  },
+  {
+    "week": 8,
+    "theme": "Pregnancy after loss — the last stretch",
+    "phase": ["active_pregnancy"],
+    "weekIntro": "As you get closer to your due date, a new set of fears and hopes arrives — this week is for navigating those.",
+    "days": [
+      {
+        "day": 1,
+        "title": "Fear as the due date approaches",
+        "type": "reflection",
+        "content": "As a due date approaches, anxiety in pregnancy after loss often intensifies rather than eases. This can feel confusing — you are almost there, so why does it feel worse? The answer is that the stakes feel higher the closer you get. Your mind is protecting you from hope at the exact moment that hope is most warranted. The fear makes sense. It does not have to mean something bad is coming.",
+        "prompt": "What is your biggest fear right now about the birth or the weeks after it?",
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "Birth trauma and previous loss",
+        "type": "psychoeducation",
+        "content": "Women who have experienced pregnancy loss often approach labour with a layer of fear that is about more than the birth itself — it is also carrying the memory of the previous loss. This can cause the body to tense during labour in ways that slow progress or increase pain. Telling your healthcare provider about your previous loss matters, not just medically but so they can support you emotionally during labour. You do not have to manage the fear alone in that room.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 3,
+        "title": "Slow breathing for late pregnancy",
+        "type": "breathing",
+        "content": "In late pregnancy, your diaphragm is compressed, making deep breathing physically harder. Breathing slowly and gently — not deeply — is more effective and more comfortable. Side-lying breathing, where you breathe into the sides of your ribcage rather than down into your belly, can be more accessible as the pregnancy progresses. Practising this now means it will be more natural in labour.",
+        "prompt": "Lie on your side or sit upright. Breathe slowly and let your ribcage expand sideways. Breathe out fully. Do this for two minutes.",
+        "duration": "2 min"
+      },
+      {
+        "day": 4,
+        "title": "Preparing your support",
+        "type": "action",
+        "content": "Who will be with you during labour and in the immediate days after birth? Having someone who understands your history — who knows about your previous loss and does not require you to explain yourself — can make a significant difference to how supported you feel. This does not have to be a formal plan. Even identifying one person who knows what you have been through and can be present is meaningful.",
+        "prompt": "Identify one person who knows your full story and can be with you during or after birth. If no one comes to mind, consider telling one person this week.",
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "You have done the hardest part",
+        "type": "affirmation",
+        "content": "Getting through a pregnancy after loss — with the daily anxiety, the milestones held with terror as much as hope, the complicated feelings — is genuinely hard. Most people who have not experienced it do not understand how much it costs. You have been present in this pregnancy while carrying grief and fear simultaneously. That is not nothing. That is a significant thing.",
+        "prompt": "I have shown up for this pregnancy, even when it was frightening.",
+        "duration": "2 min"
+      },
+      {
+        "day": 6,
+        "title": "The grief that may return after birth",
+        "type": "psychoeducation",
+        "content": "It is common — and normal — for grief about a previous loss to resurface after a subsequent birth, even a healthy one. The arrival of a living baby can bring up feelings about the baby who was lost: relief and sadness together, love for this child and grief for the other, sometimes a strange sense of disloyalty. These feelings do not mean you love your new baby less. They mean you are a person who loved more than one.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 7,
+        "title": "You are almost there",
+        "type": "reflection",
+        "content": "Whatever happens in the coming weeks, you have lived through something that required extraordinary endurance. You became pregnant again after loss, and you have carried this pregnancy with all the weight that comes with that. The outcome of a pregnancy does not determine the value of the person who carried it. You have done your part. Now you wait, and hope, and breathe.",
+        "prompt": "What do you want to say to yourself before the birth?",
+        "duration": "3 min"
+      }
+    ]
+  },
+  {
+    "week": 9,
+    "theme": "After the birth — the fourth trimester and grief",
+    "phase": ["postnatal"],
+    "weekIntro": "The weeks after birth are full of contradictions — this week acknowledges all of them.",
+    "days": [
+      {
+        "day": 1,
+        "title": "The fourth trimester",
+        "type": "psychoeducation",
+        "content": "The first twelve weeks after birth are sometimes called the fourth trimester — a period of enormous physical, hormonal, and emotional upheaval for the mother. Oestrogen and progesterone drop dramatically after delivery, which directly affects mood, energy, and emotional regulation. This hormonal shift is one reason why the early postnatal period is a high-risk time for depression and anxiety, even in uncomplicated births. What you are feeling is not weakness. It is biology, and it deserves real support.",
+        "prompt": null,
+        "duration": "3 min"
+      },
+      {
+        "day": 2,
+        "title": "Baby blues versus postnatal depression",
+        "type": "psychoeducation",
+        "content": "Baby blues — tearfulness, overwhelm, emotional fragility in the first two weeks — affect up to 80% of women and typically resolve on their own. Postnatal depression is different: it is persistent low mood, inability to bond, anxiety, hopelessness, or anger that lasts longer than two weeks and interferes with daily functioning. For women who have also experienced pregnancy loss, the risk of postnatal depression is higher. Knowing the difference matters, because postnatal depression responds well to treatment when it is caught early.",
+        "prompt": "Have you felt persistently low, hopeless, or unable to connect with your baby for more than two weeks? If yes, speaking to a health worker this week is worth doing.",
+        "duration": "3 min"
+      },
+      {
+        "day": 3,
+        "title": "Breathing with a newborn",
+        "type": "breathing",
+        "content": "Sleep deprivation in the postnatal period keeps your stress hormones elevated, which makes emotional regulation harder and everything feel more intense. You cannot fix the sleep deprivation, but you can give your nervous system a brief reset during moments of quiet. Even one minute of slow breathing when the baby sleeps is measurably better than no intentional rest at all.",
+        "prompt": "When the baby next sleeps, spend sixty seconds breathing slowly before you do anything else. Just sixty seconds.",
+        "duration": "1 min"
+      },
+      {
+        "day": 4,
+        "title": "The grief that came back",
+        "type": "reflection",
+        "content": "If grief about a previous loss has resurfaced since the birth, you are not alone. Many women are surprised by this — they expected to feel only joy, and the arrival of sadness or complicated feelings alongside that joy can be disorienting. Having a living baby does not cancel the loss of a previous one. Both are real. You are allowed to hold both at once, even if the people around you cannot understand why you would grieve now.",
+        "prompt": "Is there anything you need to say to the baby you lost now that this baby is here?",
+        "duration": "3 min"
+      },
+      {
+        "day": 5,
+        "title": "Your body after birth",
+        "type": "action",
+        "content": "Your body has just completed a massive physical event on top of months of pregnancy. It is recovering from hormonal changes, physical changes, and possibly a difficult birth. Caring for your body right now is not a luxury — it is necessary for your mental health as well as your physical recovery. You do not have to do anything complicated. Small acts of physical care count.",
+        "prompt": "Do one thing for your body today: eat a proper meal, sleep when the baby sleeps, ask someone to take the baby for twenty minutes so you can rest.",
+        "duration": "2 min"
+      },
+      {
+        "day": 6,
+        "title": "You are enough for this baby",
+        "type": "affirmation",
+        "content": "New motherhood after loss often comes with an extra layer of pressure — to be grateful enough, present enough, to not let the grief affect your parenting. The truth is that your baby does not need a perfect mother. Your baby needs a mother who is present, who keeps showing up, who cares. All of those things are already true of you, including on the days when you are struggling.",
+        "prompt": "I am enough for this baby, including on the hard days.",
+        "duration": "2 min"
+      },
+      {
+        "day": 7,
+        "title": "What you carry and what you put down",
+        "type": "reflection",
+        "content": "You will carry your loss forward into your life as a mother. It will inform the way you love, the way you hold your children, the way you understand pain in others. Some of what you have been through is something you can slowly put down — the acute grief, the daily weight of early loss. Some of it you will carry always, but more gently over time. Both are okay. You are building a life that has room for all of it.",
+        "prompt": "What are you ready to carry forward? And is there anything, even one small thing, you are ready to put down?",
+        "duration": "3 min"
+      }
+    ]
+  }
+]

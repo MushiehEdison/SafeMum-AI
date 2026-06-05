@@ -156,7 +156,7 @@ function LocationPicker({ formData, setFormData }) {
         </div>
       )}
 
-      <p className="text-xs text-gray-400">📍 Drag the pin to your exact location</p>
+      <p className="text-xs text-gray-400"> Drag the pin to your exact location</p>
       {formData.locationName && (
         <p className="text-xs text-gray-600 font-medium truncate">{formData.locationName}</p>
       )}
@@ -415,7 +415,10 @@ export default function PatientAuth() {
                         <option key={l}>{l}</option>
                       ))}
                     </select>
-
+                        <div>
+                          <p className="text-sm font-medium text-black mb-2">Your location</p>
+                          <LocationPicker formData={formData} setFormData={setFormData} />
+                        </div>
                     <div>
                       <p className="text-sm font-medium text-black mb-3">Which best describes you right now?</p>
                       <div className="grid grid-cols-2 gap-3">
