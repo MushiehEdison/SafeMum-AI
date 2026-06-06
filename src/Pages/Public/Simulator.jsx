@@ -430,7 +430,7 @@ function USSDScreen() {
 
 function CallScreen() {
   const [status,      setStatus]      = useState("idle");
-  const [screenMsg,   setScreenMsg]   = useState("Dial to connect");
+  const [screenMsg,   setScreenMsg]   = useState("Press Dial to connect");
   const [sessionId,   setSessionId]   = useState(null);
   const [loading,     setLoading]     = useState(false);
   const [callbackUrl, setCallbackUrl] = useState(null);
@@ -439,29 +439,46 @@ function CallScreen() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef   = useRef([]);
   const currentAudioRef  = useRef(null);
+  const callbackUrlRef   = useRef(null);
+  const sessionIdRef     = useRef(null);
+  const statusRef        = useRef("idle");
+  const langRef          = useRef("en");
 
-  // Listen for dial and end from main keypad
-  useEffect(() => {
-    function onDial() { dialCall(); }
-    function onEnd()  { endCall(); }
-    window.addEventListener("phone-dial", onDial);
-    window.addEventListener("phone-end",  onEnd);
-    return () => {
-      window.removeEventListener("phone-dial", onDial);
-      window.removeEventListener("phone-end",  onEnd);
-    };
-  }, [sessionId, callbackUrl, status]);
+  // Keep refs in sync
+  useEffect(() => { callbackUrlRef.current = callbackUrl; }, [callbackUrl]);
+  useEffect(() => { sessionIdRef.current = sessionId; }, [sessionId]);
+  useEffect(() => { statusRef.current = status; }, [status]);
+  useEffect(() => { langRef.current = lang; }, [lang]);
 
-  // Listen for keypresses from main keypad when listening
+  // Single unified event listener
   useEffect(() => {
-    function onKeyPress(e) {
-      if (status === "listening") {
-        sendDTMF(e.detail);
+    function onDial() {
+      const s = statusRef.current;
+      if (s === "idle" || s === "ended") {
+        dialCall();
       }
     }
+    function onEnd() {
+      endCall();
+    }
+    function onKeyPress(e) {
+      const digit = e.detail;
+      const s = statusRef.current;
+      if (s === "listening" && callbackUrlRef.current && sessionIdRef.current) {
+        sendDTMF(digit);
+      } else if (s === "recording") {
+        stopRecording();
+      }
+    }
+    window.addEventListener("phone-dial", onDial);
+    window.addEventListener("phone-end", onEnd);
     window.addEventListener("phone-keypress", onKeyPress);
-    return () => window.removeEventListener("phone-keypress", onKeyPress);
-  }, [status, callbackUrl, sessionId, lang]);
+    return () => {
+      window.removeEventListener("phone-dial", onDial);
+      window.removeEventListener("phone-end", onEnd);
+      window.removeEventListener("phone-keypress", onKeyPress);
+    };
+  }, []);
 
   async function speakText(text, langCode, onDone) {
     try {
@@ -496,7 +513,7 @@ function CallScreen() {
     if (sayEl) {
       const text = sayEl.textContent.trim();
       setScreenMsg(text); setStatus("speaking");
-      speakText(text, lang, () => {
+      speakText(text, langRef.current, () => {
         if (getDigits) setStatus("listening");
         else if (record) setStatus("recording");
       });
@@ -520,15 +537,17 @@ function CallScreen() {
   }
 
   async function sendDTMF(digit) {
-    if (!callbackUrl || status !== "listening") return;
+    const cbUrl = callbackUrlRef.current;
+    const sid = sessionIdRef.current;
+    if (!cbUrl || !sid) return;
     if (digit === "2") setLang("fr");
     else if (digit === "3") setLang("pt");
     else if (digit === "1") setLang("en");
     setLoading(true);
     try {
-      const res = await fetch(callbackUrl, {
+      const res = await fetch(cbUrl, {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ sessionId, callerNumber: "+237653288958", dtmfDigits: digit, isActive: "1" }).toString(),
+        body: new URLSearchParams({ sessionId: sid, callerNumber: "+237653288958", dtmfDigits: digit, isActive: "1" }).toString(),
       });
       handleVoiceResponse(await res.text());
     } catch { setScreenMsg("Network error."); }
@@ -545,12 +564,12 @@ function CallScreen() {
       recorder.onstop = () => submitRecording(new Blob(audioChunksRef.current, { type: "audio/webm" }));
       recorder.start();
       setIsRecording(true);
-      setScreenMsg("Recording...\nTap mic again to stop.");
+      setScreenMsg("Recording...\nPress any key to stop.");
     }).catch(() => setScreenMsg("Microphone access denied."));
   }
 
   function stopRecording() {
-    if (mediaRecorderRef.current && isRecording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
       mediaRecorderRef.current.stop();
       setIsRecording(false);
       mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
@@ -558,26 +577,28 @@ function CallScreen() {
   }
 
   async function submitRecording(blob) {
-    if (!callbackUrl) return;
+    const cbUrl = callbackUrlRef.current;
+    const sid = sessionIdRef.current;
+    if (!cbUrl || !sid) return;
     setLoading(true); setScreenMsg("Transcribing...");
     try {
       const fd = new FormData();
       fd.append("audio", blob, "recording.webm");
-      fd.append("lang", lang);
+      fd.append("lang", langRef.current);
       const sttRes = await fetch(`${API_BASE}/voice/stt`, { method: "POST", body: fd });
       const sttData = await sttRes.json();
       const transcript = sttData.text || "";
       setScreenMsg(`You said:\n"${transcript}"\n\nProcessing...`);
-      const res = await fetch(callbackUrl, {
+      const res = await fetch(cbUrl, {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ sessionId, callerNumber: "+237653288958", isActive: "1", transcriptionText: transcript }).toString(),
+        body: new URLSearchParams({ sessionId: sid, callerNumber: "+237653288958", isActive: "1", transcriptionText: transcript }).toString(),
       });
       handleVoiceResponse(await res.text());
     } catch {
       try {
-        const res = await fetch(callbackUrl, {
+        const res = await fetch(cbUrl, {
           method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({ sessionId, callerNumber: "+237653288958", isActive: "1", transcriptionText: "" }).toString(),
+          body: new URLSearchParams({ sessionId: sid, callerNumber: "+237653288958", isActive: "1", transcriptionText: "" }).toString(),
         });
         handleVoiceResponse(await res.text());
       } catch { setScreenMsg("Network error."); }
@@ -585,11 +606,12 @@ function CallScreen() {
   }
 
   function endCall() {
+    const sid = sessionIdRef.current;
     if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null; }
-    if (sessionId) {
+    if (sid) {
       fetch(`${API_BASE}/voice/hangup`, {
         method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ sessionId }).toString(),
+        body: new URLSearchParams({ sessionId: sid }).toString(),
       }).catch(() => {});
     }
     setStatus("ended"); setScreenMsg("Call ended.");
@@ -597,12 +619,12 @@ function CallScreen() {
   }
 
   const statusConfig = {
-    idle:      { label: "Ready to dial",            color: C.muted },
-    calling:   { label: "Dialing...",               color: C.accent },
-    speaking:  { label: "SafeMum is speaking",      color: C.accent },
+    idle:      { label: "Press Dial to start",    color: C.muted },
+    calling:   { label: "Dialing...",              color: C.accent },
+    speaking:  { label: "SafeMum is speaking",     color: C.accent },
     listening: { label: "Press a key on the keypad", color: C.text },
-    recording: { label: isRecording ? "Tap mic to stop" : "Tap mic to speak", color: C.danger },
-    ended:     { label: "Disconnected",             color: C.muted },
+    recording: { label: isRecording ? "Press any key to stop" : "Tap mic to speak", color: C.danger },
+    ended:     { label: "Disconnected",            color: C.muted },
   };
   const cfg = statusConfig[status] || statusConfig.idle;
 
@@ -611,7 +633,6 @@ function CallScreen() {
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "space-between", minHeight: "260px", padding: "24px 20px 20px", gap: "14px",
     }}>
-      {/* Icon ring */}
       <div style={{
         width: "60px", height: "60px", borderRadius: "50%",
         border: `1.5px solid ${status === "idle" || status === "ended" ? C.border : status === "recording" ? "#FCA5A5" : C.accent}`,
