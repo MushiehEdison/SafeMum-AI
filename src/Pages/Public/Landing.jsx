@@ -235,7 +235,7 @@ export default function Landing() {
                   who need to understand scale and impact at a glance.
                 </p>
                 <Link
-                  to="/auth/admin"
+                  to="/admin/login"
                   className="cta-link flex items-center justify-between px-5 py-4 rounded-[10px] bg-transparent text-[#6b7280] border border-dashed border-[#d1d5db] no-underline hover:bg-[#f3f4f6] hover:text-[#0e0e0e]"
                 >
                   <div className="flex flex-col gap-0.5">
