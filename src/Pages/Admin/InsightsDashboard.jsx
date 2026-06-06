@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAdminAuth } from "../../Context/AdminAuthContext";
 import { useInsightsData } from "../../API/useInsightsData";
-import LossGeographyMap from "../../components/admin/LossGeographyMap";
-import CareFacilityGapsMap from "../../components/admin/CareFacilityGapsMap";
-import FollowUpRatesChart from "../../components/admin/FollowUpRatesChart";
-import EmotionalRecoveryChart from "../../components/admin/EmotionalRecoveryChart";
-import LLMInsightSummary from "../../components/admin/LLMInsightSummary";
-import ReportExportPanel from "../../components/admin/ReportExportPanel";
+import LossGeographyMap from "../../Components/admin/LossGeographyMap";
+import CareFacilityGapsMap from "../../Components/admin/CareFacilityGapsMap";
+import FollowUpRatesChart from "../../Components/admin/FollowUpRatesChart";
+import EmotionalRecoveryChart from "../../Components/admin/EmotionalRecoveryChart";
+import LLMInsightSummary from "../../Components/admin/LLMInsightSummary";
+import ReportExportPanel from "../../Components/admin/ReportExportPanel";
 import {
   LayoutDashboard, MapPin, HeartPulse, CalendarCheck,
   Brain, FileBarChart, LogOut, Shield, Menu, X,
