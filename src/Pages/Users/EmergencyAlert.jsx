@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Bot, Droplets, Zap, Thermometer, AlertCircle,
   HelpCircle, CheckCircle2, MapPin, Phone, Send, Loader,
-  Heart, X, AlertTriangle, Building2, User, ChevronRight,
+  Heart, X, AlertTriangle, Building2, User,
 } from 'lucide-react';
 import { UserAuthContext } from '../../Context/UserAuthContext';
 import { sendEmergencyAlert } from '../../API/alerts';
@@ -26,8 +26,6 @@ export default function EmergencyAlert() {
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [otherSymptomText, setOtherSymptomText] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState([]);
-  const [extraFacilityExpanded, setExtraFacilityExpanded] = useState(false);
-  const [selectedExtraFacility, setSelectedExtraFacility] = useState(null);
   const [isSending, setIsSending] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -99,7 +97,7 @@ export default function EmergencyAlert() {
         s === 'Something else feels very wrong' && otherSymptomText ? otherSymptomText : s
       );
       await sendEmergencyAlert({
-        symptom: symptomsList,
+        symptom: symptomsList.join(', '),
         recipients: selectedRecipients.map(r => ({ id: r.id, type: r.type, name: r.name })),
         location: {
           latitude:  userCoords?.latitude  || null,
@@ -220,7 +218,11 @@ export default function EmergencyAlert() {
                             </p>
                             <p className="text-xs text-gray-400">{description}</p>
                           </div>
-                          {active && <CheckCircle2 size={20} className="text-red-500" />}
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                            active ? 'border-red-500 bg-red-500' : 'border-gray-300'
+                          }`}>
+                            {active && <CheckCircle2 size={11} className="text-white" />}
+                          </div>
                         </div>
                       </button>
                     );
@@ -256,9 +258,11 @@ export default function EmergencyAlert() {
               <div className="space-y-6">
                 <div className="bg-amber-50 rounded-xl p-4 border border-amber-100">
                   <p className="text-sm text-amber-800">
-                    <span className="font-semibold">⚠️ Based on your symptoms,</span> we recommend alerting your primary hospital immediately.
+                    <span className="font-semibold">⚠️ Select who should receive your alert.</span> We recommend alerting your primary hospital and CHW.
                   </p>
                 </div>
+
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Your care team</p>
 
                 <div className="space-y-3">
                   {/* Primary Hospital */}
@@ -268,32 +272,36 @@ export default function EmergencyAlert() {
                         id: userProfile.primaryHospital.id,
                         name: userProfile.primaryHospital.name,
                         phone: userProfile.primaryHospital.phone,
-                        role: 'Primary Hospital',
-                        distance: userProfile.primaryHospital.distance,
+                        role: 'Hospital',
                         type: 'hospital',
                       })}
                       className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         isSelected(userProfile.primaryHospital.id)
-                          ? 'border-red-500 bg-red-50/50'
-                          : 'border-gray-100 bg-white'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-100 bg-white hover:border-gray-200'
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
-                          <Building2 size={20} className="text-green-600" />
+                        <div className="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+                          <Building2 size={19} className="text-green-600" />
                         </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-green-600 uppercase tracking-wide">Primary Hospital</p>
-                          <p className="font-semibold text-gray-900 mt-0.5">{userProfile.primaryHospital.name}</p>
-                          <p className="text-xs text-gray-400 mt-1">{userProfile.primaryPhysician} · {userProfile.primaryHospital.distance}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Hospital</span>
+                            <span className="text-[10px] text-gray-400">{userProfile.primaryHospital.distance}</span>
+                          </div>
+                          <p className="font-semibold text-gray-900 text-sm">{userProfile.primaryHospital.name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{userProfile.primaryPhysician}</p>
                           <div className="flex items-center gap-1 mt-1">
-                            <Phone size={11} className="text-gray-300" />
+                            <Phone size={10} className="text-gray-300" />
                             <span className="text-xs text-gray-400">{userProfile.primaryHospital.phone}</span>
                           </div>
                         </div>
-                        {isSelected(userProfile.primaryHospital.id) && (
-                          <CheckCircle2 size={20} className="text-red-500" />
-                        )}
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+                          isSelected(userProfile.primaryHospital.id) ? 'border-red-500 bg-red-500' : 'border-gray-300'
+                        }`}>
+                          {isSelected(userProfile.primaryHospital.id) && <CheckCircle2 size={11} className="text-white" />}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -305,103 +313,91 @@ export default function EmergencyAlert() {
                         id: userProfile.primaryCHW.id,
                         name: userProfile.primaryCHW.name,
                         phone: userProfile.primaryCHW.phone,
-                        role: 'Community Health Worker',
+                        role: 'CHW',
                         type: 'chw',
                       })}
                       className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                         isSelected(userProfile.primaryCHW.id)
-                          ? 'border-red-500 bg-red-50/50'
-                          : 'border-gray-100 bg-white'
+                          ? 'border-red-500 bg-red-50'
+                          : 'border-gray-100 bg-white hover:border-gray-200'
                       }`}
                     >
                       <div className="flex items-start gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
-                          <User size={20} className="text-purple-600" />
+                        <div className="w-11 h-11 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+                          <User size={19} className="text-purple-600" />
                         </div>
-                        <div className="flex-1">
-                          <p className="text-xs font-semibold text-purple-600 uppercase tracking-wide">Your CHW</p>
-                          <p className="font-semibold text-gray-900 mt-0.5">{userProfile.primaryCHW.name}</p>
-                          <p className="text-xs text-gray-400 mt-1">{userProfile.primaryCHW.speciality} · {userProfile.primaryCHW.area}</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-[10px] font-semibold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">Community Health Worker</span>
+                          </div>
+                          <p className="font-semibold text-gray-900 text-sm">{userProfile.primaryCHW.name}</p>
+                          <p className="text-xs text-gray-400 mt-0.5">{userProfile.primaryCHW.speciality} · {userProfile.primaryCHW.area}</p>
                           <div className="flex items-center gap-1 mt-1">
-                            <Phone size={11} className="text-gray-300" />
+                            <Phone size={10} className="text-gray-300" />
                             <span className="text-xs text-gray-400">{userProfile.primaryCHW.phone}</span>
                           </div>
                         </div>
-                        {isSelected(userProfile.primaryCHW.id) && (
-                          <CheckCircle2 size={20} className="text-red-500" />
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Additional Facilities */}
-                  {nearbyFacilities.length > 0 && (
-                    <div className={`rounded-xl border-2 border-dashed ${extraFacilityExpanded ? 'border-red-300 bg-red-50/30' : 'border-gray-200 bg-white'}`}>
-                      <div
-                        onClick={() => setExtraFacilityExpanded(!extraFacilityExpanded)}
-                        className="flex items-center justify-between p-4 cursor-pointer"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                            <MapPin size={20} className="text-gray-500" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">Nearest facility</p>
-                            {selectedExtraFacility && (
-                              <p className="text-xs text-green-600 mt-0.5">{selectedExtraFacility.name} selected</p>
-                            )}
-                          </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1 ${
+                          isSelected(userProfile.primaryCHW.id) ? 'border-red-500 bg-red-500' : 'border-gray-300'
+                        }`}>
+                          {isSelected(userProfile.primaryCHW.id) && <CheckCircle2 size={11} className="text-white" />}
                         </div>
-                        <ChevronRight size={18} className={`text-gray-400 transition-transform ${extraFacilityExpanded ? 'rotate-90' : ''}`} />
                       </div>
-
-                      {extraFacilityExpanded && (
-                        <div className="border-t border-gray-100 p-3 space-y-2">
-                          {nearbyFacilities.map(f => {
-                            const isChosen = selectedExtraFacility?.id === f.id;
-                            return (
-                              <div
-                                key={f.id}
-                                onClick={() => {
-                                  if (isChosen) {
-                                    setSelectedExtraFacility(null);
-                                    setSelectedRecipients(prev => prev.filter(r => r.id !== f.id));
-                                  } else {
-                                    setSelectedExtraFacility(f);
-                                    setSelectedRecipients(prev => {
-                                      const filtered = prev.filter(r => !nearbyFacilities.find(nf => nf.id === r.id));
-                                      return [...filtered, { id: f.id, name: f.name, phone: f.phone, role: 'Hospital', distance: f.distance, type: 'hospital' }];
-                                    });
-                                  }
-                                }}
-                                className={`p-3 rounded-xl cursor-pointer transition-all ${
-                                  isChosen ? 'bg-red-100 border border-red-200' : 'bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <p className="text-sm font-medium text-gray-900">{f.name}</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <span className="text-xs text-gray-400">{f.distance || f.dist}</span>
-                                      {f.hasPostLossCare && (
-                                        <span className="text-[10px] font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Post-loss care</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                                    isChosen ? 'border-red-500 bg-red-500' : 'border-gray-300'
-                                  }`}>
-                                    {isChosen && <CheckCircle2 size={12} className="text-white" />}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
                     </div>
                   )}
                 </div>
+
+                {/* Nearby Facilities — always visible */}
+                {nearbyFacilities.length > 0 && (
+                  <>
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mt-2">Nearby facilities</p>
+                    <div className="space-y-2">
+                      {nearbyFacilities.slice(0, 4).map(f => {
+                        const isChosen = !!selectedRecipients.find(r => r.id === f.id);
+                        return (
+                          <div
+                            key={f.id}
+                            onClick={() => {
+                              if (isChosen) {
+                                setSelectedRecipients(prev => prev.filter(r => r.id !== f.id));
+                              } else {
+                                setSelectedRecipients(prev => [...prev, {
+                                  id: f.id, name: f.name, phone: f.phone,
+                                  role: 'Hospital', type: 'hospital',
+                                }]);
+                              }
+                            }}
+                            className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                              isChosen ? 'border-red-500 bg-red-50' : 'border-gray-100 bg-white hover:border-gray-200'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Hospital</span>
+                                  <span className="text-[10px] text-gray-400">{f.distance || f.dist}</span>
+                                  {f.hasPostLossCare && (
+                                    <span className="text-[10px] font-medium text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full">Post-loss care</span>
+                                  )}
+                                </div>
+                                <p className="text-sm font-medium text-gray-900">{f.name}</p>
+                              </div>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                isChosen ? 'border-red-500 bg-red-500' : 'border-gray-300'
+                              }`}>
+                                {isChosen && <CheckCircle2 size={11} className="text-white" />}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {selectedRecipients.length === 0 && (
+                  <p className="text-xs text-gray-400 text-center py-2">Select at least one recipient to continue</p>
+                )}
 
                 <button
                   onClick={() => selectedRecipients.length > 0 && setStep(3)}
@@ -412,7 +408,7 @@ export default function EmergencyAlert() {
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  Continue
+                  {selectedRecipients.length > 0 ? `Continue (${selectedRecipients.length} selected)` : 'Select recipients'}
                 </button>
               </div>
             )}
@@ -439,10 +435,18 @@ export default function EmergencyAlert() {
                     {selectedRecipients.map((r, idx) => (
                       <div key={`${r.type}-${r.id}-${idx}`} className="flex items-center justify-between py-2">
                         <div className="flex items-center gap-2">
-                          {r.type === 'chw' ? <User size={14} className="text-purple-500" /> : <Building2 size={14} className="text-green-600" />}
+                          {r.type === 'chw' ? (
+                            <User size={14} className="text-purple-500" />
+                          ) : (
+                            <Building2 size={14} className="text-green-600" />
+                          )}
                           <span className="text-sm text-gray-700">{r.name}</span>
                         </div>
-                        <span className="text-xs text-gray-400">{r.role}</span>
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          r.type === 'chw' ? 'bg-purple-50 text-purple-600' : 'bg-green-50 text-green-600'
+                        }`}>
+                          {r.type === 'chw' ? 'CHW' : 'Hospital'}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -498,7 +502,13 @@ export default function EmergencyAlert() {
                             </div>
                             <div>
                               <p className="font-semibold text-gray-900">{r.name}</p>
-                              <p className="text-xs text-gray-400">{r.role}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                                  r.type === 'chw' ? 'bg-purple-50 text-purple-600' : 'bg-green-50 text-green-600'
+                                }`}>
+                                  {r.type === 'chw' ? 'Community Health Worker' : 'Hospital'}
+                                </span>
+                              </div>
                             </div>
                           </div>
                           <div className="flex items-center gap-1 text-green-500">
