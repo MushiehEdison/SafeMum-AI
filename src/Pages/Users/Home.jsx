@@ -801,8 +801,8 @@ export default function Home() {
 
 
 const statusTitle = recoveryProgress?.phase
-  ? (STATUS_TITLE_MAP[recoveryProgress.phase] || "Steady & Recovering")
-  : "Steady & Recovering";
+  ? (STATUS_TITLE_MAP[recoveryProgress.phase] || "We're Here With You 💛")
+  : "We're Here With You 💛";
 
 const statusSubtitle = recoveryProgress?.phase === "early_acute"
   ? "You're taking important first steps. Be gentle with yourself."
