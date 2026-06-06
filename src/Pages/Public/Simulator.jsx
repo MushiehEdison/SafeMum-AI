@@ -44,7 +44,6 @@ export default function PhoneSimulator() {
       fontFamily: "'DM Mono', 'Courier New', monospace",
       position: "relative",
       background: C.bg,
-      // Dot grid pattern
       backgroundImage: "radial-gradient(circle, #CCCCCC 1px, transparent 1px)",
       backgroundSize: "22px 22px",
     }}>
@@ -237,7 +236,6 @@ function USSDScreen() {
       "enter your message","enter a message","please type","please reply","respond with",
       "tell us","tell me","your response","your message","your reply",
     ];
-    // Also detect when screen has "0. End | Reply to continue" style pattern — no numbered menu items
     const hasReplyPrompt = /reply\s+to\s+continue/i.test(screen) || /0\.\s*end\s*[\|\/]\s*reply/i.test(screen);
     const needsFree = hasReplyPrompt || (triggers.some(t => lower.includes(t)) && !lower.match(/^\d+\./m));
     setIsFreeText(needsFree);
@@ -355,7 +353,6 @@ function USSDScreen() {
     else if (raw.startsWith("CON"))  { txt = raw.substring(3); }
     else if (raw.startsWith("END"))  { txt = raw.substring(3); ended = true; }
 
-    // Only replace bare "0 to exit" when NOT paired with a "reply to continue" alternative
     if (!/reply\s+to\s+continue/i.test(txt)) {
       txt = txt
         .replace(/\b0[\s.]*to\s+exit\b/gi, "1 to continue")
@@ -386,7 +383,6 @@ function USSDScreen() {
       overflowY: "auto", position: "relative", minHeight: "260px",
       display: "flex", flexDirection: "column",
     }}>
-      {/* Badge */}
       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px", fontFamily: "'Inter', sans-serif" }}>
         <div style={{
           width: "5px", height: "5px", borderRadius: "50%",
@@ -398,12 +394,10 @@ function USSDScreen() {
         </span>
       </div>
 
-      {/* Screen content */}
       <div key={msgKey} style={{ flex: 1, animation: "slide-in 0.2s ease" }}>
         {screen}
       </div>
 
-      {/* Code input */}
       {!isActive && (
         <div style={{ marginTop: "14px", padding: "10px 12px", background: C.surface, borderRadius: "10px", border: `1px solid ${C.border}` }}>
           <span style={{ color: C.accent }}>{serviceCode}</span>
@@ -446,6 +440,7 @@ function CallScreen() {
   const audioChunksRef   = useRef([]);
   const currentAudioRef  = useRef(null);
 
+  // Listen for dial and end from main keypad
   useEffect(() => {
     function onDial() { dialCall(); }
     function onEnd()  { endCall(); }
@@ -456,6 +451,17 @@ function CallScreen() {
       window.removeEventListener("phone-end",  onEnd);
     };
   }, [sessionId, callbackUrl, status]);
+
+  // Listen for keypresses from main keypad when listening
+  useEffect(() => {
+    function onKeyPress(e) {
+      if (status === "listening") {
+        sendDTMF(e.detail);
+      }
+    }
+    window.addEventListener("phone-keypress", onKeyPress);
+    return () => window.removeEventListener("phone-keypress", onKeyPress);
+  }, [status, callbackUrl, sessionId, lang]);
 
   async function speakText(text, langCode, onDone) {
     try {
@@ -594,7 +600,7 @@ function CallScreen() {
     idle:      { label: "Ready to dial",            color: C.muted },
     calling:   { label: "Dialing...",               color: C.accent },
     speaking:  { label: "SafeMum is speaking",      color: C.accent },
-    listening: { label: "Awaiting your input",      color: C.text },
+    listening: { label: "Press a key on the keypad", color: C.text },
     recording: { label: isRecording ? "Tap mic to stop" : "Tap mic to speak", color: C.danger },
     ended:     { label: "Disconnected",             color: C.muted },
   };
@@ -635,19 +641,6 @@ function CallScreen() {
           {cfg.label}
         </span>
       </div>
-
-      {status === "listening" && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
-          {["1","2","3","4","5","6","7","8","9","*","0","#"].map(d => (
-            <button key={d} onClick={() => sendDTMF(d)} className="kb" style={{
-              width: "38px", height: "32px", borderRadius: "8px",
-              background: C.white, border: `1px solid ${C.border}`,
-              color: C.text, fontSize: "13px", cursor: "pointer",
-              fontFamily: "'DM Mono', monospace", transition: "all 0.07s ease",
-            }}>{d}</button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
