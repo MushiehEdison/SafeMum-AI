@@ -23,7 +23,7 @@ export default function EmergencyAlert() {
   const { user } = useContext(UserAuthContext);
 
   const [step, setStep] = useState(1);
-  const [selectedSymptom, setSelectedSymptom] = useState(null);
+  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [otherSymptomText, setOtherSymptomText] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState([]);
   const [extraFacilityExpanded, setExtraFacilityExpanded] = useState(false);
@@ -54,11 +54,12 @@ export default function EmergencyAlert() {
   }, []);
 
   const stepTitles = {
-    1: 'What\'s happening?',
+    1: "What's happening?",
     2: 'Who to alert?',
     3: 'Confirm',
     4: 'Help en route',
   };
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -72,6 +73,12 @@ export default function EmergencyAlert() {
   function goBack() {
     if (step === 1) navigate('/');
     else setStep(s => s - 1);
+  }
+
+  function toggleSymptom(label) {
+    setSelectedSymptoms(prev =>
+      prev.includes(label) ? prev.filter(s => s !== label) : [...prev, label]
+    );
   }
 
   function toggleRecipient(recipient) {
@@ -88,8 +95,11 @@ export default function EmergencyAlert() {
   async function handleSend() {
     setIsSending(true);
     try {
+      const symptomsList = selectedSymptoms.map(s =>
+        s === 'Something else feels very wrong' && otherSymptomText ? otherSymptomText : s
+      );
       await sendEmergencyAlert({
-        symptom: selectedSymptom === 'Something else feels very wrong' ? otherSymptomText : selectedSymptom,
+        symptom: symptomsList,
         recipients: selectedRecipients.map(r => ({ id: r.id, type: r.type, name: r.name })),
         location: {
           latitude:  userCoords?.latitude  || null,
@@ -105,9 +115,11 @@ export default function EmergencyAlert() {
     }
   }
 
-  const symptomDisplay = selectedSymptom === 'Something else feels very wrong' && otherSymptomText
-    ? otherSymptomText
-    : selectedSymptom;
+  const symptomDisplay = selectedSymptoms
+    .map(s => s === 'Something else feels very wrong' && otherSymptomText ? otherSymptomText : s)
+    .join(', ');
+
+  const hasOtherSelected = selectedSymptoms.includes('Something else feels very wrong');
 
   if (loading) {
     return (
@@ -182,18 +194,18 @@ export default function EmergencyAlert() {
                       <Bot size={20} className="text-white" />
                     </div>
                     <p className="text-sm text-gray-600 leading-relaxed">
-                      <span className="font-semibold text-gray-900">{user?.name || userProfile?.name},</span> I'm here with you. Tell me what you're experiencing so I can get you the right help.
+                      <span className="font-semibold text-gray-900">{user?.name || userProfile?.name},</span> I'm here with you. Tell me what you're experiencing — select all that apply — so I can get you the right help.
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   {SYMPTOMS.map(({ icon: Icon, label, description }) => {
-                    const active = selectedSymptom === label;
+                    const active = selectedSymptoms.includes(label);
                     return (
                       <button
                         key={label}
-                        onClick={() => setSelectedSymptom(label)}
+                        onClick={() => toggleSymptom(label)}
                         className={`w-full text-left p-4 rounded-xl transition-all ${
                           active
                             ? 'bg-red-50 border-2 border-red-500 shadow-sm'
@@ -215,7 +227,7 @@ export default function EmergencyAlert() {
                   })}
                 </div>
 
-                {selectedSymptom === 'Something else feels very wrong' && (
+                {hasOtherSelected && (
                   <textarea
                     value={otherSymptomText}
                     onChange={e => setOtherSymptomText(e.target.value)}
@@ -226,15 +238,15 @@ export default function EmergencyAlert() {
                 )}
 
                 <button
-                  onClick={() => selectedSymptom && setStep(2)}
-                  disabled={!selectedSymptom}
+                  onClick={() => selectedSymptoms.length > 0 && setStep(2)}
+                  disabled={selectedSymptoms.length === 0}
                   className={`w-full py-4 rounded-xl font-semibold text-white transition-all ${
-                    selectedSymptom
+                    selectedSymptoms.length > 0
                       ? 'bg-red-500 hover:bg-red-600 shadow-lg shadow-red-200'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
                 >
-                  Continue
+                  {selectedSymptoms.length > 0 ? `Continue (${selectedSymptoms.length} selected)` : 'Select symptoms'}
                 </button>
               </div>
             )}
@@ -414,8 +426,8 @@ export default function EmergencyAlert() {
                     <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">Emergency Alert</p>
                   </div>
                   <div className="space-y-2 text-xs font-mono text-green-400 leading-relaxed">
-                    <p>Patient: {user?.name || userProfile?.name} (post-loss)</p>
-                    <p>Situation: {symptomDisplay || 'Medical emergency'}</p>
+                    <p>Patient: {user?.name || userProfile?.name}</p>
+                    <p>Symptoms: {symptomDisplay || 'Medical emergency'}</p>
                     <p>Location: {userProfile?.location?.area || 'Current location'}</p>
                     <p>Time: {new Date().toLocaleTimeString()}</p>
                   </div>
